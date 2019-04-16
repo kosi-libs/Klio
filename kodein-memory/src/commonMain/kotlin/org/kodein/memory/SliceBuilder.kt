@@ -34,7 +34,7 @@ class SliceBuilder(val initialCapacity: Int, private val alloc: (Int) -> Allocat
         }
     }
 
-    private val writeable = object : Writeable {
+    private inner class BuilderWriteable : Writeable {
         override val remaining: Int get() = Int.MAX_VALUE
 
         override fun put(value: Byte) {
@@ -118,6 +118,8 @@ class SliceBuilder(val initialCapacity: Int, private val alloc: (Int) -> Allocat
             current.setDouble(index, value)
         }
     }
+
+    private val writeable = BuilderWriteable()
 
     fun newSlice(block: Writeable.() -> Unit): KBuffer {
         startPosition = current.position
