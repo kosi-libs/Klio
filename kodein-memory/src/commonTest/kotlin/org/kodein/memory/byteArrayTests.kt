@@ -1,9 +1,9 @@
 package org.kodein.memory
 
 class ByteArrayKBufferTests : AbstractKBufferTests() {
-    override fun alloc(size: Int): Allocation = HeapAllocation(allocArrayKBuffer(size))
+    override fun alloc(size: Int): Allocation = ManagedAllocation(allocArrayKBuffer(size))
 }
 
 class ByteArrayViewsTests : AbstractViewsTest() {
-    override fun viewMaker(size: Int): SliceBuilder = SliceBuilder(size) { HeapAllocation(allocArrayKBuffer(it)) }
+    override fun viewMaker(size: Int): SliceBuilder = SliceBuilder(size, ::allocArrayKBuffer)
 }

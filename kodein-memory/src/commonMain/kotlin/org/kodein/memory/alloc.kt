@@ -1,15 +1,21 @@
 package org.kodein.memory
 
-fun allocArrayKBuffer(capacity: Int): KBuffer = ByteArrayKBuffer(ByteArray(capacity))
-
 interface Allocation : KBuffer, Closeable
 
 internal class NativeAllocation(private val buffer: KBuffer, private val closeFun: () -> Unit) : Allocation, KBuffer by buffer {
-    override fun close() = closeFun()
+    private var isClosed = false
+    override fun close() {
+        if (!isClosed) {
+            isClosed = true
+            closeFun()
+        }
+    }
 }
 
-internal class HeapAllocation(private val buffer: KBuffer) : Allocation, KBuffer by buffer {
+internal class ManagedAllocation(private val buffer: KBuffer) : Allocation, KBuffer by buffer {
     override fun close() {}
 }
 
-expect fun allocNative(capacity: Int): Allocation
+fun allocArrayKBuffer(capacity: Int): Allocation = ManagedAllocation(ByteArrayKBuffer(ByteArray(capacity)))
+
+expect fun allocNativeKBuffer(capacity: Int): Allocation
