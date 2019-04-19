@@ -6,9 +6,6 @@ interface ReadBuffer : Readable {
 
     val limit: Int
 
-    fun mark()
-    fun reset()
-
     fun duplicate(): ReadBuffer
     fun slice(): ReadBuffer
     fun view(index: Int, length: Int = limit - index): ReadBuffer
@@ -30,4 +27,13 @@ fun ReadBuffer.getBytes(index: Int, length: Int = limit - index): ByteArray {
     val array = ByteArray(length)
     getBytes(index, array)
     return array
+}
+
+inline fun ReadBuffer.mark(block: () -> Unit) {
+    val mark = position
+    try {
+        block()
+    } finally {
+        position = mark
+    }
 }

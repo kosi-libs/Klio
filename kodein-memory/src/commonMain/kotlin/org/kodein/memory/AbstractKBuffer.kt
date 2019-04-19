@@ -18,39 +18,24 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override val remaining: Int get() = limit - position
 
-    private var mark: Int = -1
-
     final override fun clear() {
         position = 0
         limit = capacity
-        mark = -1
     }
 
     final override fun flip() {
         limit = position
         position = 0
-        mark = -1
     }
 
     final override fun rewind() {
         position = 0
-        mark = -1
-    }
-
-    final override fun mark() {
-        mark = position
-    }
-
-    final override fun reset() {
-        require(mark >= 0) { "Mark is unset" }
-        position = mark
     }
 
     final override fun duplicate(): KBuffer {
         val dup = createDuplicate()
         dup.position = position
         dup.limit = limit
-        dup.mark = mark
         return dup
     }
 

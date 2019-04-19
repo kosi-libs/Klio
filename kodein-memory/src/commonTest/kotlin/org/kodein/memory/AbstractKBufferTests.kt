@@ -261,17 +261,6 @@ abstract class AbstractKBufferTests {
     }
 
     @Test
-    fun mark() {
-        alloc().use {
-            it.putInt(1234567890)
-            it.mark()
-            it.putLong(1234567890123456L)
-            it.reset()
-            assertEquals(1234567890123456L, it.readLong())
-        }
-    }
-
-    @Test
     fun slice() {
         alloc().use {
             it.putInt(1234567890)

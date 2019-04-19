@@ -20,10 +20,6 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
     override fun rewind() { byteBuffer.rewind() }
 
-    override fun mark() { byteBuffer.mark() }
-
-    override fun reset() { byteBuffer.reset() }
-
     override fun duplicate(): KBuffer = JvmNioKBuffer(byteBuffer.duplicate())
 
     override fun slice(): KBuffer = JvmNioKBuffer(byteBuffer.slice())
