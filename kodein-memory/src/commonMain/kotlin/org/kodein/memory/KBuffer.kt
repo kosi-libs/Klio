@@ -1,20 +1,27 @@
 package org.kodein.memory
 
-interface KBuffer : Writeable, Readable {
+interface KBuffer : WriteBuffer, ReadBuffer {
 
     val capacity: Int
 
-    var position: Int
-
-    var limit: Int
+    override var limit: Int
 
     fun clear()
     fun flip()
     fun rewind()
 
-    fun mark()
-    fun reset()
+    override fun duplicate(): KBuffer
+    override fun slice(): KBuffer
+    override fun view(index: Int, length: Int): KBuffer
 
-    fun duplicate(): KBuffer
-    fun slice(): KBuffer
+    override fun internalBuffer(): KBuffer
+
+    companion object
 }
+
+fun KBuffer.limitHere() {
+    limit = position
+}
+
+fun KBuffer.Companion.wrap(array: ByteArray) = ByteArrayKBuffer(array)
+fun KBuffer.Companion.array(capacity: Int) = ByteArrayKBuffer(ByteArray(capacity))

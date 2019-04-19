@@ -28,6 +28,20 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
     override fun slice(): KBuffer = JvmNioKBuffer(byteBuffer.slice())
 
+    override fun view(index: Int, length: Int): JvmNioKBuffer {
+        val position = byteBuffer.position()
+        val limit = byteBuffer.limit()
+        try {
+            byteBuffer.position(index)
+            byteBuffer.limit(index + length)
+            val view = JvmNioKBuffer(byteBuffer.slice())
+            return view
+        } finally {
+            byteBuffer.position(position)
+            byteBuffer.limit(limit)
+        }
+    }
+
     override val remaining: Int get() = byteBuffer.remaining()
 
     override fun put(value: Byte) { byteBuffer.put(value) }
@@ -44,19 +58,26 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
     override fun putDouble(value: Double) { byteBuffer.putDouble(value) }
 
-    override fun putBytes(src: ByteArray, offset: Int, length: Int) { byteBuffer.put(src, offset, length) }
+    override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) { byteBuffer.put(src, srcOffset, length) }
 
     override fun putBytes(src: Readable, length: Int) {
-        when (src) {
+        when (val srcBuffer = src.internalBuffer()) {
             is JvmNioKBuffer -> {
-                if (src.byteBuffer.remaining() == length) {
-                    byteBuffer.put(src.byteBuffer)
+                if (srcBuffer.byteBuffer.remaining() == length) {
+                    byteBuffer.put(srcBuffer.byteBuffer)
                 } else {
-                    byteBuffer.put(src.byteBuffer.duplicate().also { it.limit(it.position() + length) })
+                    val srcLimit = srcBuffer.byteBuffer.limit()
+                    try {
+                        srcBuffer.byteBuffer.limit(srcBuffer.byteBuffer.position() + length)
+                        byteBuffer.put(srcBuffer.byteBuffer)
+                    } finally {
+                        srcBuffer.byteBuffer.limit(srcLimit)
+                    }
                 }
             }
             is ByteArrayKBuffer -> {
-                byteBuffer.put(src.array, src.offset + src.position, length)
+                byteBuffer.put(srcBuffer.array, srcBuffer.offset + srcBuffer.position, length)
+                srcBuffer.skip(length)
             }
             else -> {
                 for (i in 0 until length) {
@@ -79,6 +100,29 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
     override fun setFloat(index: Int, value: Float) { byteBuffer.putFloat(index, value) }
 
     override fun setDouble(index: Int, value: Double) { byteBuffer.putDouble(index, value) }
+
+    override fun setBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
+        val position = byteBuffer.position()
+        try {
+            byteBuffer.position(index)
+            putBytes(src, srcOffset, length)
+        } finally {
+            byteBuffer.position(position)
+        }
+    }
+
+    override fun setBytes(index: Int, src: ReadBuffer, srcIndex: Int, length: Int) {
+        val thisPosition = byteBuffer.position()
+        val srcPosition = src.position
+        try {
+            byteBuffer.position(index)
+            src.position = srcIndex
+            putBytes(src, length)
+        } finally {
+            byteBuffer.position(thisPosition)
+            src.position = srcPosition
+        }
+    }
 
     override fun read(): Byte = byteBuffer.get()
 
@@ -110,9 +154,43 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
     override fun getDouble(index: Int): Double = byteBuffer.getDouble(index)
 
+    override fun getBytes(index: Int, dst: ByteArray, offset: Int, length: Int) {
+        val position = byteBuffer.position()
+        try {
+            byteBuffer.position(index)
+            byteBuffer.get(dst, offset, length)
+        } finally {
+            byteBuffer.position(position)
+        }
+    }
+
     override fun skip(count: Int) {
         require(count >= 0) { "count (=$count) < 0" }
         byteBuffer.position(byteBuffer.position() + count)
     }
 
+    override fun internalBuffer() = this
+
+    override fun equals(other: Any?): Boolean {
+        if (other === this) return true
+        if (other == null) return false
+        if (other !is KBuffer) return false
+        if (other.remaining != remaining) return false
+
+        when (val otherBuffer = other.internalBuffer()) {
+            is JvmNioKBuffer -> return byteBuffer == otherBuffer.byteBuffer
+            is ByteArrayKBuffer -> return byteBuffer == ByteBuffer.wrap(otherBuffer.array, otherBuffer.offset + otherBuffer.position, otherBuffer.remaining)
+            else -> {
+                var otherP = other.limit - 1
+                for (thisP in (limit - 1) downTo position) {
+                    if (byteBuffer.get(thisP) != otherBuffer.get(otherP))
+                        return false
+                    --otherP
+                }
+                return true
+            }
+        }
+    }
+
+    override fun hashCode() = byteBuffer.hashCode()
 }

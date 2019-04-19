@@ -12,15 +12,15 @@ interface Readable {
     fun readFloat(): Float
     fun readDouble(): Double
 
-    fun readBytes(dst: ByteArray, offset: Int = 0, length: Int = dst.size)
-
-    operator fun get(index: Int): Byte
-    fun getChar(index: Int): Char
-    fun getShort(index: Int): Short
-    fun getInt(index: Int): Int
-    fun getLong(index: Int): Long
-    fun getFloat(index: Int): Float
-    fun getDouble(index: Int): Double
+    fun readBytes(dst: ByteArray, offset: Int = 0, length: Int = dst.size - offset)
 
     fun skip(count: Int)
+
+    fun internalBuffer(): Readable
+}
+
+fun Readable.readBytes(length: Int = remaining): ByteArray {
+    val array = ByteArray(length)
+    readBytes(array)
+    return array
 }

@@ -23,7 +23,7 @@ class SliceBuilder(val initialCapacity: Int, private val alloc: (Int) -> Allocat
         previousBuffer.limitHere()
         val isOneSlice = startPosition == 0
         if (isOneSlice) {
-            allocs.remove(previousAllocation)
+            allocs.removeAt(allocs.lastIndex)
         }
         previousBuffer.position = startPosition
         current = alloc(factor * initialCapacity).also { allocs += it }
@@ -72,9 +72,9 @@ class SliceBuilder(val initialCapacity: Int, private val alloc: (Int) -> Allocat
             current.putDouble(value)
         }
 
-        override fun putBytes(src: ByteArray, offset: Int, length: Int) {
+        override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
             checkSize(length)
-            current.putBytes(src, offset, length)
+            current.putBytes(src, srcOffset, length)
         }
 
         override fun putBytes(src: Readable, length: Int) {
@@ -82,41 +82,7 @@ class SliceBuilder(val initialCapacity: Int, private val alloc: (Int) -> Allocat
             current.putBytes(src, length)
         }
 
-        override fun set(index: Int, value: Byte) {
-            checkSize(index + 1)
-            current.set(index, value)
-
-        }
-
-        override fun setChar(index: Int, value: Char) {
-            checkSize(index + 2)
-            current.setChar(index, value)
-        }
-
-        override fun setShort(index: Int, value: Short) {
-            checkSize(index + 2)
-            current.setShort(index, value)
-        }
-
-        override fun setInt(index: Int, value: Int) {
-            checkSize(index + 4)
-            current.setInt(index, value)
-        }
-
-        override fun setLong(index: Int, value: Long) {
-            checkSize(index + 8)
-            current.setLong(index, value)
-        }
-
-        override fun setFloat(index: Int, value: Float) {
-            checkSize(index + 4)
-            current.setFloat(index, value)
-        }
-
-        override fun setDouble(index: Int, value: Double) {
-            checkSize(index + 8)
-            current.setDouble(index, value)
-        }
+        override fun internalBuffer(): Writeable = current.internalBuffer()
     }
 
     private val writeable = BuilderWriteable()
