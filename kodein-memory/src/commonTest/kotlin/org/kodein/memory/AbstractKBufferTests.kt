@@ -282,14 +282,14 @@ abstract class AbstractKBufferTests {
             it.putBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9))
             it.flip()
 
-            val view1 = it.view(3, 3)
+            val view1 = it.slice(3, 3)
             assertEquals(0, view1.position)
             assertEquals(0, view1.position)
             assertEquals(3, view1.capacity)
             assertEquals(3, view1.limit)
             assertTrue(byteArrayOf(4, 5, 6).contentEquals(view1.readBytes()))
 
-            val view2 = it.view(6)
+            val view2 = it.slice(6)
             assertEquals(0, view2.position)
             assertEquals(0, view2.position)
             assertEquals(3, view2.capacity)

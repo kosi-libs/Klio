@@ -24,3 +24,5 @@ fun Readable.readBytes(length: Int = remaining): ByteArray {
     readBytes(array)
     return array
 }
+
+fun ReadBuffer.hasRemaining(): Boolean = remaining == 0

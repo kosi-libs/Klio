@@ -8,7 +8,7 @@ interface ReadBuffer : Readable {
 
     fun duplicate(): ReadBuffer
     fun slice(): ReadBuffer
-    fun view(index: Int, length: Int = limit - index): ReadBuffer
+    fun slice(index: Int, length: Int = limit - index): ReadBuffer
 
     operator fun get(index: Int): Byte
     fun getChar(index: Int): Char
@@ -29,11 +29,20 @@ fun ReadBuffer.getBytes(index: Int, length: Int = limit - index): ByteArray {
     return array
 }
 
-inline fun ReadBuffer.mark(block: () -> Unit) {
-    val mark = position
+inline fun mark(buffer: ReadBuffer, block: () -> Unit) {
+    val mark = buffer.position
     try {
         block()
     } finally {
-        position = mark
+        buffer.position = mark
+    }
+}
+
+inline fun mark(vararg buffers: ReadBuffer, block: () -> Unit) {
+    val marks = IntArray(buffers.size) { index -> buffers[index].position }
+    try {
+        block()
+    } finally {
+        marks.forEachIndexed { index, mark -> buffers[index].position = mark }
     }
 }

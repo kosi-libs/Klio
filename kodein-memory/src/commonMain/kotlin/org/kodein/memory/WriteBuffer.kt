@@ -2,6 +2,10 @@ package org.kodein.memory
 
 interface WriteBuffer : Writeable {
 
+    var position: Int
+
+    val limit: Int
+
     operator fun set(index: Int, value: Byte)
     fun setChar(index: Int, value: Char)
     fun setShort(index: Int, value: Short)
@@ -16,3 +20,4 @@ interface WriteBuffer : Writeable {
     override fun internalBuffer(): WriteBuffer
 
 }
+

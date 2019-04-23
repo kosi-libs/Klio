@@ -43,7 +43,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override fun slice() = unsafeView(position, remaining)
 
-    final override fun view(index: Int, length: Int): KBuffer {
+    final override fun slice(index: Int, length: Int): KBuffer {
         require(index >= 0) { "$index < 0" }
         require(length >= 0) { "$length < 0" }
         require(index + length <= limit) { "$index + $length > limit (=$limit)" }

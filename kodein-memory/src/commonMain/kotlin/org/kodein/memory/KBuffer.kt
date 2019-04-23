@@ -12,7 +12,7 @@ interface KBuffer : WriteBuffer, ReadBuffer {
 
     override fun duplicate(): KBuffer
     override fun slice(): KBuffer
-    override fun view(index: Int, length: Int): KBuffer
+    override fun slice(index: Int, length: Int): KBuffer
 
     override fun internalBuffer(): KBuffer
 

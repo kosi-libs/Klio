@@ -3,17 +3,17 @@ package org.kodein.memory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-abstract class AbstractViewsTest {
+abstract class AbstractSliceBuilderTest {
 
     companion object {
         const val DEFAULT_SIZE = 16384
     }
 
-    abstract fun viewMaker(size: Int = DEFAULT_SIZE): SliceBuilder
+    abstract fun sliceBuilder(size: Int = DEFAULT_SIZE): SliceBuilder
 
     @Test
-    fun views() {
-        viewMaker().use {
+    fun simpleSlices() {
+        sliceBuilder().use {
             val v1 = it.newSlice {
                 putShort(2142)
                 putShort(4221)
@@ -34,8 +34,8 @@ abstract class AbstractViewsTest {
     }
 
     @Test
-    fun small() {
-        viewMaker(5).use {
+    fun slicesInRemap() {
+        sliceBuilder(5).use {
             val v1 = it.newSlice { putInt(1234567890) }
             assertEquals(0, v1.position)
             assertEquals(4, v1.limit)
@@ -54,6 +54,56 @@ abstract class AbstractViewsTest {
             assertEquals(4, v3.capacity)
             assertEquals(2, it.allocationCount)
             assertEquals(25, it.allocationSize)
+        }
+    }
+
+    @Test
+    fun simpleSubSlice() {
+        sliceBuilder().use {
+            lateinit var sub: ReadBuffer
+
+            val slice = it.newSlice {
+                putChar('a')
+                sub = subSlice {
+                    putChar('b')
+                    putChar('c')
+                }
+                putChar('d')
+            }
+
+            assertEquals('a', slice.readChar())
+            assertEquals('b', slice.readChar())
+            assertEquals('c', slice.readChar())
+            assertEquals('d', slice.readChar())
+
+            assertEquals('b', sub.readChar())
+            assertEquals('c', sub.readChar())
+        }
+    }
+
+    @Test
+    fun subSliceInRemap() {
+        sliceBuilder(3).use {
+            lateinit var sub: ReadBuffer
+
+            val slice = it.newSlice {
+                putChar('a')
+                sub = subSlice {
+                    putChar('b')
+                    putChar('c')
+                }
+                putChar('d')
+                putChar('e')
+                putChar('f')
+            }
+
+            assertEquals('a', slice.readChar())
+            assertEquals('b', slice.readChar())
+            assertEquals('c', slice.readChar())
+            assertEquals('d', slice.readChar())
+
+            assertEquals('b', sub.readChar())
+            assertEquals('c', sub.readChar())
         }
     }
 }

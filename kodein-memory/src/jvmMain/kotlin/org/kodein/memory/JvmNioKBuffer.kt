@@ -24,7 +24,7 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
     override fun slice(): KBuffer = JvmNioKBuffer(byteBuffer.slice())
 
-    override fun view(index: Int, length: Int): JvmNioKBuffer {
+    override fun slice(index: Int, length: Int): JvmNioKBuffer {
         val position = byteBuffer.position()
         val limit = byteBuffer.limit()
         try {
