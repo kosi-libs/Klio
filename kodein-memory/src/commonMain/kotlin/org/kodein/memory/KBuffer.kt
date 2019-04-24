@@ -19,9 +19,17 @@ interface KBuffer : WriteBuffer, ReadBuffer {
     companion object
 }
 
-fun KBuffer.limitHere() {
+@Suppress("NOTHING_TO_INLINE")
+inline fun KBuffer.limitHere() {
     limit = position
 }
 
 fun KBuffer.Companion.wrap(array: ByteArray) = ByteArrayKBuffer(array)
 fun KBuffer.Companion.array(capacity: Int) = ByteArrayKBuffer(ByteArray(capacity))
+
+inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): KBuffer {
+    val buf = KBuffer.array(capacity)
+    buf.block()
+    buf.flip()
+    return buf
+}

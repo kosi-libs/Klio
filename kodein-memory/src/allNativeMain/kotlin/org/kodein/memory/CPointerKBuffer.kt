@@ -7,6 +7,8 @@ import platform.posix.memcpy
 @Suppress("ConstantConditionIf")
 class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractKBuffer(capacity) {
 
+    override val name: String get() = "CPointerKBuffer"
+
     override fun createDuplicate() = CPointerKBuffer(pointer, capacity)
 
     override fun unsafeView(index: Int, length: Int) = CPointerKBuffer((pointer + index)!!, length)

@@ -4,6 +4,8 @@ class ByteArrayKBuffer private constructor(val array: ByteArray, val offset: Int
 
     constructor(array: ByteArray) : this(array, 0, array.size)
 
+    override val name: String get() = "ByteArrayKBuffer"
+
     override fun createDuplicate() = ByteArrayKBuffer(array, offset, capacity)
 
     override fun unsafeView(index: Int, length: Int): KBuffer = ByteArrayKBuffer(array, offset + index, length)

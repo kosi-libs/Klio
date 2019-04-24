@@ -320,4 +320,8 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         }
         return h
     }
+
+    override fun toString(): String = "$name[pos=$position, lim=$limit, cap=$capacity]"
+
+    protected abstract val name: String
 }

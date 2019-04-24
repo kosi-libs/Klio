@@ -25,4 +25,5 @@ fun Readable.readBytes(length: Int = remaining): ByteArray {
     return array
 }
 
-fun ReadBuffer.hasRemaining(): Boolean = remaining == 0
+@Suppress("NOTHING_TO_INLINE")
+inline fun ReadBuffer.hasRemaining(): Boolean = remaining != 0

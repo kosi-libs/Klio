@@ -95,7 +95,8 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
             val startOffset = current.position - startPosition
             block()
             hasSubSlice = true
-            return current.slice(startPosition + startOffset, current.position)
+            val newStart = startPosition + startOffset
+            return current.slice(newStart, current.position - newStart)
         }
     }
 

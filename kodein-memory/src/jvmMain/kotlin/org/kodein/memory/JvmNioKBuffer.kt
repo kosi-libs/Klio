@@ -189,4 +189,6 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
     }
 
     override fun hashCode() = byteBuffer.hashCode()
+
+    override fun toString(): String = "JvmNioKBuffer[pos=$position, lim=$limit, cap=$capacity]"
 }
