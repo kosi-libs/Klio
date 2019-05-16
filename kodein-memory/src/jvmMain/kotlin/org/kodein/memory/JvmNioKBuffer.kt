@@ -1,6 +1,7 @@
 package org.kodein.memory
 
 import java.nio.ByteBuffer
+import kotlin.math.min
 
 class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 

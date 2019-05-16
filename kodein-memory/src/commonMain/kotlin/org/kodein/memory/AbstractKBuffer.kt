@@ -1,5 +1,7 @@
 package org.kodein.memory
 
+import kotlin.math.min
+
 abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override var position: Int = 0
