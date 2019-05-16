@@ -24,7 +24,7 @@ inline fun KBuffer.limitHere() {
     limit = position
 }
 
-fun KBuffer.Companion.wrap(array: ByteArray) = ByteArrayKBuffer(array)
+fun KBuffer.Companion.wrap(array: ByteArray, offset: Int = 0, capacity: Int = array.size - offset) = ByteArrayKBuffer(array)
 fun KBuffer.Companion.array(capacity: Int) = ByteArrayKBuffer(ByteArray(capacity))
 
 inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): KBuffer {

@@ -6,6 +6,7 @@ interface Readable {
 
     val remaining: Int
 
+    fun peek(): Byte
     fun read(): Byte
     fun readChar(): Char
     fun readShort(): Short

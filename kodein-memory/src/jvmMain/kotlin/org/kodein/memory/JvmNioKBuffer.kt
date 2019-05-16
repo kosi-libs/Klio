@@ -121,6 +121,8 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
         }
     }
 
+    override fun peek(): Byte = byteBuffer.get(byteBuffer.position())
+
     override fun read(): Byte = byteBuffer.get()
 
     override fun readChar(): Char = byteBuffer.getChar()

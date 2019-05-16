@@ -43,14 +43,6 @@ object Base64 {
 
     class Encoder internal constructor(private val isURL: Boolean, private val newline: String?, private val linemax: Int, private val doPadding: Boolean) {
 
-        fun encode(src: ByteArray): String {
-            val dst = CharArray(outLength(src.size))
-            val length = encode(src, 0, src.size, dst)
-            return String(dst, 0, length)
-        }
-
-        fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
-
         private fun outLength(srclen: Int): Int {
             val len = if (doPadding) {
                 4 * ((srclen + 2) / 3)
@@ -64,51 +56,72 @@ object Base64 {
             return len
         }
 
-        private fun encode(src: ByteArray, off: Int, end: Int, dst: CharArray): Int {
+        fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len))
+
+        fun encode(src: Readable, len: Int = src.remaining): String {
+            val dst = ByteArray(outLength(len))
+            val length = encode(src, KBuffer.wrap(dst))
+            val chars = CharArray(length)
+            for (i in 0 until length) {
+                chars[i] = dst[i].toChar()
+            }
+            return String(chars)
+        }
+
+        fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
+
+        fun encode(src: Readable, dst: Writeable, len: Int = src.remaining): Int {
             val base64 = if (isURL) toBase64URL else toBase64
-            var sp = off
-            var slen = (end - off) / 3 * 3
-            val sl = off + slen
+            var sp = 0
+            var slen = len / 3 * 3
+            val sl = slen
             if (linemax > 0 && slen > linemax / 4 * 3)
                 slen = linemax / 4 * 3
             var dp = 0
             while (sp < sl) {
                 val sl0 = min(sp + slen, sl)
                 var sp0 = sp
-                var dp0 = dp
                 while (sp0 < sl0) {
-                    val bits = src[sp0++].toInt() and 0xff shl 16 or (
-                            src[sp0++].toInt() and 0xff shl 8) or
-                            (src[sp0++].toInt() and 0xff)
-                    dst[dp0++] = base64[bits ushr 18 and 0x3f]
-                    dst[dp0++] = base64[bits ushr 12 and 0x3f]
-                    dst[dp0++] = base64[bits ushr 6 and 0x3f]
-                    dst[dp0++] = base64[bits and 0x3f]
+                    val bits =
+                            (src.read().toInt() and 0xff shl 16) or
+                            (src.read().toInt() and 0xff shl 8) or
+                            (src.read().toInt() and 0xff)
+                    sp0 += 3
+                    dst.put(base64[bits ushr 18 and 0x3f].toByte())
+                    dst.put(base64[bits ushr 12 and 0x3f].toByte())
+                    dst.put(base64[bits ushr 6 and 0x3f].toByte())
+                    dst.put(base64[bits and 0x3f].toByte())
                 }
                 val dlen = (sl0 - sp) / 3 * 4
                 dp += dlen
                 sp = sl0
-                if (dlen == linemax && sp < end && newline != null) {
+                if (dlen == linemax && sp < len && newline != null) {
                     for (b in newline) {
-                        dst[dp++] = b
+                        dst.put(b.toByte())
+                        dp++
                     }
                 }
             }
-            if (sp < end) {
-                val b0 = src[sp++].toInt() and 0xff
-                dst[dp++] = base64[b0 shr 2]
-                if (sp == end) {
-                    dst[dp++] = base64[b0 shl 4 and 0x3f]
+            if (sp < len) {
+                val b0 = src.read().toInt() and 0xff
+                sp++
+                dst.put(base64[b0 shr 2].toByte())
+                dp++
+                if (sp == len) {
+                    dst.put(base64[b0 shl 4 and 0x3f].toByte())
+                    dp++
                     if (doPadding) {
-                        dst[dp++] = '='
-                        dst[dp++] = '='
+                        repeat(2) { dst.put('='.toByte()) }
+                        dp += 2
                     }
                 } else {
-                    val b1 = src[sp].toInt() and 0xff
-                    dst[dp++] = base64[b0 shl 4 and 0x3f or (b1 shr 4)]
-                    dst[dp++] = base64[b1 shl 2 and 0x3f]
+                    val b1 = src.peek().toInt() and 0xff
+                    dst.put(base64[b0 shl 4 and 0x3f or (b1 shr 4)].toByte())
+                    dst.put(base64[b1 shl 2 and 0x3f].toByte())
+                    dp += 2
                     if (doPadding) {
-                        dst[dp++] = '='
+                        dst.put('='.toByte())
+                        dp++
                     }
                 }
             }

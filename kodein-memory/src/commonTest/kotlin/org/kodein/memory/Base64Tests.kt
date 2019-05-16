@@ -29,4 +29,15 @@ class Base64Tests {
         assertTrue(s14.contentEquals(Base64.decoder.decode("AQIDBA==")))
     }
 
+//    @Test
+//    fun loremIpsum() {
+//        val lipsumString = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus risus elit, efficitur a nisi sit amet, lacinia hendrerit elit. Duis lacinia, eros et eleifend posuere, sapien diam bibendum ex, at blandit quam lacus quis risus. Aliquam id nulla sed risus viverra ullamcorper et a purus. Nullam ullamcorper, felis in laoreet euismod, dolor nisl placerat mauris, eu tincidunt libero enim in lorem. Morbi cursus dui tortor, ut faucibus lorem ultricies iaculis. Vivamus dictum tortor felis, a ultricies magna viverra non. Phasellus non elit et risus imperdiet accumsan sed ut sapien. Aliquam lacinia, elit id dignissim tempor, felis elit sodales ante, sit amet euismod risus dolor vel risus. Proin nisi nunc, porta nec luctus vitae, eleifend sed diam. Donec vitae sapien libero."
+//        val lipsumBuffer = KBuffer.wrap(lipsumString.map { it.toByte() }.toByteArray())
+//
+//        val base64 = Base64.mimeEncoder.encode(lipsumBuffer)
+//        val decodedArray = Base64.mimeDecoder.decode(base64)
+//        val decodedString = String(decodedArray.map { it.toChar() }.toCharArray())
+//
+//        assertEquals(lipsumString, decodedString)
+//    }
 }

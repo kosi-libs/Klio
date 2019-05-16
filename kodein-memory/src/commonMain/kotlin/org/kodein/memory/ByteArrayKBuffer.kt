@@ -1,8 +1,6 @@
 package org.kodein.memory
 
-class ByteArrayKBuffer private constructor(val array: ByteArray, val offset: Int, capacity: Int) : AbstractKBuffer(capacity) {
-
-    constructor(array: ByteArray) : this(array, 0, array.size)
+class ByteArrayKBuffer constructor(val array: ByteArray, val offset: Int = 0, capacity: Int = array.size - offset) : AbstractKBuffer(capacity) {
 
     override val name: String get() = "ByteArrayKBuffer"
 

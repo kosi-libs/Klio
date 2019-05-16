@@ -163,6 +163,11 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override fun setDouble(index: Int, value: Double) = setLong(index, value.toRawBits())
 
+    final override fun peek(): Byte {
+        checkHasRemaining(1)
+        return unsafeGet(position)
+    }
+
     final override fun read(): Byte {
         checkHasRemaining(1)
         val ret = unsafeGet(position)
@@ -279,7 +284,6 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         checkIndex(index, length)
         if (length == 0) return
         unsafeGetBytes(index, dst, offset, length)
-        position += length
     }
 
     protected abstract fun unsafeGetBytes(index: Int, dst: ByteArray, offset: Int, length: Int)
