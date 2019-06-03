@@ -29,6 +29,14 @@ fun ReadBuffer.getBytes(index: Int, length: Int = limit - index): ByteArray {
     return array
 }
 
+fun ReadBuffer.getCharHere() = getChar(position)
+fun ReadBuffer.getShortHere() = getShort(position)
+fun ReadBuffer.getIntHere() = getInt(position)
+fun ReadBuffer.getLongHere() = getLong(position)
+fun ReadBuffer.getFloatHere() = getFloat(position)
+fun ReadBuffer.getDoubleHere() = getDouble(position)
+fun ReadBuffer.getBytesHere() = getBytes(position)
+
 inline fun mark(buffer: ReadBuffer, block: () -> Unit) {
     val mark = buffer.position
     try {

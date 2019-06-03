@@ -1,5 +1,9 @@
-package org.kodein.memory
+package org.kodein.memory.text
 
+import org.kodein.memory.KBuffer
+import org.kodein.memory.Readable
+import org.kodein.memory.Writeable
+import org.kodein.memory.wrap
 import kotlin.math.min
 
 
@@ -22,28 +26,28 @@ object Base64 {
     }
 
 
-    val encoder get() = Encoder.RFC4648
-    val urlEncoder get() = Encoder.RFC4648_URLSAFE
-    val mimeEncoder get() = Encoder.RFC2045
+    val encoder get() = Base64.Encoder.RFC4648
+    val urlEncoder get() = Base64.Encoder.RFC4648_URLSAFE
+    val mimeEncoder get() = Base64.Encoder.RFC2045
     fun mimeEncoder(lineLength: Int, lineSeparator: String): Encoder {
         for (b in lineSeparator) {
             if (fromBase64[b.toInt() and 0xff] != -1)
                 throw IllegalArgumentException("Illegal base64 line separator character 0x" + b.toInt().toString(16))
         }
         return if (lineLength <= 0) {
-            Encoder.RFC4648
+            Base64.Encoder.RFC4648
         } else {
             Encoder(false, lineSeparator, lineLength shr 2 shl 2, true)
         }
     }
 
-    val decoder get() = Decoder.RFC4648
-    val urlDecoder get() = Decoder.RFC4648_URLSAFE
-    val mimeDecoder get() = Decoder.RFC2045
+    val decoder get() = Base64.Decoder.RFC4648
+    val urlDecoder get() = Base64.Decoder.RFC4648_URLSAFE
+    val mimeDecoder get() = Base64.Decoder.RFC2045
 
     class Encoder internal constructor(private val isURL: Boolean, private val newline: String?, private val linemax: Int, private val doPadding: Boolean) {
 
-        private fun outLength(srclen: Int): Int {
+        fun outLength(srclen: Int): Int {
             val len = if (doPadding) {
                 4 * ((srclen + 2) / 3)
             } else {
@@ -56,19 +60,17 @@ object Base64 {
             return len
         }
 
+        fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
+
         fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len))
 
-        fun encode(src: Readable, len: Int = src.remaining): String {
-            val dst = ByteArray(outLength(len))
-            val length = encode(src, KBuffer.wrap(dst))
-            val chars = CharArray(length)
-            for (i in 0 until length) {
-                chars[i] = dst[i].toChar()
-            }
-            return String(chars)
-        }
+        fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst)
 
-        fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
+        fun encode(src: Readable, length: Int = src.remaining): String {
+            val dst = ByteArray(outLength(length))
+            val realLength = encode(src, KBuffer.wrap(dst))
+            return String(CharArray(realLength) { dst[it].toChar() })
+        }
 
         fun encode(src: Readable, dst: Writeable, len: Int = src.remaining): Int {
             val base64 = if (isURL) toBase64URL else toBase64
@@ -140,103 +142,112 @@ object Base64 {
 
     class Decoder internal constructor(private val isURL: Boolean, private val isMIME: Boolean) {
 
-        fun decode(src: String): ByteArray {
-            var dst = ByteArray(outLength(src))
-            val ret = decode(src, dst)
-            if (ret != dst.size) {
-                dst = dst.copyOf(ret)
-            }
-            return dst
-        }
-
-        private fun outLength(src: String): Int {
-            var sp = 0
-            val base64 = if (isURL) fromBase64URL else fromBase64
-            var paddings = 0
-            var len = src.length - sp
+        fun outLength(src: Readable, len: Int = src.remaining): Int {
             if (len == 0)
                 return 0
+            val base64 = if (isURL) fromBase64URL else fromBase64
             if (len < 2) {
                 if (isMIME && base64[0] == -1)
                     return 0
-                throw IllegalArgumentException(
-                        "Input byte[] should at least have 2 bytes for base64 bytes")
+                throw IllegalArgumentException("Input byte[] should at least have 2 bytes for base64 bytes")
             }
+            var sp = 0
+            var slen = len
+            var paddings = 0
             if (isMIME) {
                 var n = 0
-                while (sp < src.length) {
-                    var b = src[sp++].toInt() and 0xff
+                while (sp < slen) {
+                    var b = src.read().toInt() and 0xff
+                    sp++
                     if (b == '='.toInt()) {
-                        len -= src.length - sp + 1
+                        slen -= slen - sp + 1
                         break
                     }
                     b = base64[b]
                     if (b == -1)
                         n++
                 }
-                len -= n
+                slen -= n
             } else {
-                if (src[src.length - 1] == '=') {
+                src.skip(len - 2)
+                if (src.read() == '='.toByte())
                     paddings++
-                    if (src[src.length - 2] == '=')
-                        paddings++
-                }
+                if (src.read() == '='.toByte())
+                    paddings++
             }
-            if (paddings == 0 && len and 0x3 != 0)
-                paddings = 4 - (len and 0x3)
-            return 3 * ((len + 3) / 4) - paddings
+            if (paddings == 0 && slen and 0x3 != 0)
+                paddings = 4 - (slen and 0x3)
+            return 3 * ((slen + 3) / 4) - paddings
         }
 
-        fun decode(src: String, dst: ByteArray): Int {
-            val len = outLength(src)
-            if (dst.size < len)
-                throw IllegalArgumentException("Output byte array is too small for decoding all input bytes")
+        fun decode(src: String): ByteArray {
+            val dst = ByteArray(src.length)
+            val len = decode(src, KBuffer.wrap(dst))
+            return if (len != dst.size) dst.copyOf(len) else dst
+        }
+
+        fun decode(src: String, dst: Writeable): Int {
+            val buffer = KBuffer.wrap(ByteArray(src.length) { src[it].toByte() })
+            return decode(buffer, dst)
+        }
+
+        fun decode(src: Readable, length: Int = src.remaining): ByteArray {
+            val dst = ByteArray(src.remaining)
+            val realLength = decode(src, KBuffer.wrap(dst), length)
+            return if (realLength != dst.size) dst.copyOf(realLength) else dst
+        }
+
+        fun decode(src: Readable, dst: Writeable, len: Int = src.remaining): Int {
             var sp = 0
             val base64 = if (isURL) fromBase64URL else fromBase64
             var dp = 0
             var bits = 0
             var shiftto = 18
-            while (sp < src.length) {
-                var b = src[sp++].toInt() and 0xff
-                b = base64[b]
+            while (sp < len) {
+                val c = src.read().toInt() and 0xff
+                sp++
+                val b = base64[c]
                 if (b < 0) {
                     if (b == -2) {
-                        if (shiftto == 6 && (sp == src.length || src[sp++] != '=') || shiftto == 18) {
-                            throw IllegalArgumentException(
-                                    "Input byte array has wrong 4-byte ending unit")
+                        if (shiftto == 6 && (sp == len || src.read() != '='.toByte()) || shiftto == 18) {
+                            throw IllegalArgumentException("Input byte array has wrong 4-byte ending unit")
                         }
+                        sp++
                         break
                     }
                     if (isMIME)
                         continue
                     else
-                        throw IllegalArgumentException(
-                                "Illegal base64 character " + (src[sp - 1].toInt()).toString(16))
+                        throw IllegalArgumentException("Illegal base64 character " + c.toString(16))
                 }
                 bits = bits or (b shl shiftto)
                 shiftto -= 6
                 if (shiftto < 0) {
-                    dst[dp++] = (bits shr 16).toByte()
-                    dst[dp++] = (bits shr 8).toByte()
-                    dst[dp++] = bits.toByte()
+                    dst.put((bits shr 16).toByte())
+                    dst.put((bits shr 8).toByte())
+                    dst.put(bits.toByte())
+                    dp += 3
                     shiftto = 18
                     bits = 0
                 }
             }
             if (shiftto == 6) {
-                dst[dp++] = (bits shr 16).toByte()
+                dst.put((bits shr 16).toByte())
+                dp++
             } else if (shiftto == 0) {
-                dst[dp++] = (bits shr 16).toByte()
-                dst[dp++] = (bits shr 8).toByte()
+                dst.put((bits shr 16).toByte())
+                dst.put((bits shr 8).toByte())
+                dp += 2
             } else if (shiftto == 12) {
-                throw IllegalArgumentException(
-                        "Last unit does not have enough valid bits")
+                throw IllegalArgumentException("Last unit does not have enough valid bits")
             }
-            while (sp < src.length) {
-                if (isMIME && base64[src[sp++].toInt()] < 0)
+            while (sp < len) {
+                if (isMIME && base64[src.read().toInt()] < 0) {
+                    sp++
                     continue
-                throw IllegalArgumentException(
-                        "Input byte array has incorrect ending byte at $sp")
+                }
+                sp++
+                throw IllegalArgumentException("Input byte array has incorrect ending byte at $sp")
             }
             return dp
         }

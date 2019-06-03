@@ -1,5 +1,8 @@
 package org.kodein.memory
 
+import org.kodein.memory.text.Base64
+import org.kodein.memory.text.readString
+import org.kodein.memory.text.wrap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -18,7 +21,9 @@ class Base64Tests {
         assertEquals("FSo_VGl-k6i90uf8", Base64.urlEncoder.encode(m21))
 
         assertEquals("AQIDBAU=", Base64.encoder.encode(s15))
+        assertEquals("AQIDBAU", Base64.encoder.withoutPadding().encode(s15))
         assertEquals("AQIDBA==", Base64.encoder.encode(s14))
+        assertEquals("AQIDBA", Base64.encoder.withoutPadding().encode(s14))
     }
 
     @Test
@@ -26,18 +31,24 @@ class Base64Tests {
         assertTrue(m21.contentEquals(Base64.decoder.decode("FSo/VGl+k6i90uf8")))
         assertTrue(m21.contentEquals(Base64.urlDecoder.decode("FSo_VGl-k6i90uf8")))
         assertTrue(s15.contentEquals(Base64.decoder.decode("AQIDBAU=")))
+        assertTrue(s15.contentEquals(Base64.decoder.decode("AQIDBAU")))
         assertTrue(s14.contentEquals(Base64.decoder.decode("AQIDBA==")))
+        assertTrue(s14.contentEquals(Base64.decoder.decode("AQIDBA")))
     }
 
-//    @Test
-//    fun loremIpsum() {
-//        val lipsumString = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus risus elit, efficitur a nisi sit amet, lacinia hendrerit elit. Duis lacinia, eros et eleifend posuere, sapien diam bibendum ex, at blandit quam lacus quis risus. Aliquam id nulla sed risus viverra ullamcorper et a purus. Nullam ullamcorper, felis in laoreet euismod, dolor nisl placerat mauris, eu tincidunt libero enim in lorem. Morbi cursus dui tortor, ut faucibus lorem ultricies iaculis. Vivamus dictum tortor felis, a ultricies magna viverra non. Phasellus non elit et risus imperdiet accumsan sed ut sapien. Aliquam lacinia, elit id dignissim tempor, felis elit sodales ante, sit amet euismod risus dolor vel risus. Proin nisi nunc, porta nec luctus vitae, eleifend sed diam. Donec vitae sapien libero."
-//        val lipsumBuffer = KBuffer.wrap(lipsumString.map { it.toByte() }.toByteArray())
-//
-//        val base64 = Base64.mimeEncoder.encode(lipsumBuffer)
-//        val decodedArray = Base64.mimeDecoder.decode(base64)
-//        val decodedString = String(decodedArray.map { it.toChar() }.toCharArray())
-//
-//        assertEquals(lipsumString, decodedString)
-//    }
+    @Test
+    fun bigText() {
+        val src = KBuffer.wrap(palindrome)
+        val size = src.remaining
+
+        val base64 = Base64.mimeEncoder.encode(src)
+
+        val dst = KBuffer.array(size)
+        Base64.mimeDecoder.decode(base64, dst)
+        dst.flip()
+        val decodedString = dst.readString()
+
+        assertEquals(palindrome, decodedString)
+    }
+
 }
