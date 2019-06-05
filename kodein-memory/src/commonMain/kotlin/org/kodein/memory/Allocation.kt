@@ -24,14 +24,9 @@ internal class ManagedAllocation(private val buffer: KBuffer) : Allocation, KBuf
     override fun hashCode() = buffer.hashCode()
 }
 
-fun Allocation.Allocations.array(capacity: Int): Allocation = ManagedAllocation(KBuffer.array(capacity))
-
 expect fun Allocation.Allocations.native(capacity: Int): Allocation
 
 fun KBuffer.asManagedAllocation(): Allocation = ManagedAllocation(this)
-
-inline fun Allocation.Allocations.array(capacity: Int, block: KBuffer.() -> Unit): Allocation =
-        KBuffer.array(capacity, block).asManagedAllocation()
 
 inline fun Allocation.Allocations.native(capacity: Int, block: KBuffer.() -> Unit): Allocation {
     val alloc = Allocation.native(capacity)

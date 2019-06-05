@@ -118,6 +118,6 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
 
     companion object {
         fun native(initialCapacity: Int) = SliceBuilder(initialCapacity) { Allocation.native(it) }
-        fun array(initialCapacity: Int) = SliceBuilder(initialCapacity) { Allocation.array(it) }
+        fun array(initialCapacity: Int) = SliceBuilder(initialCapacity) { KBuffer.array(it).asManagedAllocation() }
     }
 }
