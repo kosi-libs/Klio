@@ -1,6 +1,6 @@
 package org.kodein.memory.model
 
-interface Sized<V> {
+interface Sized<out V> {
     val value: V
     val size: Int
 
