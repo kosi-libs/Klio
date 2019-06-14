@@ -4,61 +4,47 @@ import org.kodein.memory.concurent.AtomicInteger
 import org.kodein.memory.concurent.RWLock
 import org.kodein.memory.concurent.read
 import org.kodein.memory.concurent.write
-import kotlin.jvm.Synchronized
+import kotlin.jvm.Volatile
 
-internal class ObjectCacheImpl<K : Any, V : Any>(val maxSize: Int) : ObjectCache<K, V> {
+internal class ObjectCacheImpl<K : Any, V : Any> private constructor(private var internals: Internals<K, V>, private val instanceMaxSize: Int) : ObjectCache<K, V> {
 
-    private val map = LinkedHashMap<K, ObjectCache.Entry<V>>(0, 0.75f)
+    constructor(maxSize: Int) : this(Internals(maxSize), maxSize)
 
-    val lock = RWLock()
+    @Volatile
+    private var internalsVersion = 0
 
-    var size: Int = 0
-        private set
-
-    private val atomicHitCount = AtomicInteger(0)
-    private val atomicMissCount = AtomicInteger(0)
-
-    var putCount = 0
-        private set
-    var deleteCount = 0
-        private set
-    var evictionCount = 0
-        private set
-
-    init {
-        require(maxSize > 0) { "maxSize <= 0" }
-    }
-
-    private fun toEntry(entry: ObjectCache.Entry<V>?) : ObjectCache.Entry<V> {
-        if (entry != null) atomicHitCount.incrementAndGet()
-        else atomicMissCount.incrementAndGet()
-        @Suppress("UNCHECKED_CAST")
-        return entry ?: ObjectCache.Entry.NotInCache as ObjectCache.Entry<V>
-    }
-
-    override fun getEntry(key: K): ObjectCache.Entry<V> = toEntry(lock.read { map[key] })
-
-    private fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?, lockWrite: (() -> Unit) -> Unit): ObjectCache.Entry<V> {
-        val entry = getEntry(key)
-        if (entry !is ObjectCache.Entry.NotInCache) {
-            return entry
+    private class Internals<K : Any, V : Any>(var maxSize: Int) {
+        init {
+            require(maxSize > 0) { "maxSize <= 0" }
         }
 
-        val sized = retrieve()
+        val map = LinkedHashMap<K, ObjectCache.Entry<V>>(0, 0.75f)
+        val lock = RWLock()
+        var size = 0
+        val atomicHitCount = AtomicInteger(0)
+        val atomicMissCount = AtomicInteger(0)
+        var retrieveCount = 0
+        var putCount = 0
+        var deleteCount = 0
+        var evictionCount = 0
 
-        @Suppress("UNCHECKED_CAST")
-        val newEntry = if (sized != null) ObjectCache.Entry.Cached(sized.value, sized.size) else ObjectCache.Entry.Deleted as ObjectCache.Entry<V>
-
-        lockWrite {
-            map.put(key, newEntry)
-        }
-
-        return newEntry
+        val refCount = AtomicInteger(1)
     }
 
-    override fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?): ObjectCache.Entry<V> = getOrRetrieveEntry(key, retrieve, lock::write)
+    override val size: Int get() = lockRead { internals.size }
+    override val maxSize: Int get() = lockRead { internals.maxSize }
 
-    private fun trimToSize(maxSize: Int) {
+    override val hitCount get() = lockRead { internals.atomicHitCount.get() }
+    override val missCount get() = lockRead { internals.atomicMissCount.get() }
+    override val retrieveCount get() = lockRead { internals.retrieveCount }
+    override val putCount get() = lockRead { internals.putCount }
+    override val deleteCount get() = lockRead { internals.deleteCount }
+    override val evictionCount  get() = lockRead { internals.evictionCount }
+
+    private fun Internals<K, V>.unsafeTrimToSize(maxSize: Int = this.maxSize) {
+        if (internals.refCount.get() == 1)
+            internals.maxSize = instanceMaxSize
+
         if (size <= maxSize || map.isEmpty())
             return
 
@@ -73,38 +59,124 @@ internal class ObjectCacheImpl<K : Any, V : Any>(val maxSize: Int) : ObjectCache
             val toEvict = it.next()
             it.remove()
             size -= toEvict.value.size
-            evictionCount++
+            ++evictionCount
         }
+    }
+
+    private inline fun <T> lockRead(block: () -> T): T {
+        while (true) {
+            var trimNeeded = false
+            val version = internalsVersion
+            internals.lock.read {
+                if (internalsVersion == version) {
+                    val maxSize = if (internals.refCount.get() == 1) instanceMaxSize else internals.maxSize
+                    if (internals.maxSize != maxSize || internals.size > maxSize) {
+                        trimNeeded = true
+                    }
+                    else {
+                        return block()
+                    }
+                }
+            }
+            if (trimNeeded) {
+                lockWrite {
+                    internals.unsafeTrimToSize()
+                }
+                trimNeeded = false
+            }
+        }
+    }
+
+    private inline fun <T> lockWrite(block: () -> T): T {
+        while (true) {
+            val version = internalsVersion
+            internals.lock.write {
+                if (internalsVersion == version) {
+                    val ret = block()
+                    internals.unsafeTrimToSize()
+                    return ret
+                }
+            }
+        }
+    }
+
+    private fun unsafeGetEntry(key: K) : ObjectCache.Entry<V> {
+        val entry = internals.map[key]
+        if (entry != null) internals.atomicHitCount.incrementAndGet()
+        else internals.atomicMissCount.incrementAndGet()
+        @Suppress("UNCHECKED_CAST")
+        return entry ?: ObjectCache.Entry.NotInCache as ObjectCache.Entry<V>
+    }
+
+    override fun getEntry(key: K): ObjectCache.Entry<V> = lockRead { unsafeGetEntry(key) }
+
+    private fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?, lockWrite: (() -> ObjectCache.Entry<V>) -> ObjectCache.Entry<V>): ObjectCache.Entry<V> {
+        val entry1 = lockRead { unsafeGetEntry(key) }
+        if (entry1 !is ObjectCache.Entry.NotInCache) return entry1
+
+        return lockWrite {
+            val entry2 = unsafeGetEntry(key)
+            if (entry2 !is ObjectCache.Entry.NotInCache) {
+                entry2
+            } else {
+                val sized = retrieve()
+
+                @Suppress("UNCHECKED_CAST")
+                val newEntry = if (sized != null) ObjectCache.Entry.Cached(sized.value, sized.size) else ObjectCache.Entry.Deleted as ObjectCache.Entry<V>
+
+                internals.map.put(key, newEntry)
+                ++internals.retrieveCount
+
+                newEntry
+            }
+        }
+    }
+
+    override fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?): ObjectCache.Entry<V> = getOrRetrieveEntry(key, retrieve, this::lockWrite)
+
+    private fun copyIfNeeded() {
+        val count = internals.refCount.get()
+        if (count < 1) throw IllegalStateException("refCount < 1")
+        if (count == 1) return
+
+        internals.refCount.decrementAndGet()
+        val newInternals = Internals<K, V>(instanceMaxSize)
+        newInternals.map.putAll(internals.map)
+        internals = newInternals
+        ++internalsVersion
     }
 
     private fun unsafePut(key: K, value: V, size: Int) {
-        val previous = map.put(key, ObjectCache.Entry.Cached(value, size))
+        copyIfNeeded()
+
+        val entry = ObjectCache.Entry.Cached(value, size + 8)
+        val previous = internals.map.put(key, entry)
 
         if (previous != null) {
-            this.size -= previous.size
+            internals.size -= previous.size
         }
 
-        ++putCount
-        this.size += size
-
-        trimToSize(maxSize)
+        ++internals.putCount
+        internals.size += entry.size
     }
 
     override fun put(key: K, value: V, size: Int) {
-        lock.write {
+        lockWrite {
             unsafePut(key, value, size)
         }
     }
 
     private fun unsafeDelete(key: K): ObjectCache.Entry<V> {
-        @Suppress("UNCHECKED_CAST")
-        val previous = map.put(key, ObjectCache.Entry.Deleted as ObjectCache.Entry<V>)
+        copyIfNeeded()
 
-        this.size += ObjectCache.Entry.Deleted.size
+        @Suppress("UNCHECKED_CAST")
+        val previous = internals.map.put(key, ObjectCache.Entry.Deleted as ObjectCache.Entry<V>)
+
+        internals.size += ObjectCache.Entry.Deleted.size
 
         if (previous != null) {
-            ++deleteCount
-            this.size -= previous.size
+            ++internals.deleteCount
+            internals.size -= previous.size
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -112,50 +184,52 @@ internal class ObjectCacheImpl<K : Any, V : Any>(val maxSize: Int) : ObjectCache
     }
 
     override fun delete(key: K): ObjectCache.Entry<V> {
-        lock.write {
+        lockWrite {
             return unsafeDelete(key)
         }
     }
 
-    private fun unsafeRemove(key: K): ObjectCache.Entry<V> {
+    private fun unsafeEvict(key: K): ObjectCache.Entry<V> {
+        copyIfNeeded()
+
         @Suppress("UNCHECKED_CAST")
-        val previous = map.remove(key)
+        val previous = internals.map.remove(key)
 
         if (previous != null) {
-            ++deleteCount
-            this.size -= previous.size
+            ++internals.evictionCount
+            internals.size -= previous.size
         }
 
         @Suppress("UNCHECKED_CAST")
         return previous ?: ObjectCache.Entry.NotInCache as ObjectCache.Entry<V>
     }
 
-    override fun remove(key: K): ObjectCache.Entry<V> {
-        lock.write {
-            return unsafeRemove(key)
+    override fun evict(key: K): ObjectCache.Entry<V> {
+        lockWrite {
+            return unsafeEvict(key)
         }
     }
 
-    override fun batch(block: ObjectCache<K, V>.() -> Unit) {
-        lock.write {
-            var batch: ObjectCache<K, V>? = object : ObjectCache<K, V> {
-                override fun getEntry(key: K): ObjectCache.Entry<V> = toEntry(map[key])
+    override fun batch(block: ObjectCacheBase<K, V>.() -> Unit) {
+        lockWrite {
+            var batch: ObjectCacheBase<K, V>? = object : ObjectCacheBase<K, V> {
+                override fun getEntry(key: K): ObjectCache.Entry<V> = unsafeGetEntry(key)
                 override fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?): ObjectCache.Entry<V> = getOrRetrieveEntry(key, retrieve, ::run)
                 override fun put(key: K, value: V, size: Int) = unsafePut(key, value, size)
                 override fun delete(key: K): ObjectCache.Entry<V> = unsafeDelete(key)
-                override fun remove(key: K): ObjectCache.Entry<V> = unsafeRemove(key)
-                override fun batch(block: ObjectCache<K, V>.() -> Unit) = throw IllegalStateException()
+                override fun evict(key: K): ObjectCache.Entry<V> = unsafeEvict(key)
+                override fun batch(block: ObjectCacheBase<K, V>.() -> Unit) = throw IllegalStateException()
             }
 
-            fun getBatch(): ObjectCache<K, V> = batch ?: throw IllegalStateException("Do not use batch this object outside of the batch function")
+            fun getBatch(): ObjectCacheBase<K, V> = batch ?: throw IllegalStateException("Do not use batch this object outside of the batch function")
 
-            val proxy = object : ObjectCache<K, V> {
+            val proxy = object : ObjectCacheBase<K, V> {
                 override fun getEntry(key: K): ObjectCache.Entry<V> = getBatch().getEntry(key)
                 override fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?): ObjectCache.Entry<V> = getBatch().getOrRetrieveEntry(key, retrieve)
                 override fun put(key: K, value: V, size: Int) = getBatch().put(key, value, size)
                 override fun delete(key: K): ObjectCache.Entry<V> = getBatch().delete(key)
-                override fun remove(key: K): ObjectCache.Entry<V> = getBatch().remove(key)
-                override fun batch(block: ObjectCache<K, V>.() -> Unit) = this.block()
+                override fun evict(key: K): ObjectCache.Entry<V> = getBatch().evict(key)
+                override fun batch(block: ObjectCacheBase<K, V>.() -> Unit) = this.block()
             }
 
             proxy.block()
@@ -164,36 +238,23 @@ internal class ObjectCacheImpl<K : Any, V : Any>(val maxSize: Int) : ObjectCache
         }
     }
 
-    fun clear() {
-        lock.write {
-            trimToSize(-1) // -1 will evict 0-sized elements
-            atomicHitCount.set(0)
-            atomicMissCount.set(0)
-            putCount = 0
-            deleteCount = 0
-            evictionCount = 0
+    override fun newCopy(copyMaxSize: Int): ObjectCache<K, V> {
+        lockWrite {
+            internals.refCount.incrementAndGet()
+            return ObjectCacheImpl(internals, copyMaxSize)
         }
-    }
-
-    val hitCount: Int get() = atomicHitCount.get()
-
-    val missCount: Int get() = atomicMissCount.get()
-
-    fun newCopy(copyMaxSize: Int): ObjectCacheImpl<K, V> {
-        val cache = ObjectCacheImpl<K, V>(copyMaxSize)
-        lock.read {
-            cache.map.putAll(map)
-        }
-        return cache
     }
 
     override fun toString(): String {
-        val useRate = if (size != 0) 100 * size / maxSize else 0
-        val hits = atomicHitCount.get()
-        val misses = atomicMissCount.get()
-        val accesses = hits + misses
-        val hitRate = if (accesses != 0) 100 * hits / accesses else 0
-        return "ObjectCache[maxSize=$maxSize,size=$size,useRate=$useRate,hits=$hits,misses=$misses,hitRate=$hitRate%]"
+        lockRead {
+            val maxSize = internals.maxSize
+            val useRate = if (size != 0) 100 * size / maxSize else 0
+            val hits = internals.atomicHitCount.get()
+            val misses = internals.atomicMissCount.get()
+            val accesses = hits + misses
+            val hitRate = if (accesses != 0) 100 * hits / accesses else 0
+            return "ObjectCache[maxSize=$maxSize,size=$size,useRate=$useRate,hits=$hits,misses=$misses,hitRate=$hitRate%]"
+        }
     }
 
 }

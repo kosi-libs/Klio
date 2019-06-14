@@ -6,6 +6,8 @@ actual class AtomicInteger actual constructor(initial: Int) {
 
     actual fun incrementAndGet(): Int = ++value
 
+    actual fun decrementAndGet(): Int = --value
+
     actual fun get() = value
 
     actual fun set(value: Int) { this.value = value }

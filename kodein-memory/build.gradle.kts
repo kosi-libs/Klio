@@ -10,6 +10,10 @@ kodein {
 
         add(kodeinTargets.jvm) {
             target.setCompileClasspath()
+
+            test.dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-reflect")
+            }
         }
 
 //        add(kodeinTargets.js)

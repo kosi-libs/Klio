@@ -12,32 +12,31 @@ class TransferTests {
 
     @Test
     fun equalsAndHashcode() {
-        Allocation.array(DEFAULT_SIZE).use { arrayBuffer ->
-            Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
-                listOf(arrayBuffer, nativeBuffer).forEach {
-                    it.put(123)
-                    it.putChar('*')
-                    it.putShort(12345)
-                    it.putInt(1234567890)
-                    it.putLong(1234567890123456L)
-                    it.putFloat(123456.789f)
-                    it.putDouble(123456789.987654321)
-                    it.flip()
-                }
-
-                assertEquals(arrayBuffer, nativeBuffer)
-                assertEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
-
-                listOf(arrayBuffer, nativeBuffer).forEach { it.skip(4) }
-
-                assertEquals(arrayBuffer, nativeBuffer)
-                assertEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
-
-                arrayBuffer.position = 0
-
-                assertNotEquals(arrayBuffer, nativeBuffer)
-                assertNotEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
+        val arrayBuffer = KBuffer.array(DEFAULT_SIZE)
+        Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
+            listOf(arrayBuffer, nativeBuffer).forEach {
+                it.put(123)
+                it.putChar('*')
+                it.putShort(12345)
+                it.putInt(1234567890)
+                it.putLong(1234567890123456L)
+                it.putFloat(123456.789f)
+                it.putDouble(123456789.987654321)
+                it.flip()
             }
+
+            assertEquals<KBuffer>(arrayBuffer, nativeBuffer)
+            assertEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
+
+            listOf(arrayBuffer, nativeBuffer).forEach { it.skip(4) }
+
+            assertEquals<KBuffer>(arrayBuffer, nativeBuffer)
+            assertEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
+
+            arrayBuffer.position = 0
+
+            assertNotEquals<KBuffer>(arrayBuffer, nativeBuffer)
+            assertNotEquals(arrayBuffer.hashCode(), nativeBuffer.hashCode())
         }
     }
 
@@ -69,19 +68,17 @@ class TransferTests {
 
     @Test
     fun transferNativeToArray() {
-        Allocation.array(DEFAULT_SIZE).use { arrayBuffer ->
-            Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
-                transfer(nativeBuffer, arrayBuffer)
-            }
+        val arrayBuffer = KBuffer.array(DEFAULT_SIZE)
+        Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
+            transfer(nativeBuffer, arrayBuffer)
         }
     }
 
     @Test
     fun transferArrayToNative() {
-        Allocation.array(DEFAULT_SIZE).use { arrayBuffer ->
-            Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
-                transfer(arrayBuffer, nativeBuffer)
-            }
+        val arrayBuffer = KBuffer.array(DEFAULT_SIZE)
+        Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
+            transfer(arrayBuffer, nativeBuffer)
         }
     }
 

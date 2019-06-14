@@ -1,6 +1,6 @@
 package org.kodein.memory.model
 
-interface ObjectCache<K : Any, V  : Any> {
+interface ObjectCache<K : Any, V  : Any> : ObjectCacheBase<K, V> {
 
     sealed class Entry<V> {
         abstract val value: V?
@@ -11,23 +11,17 @@ interface ObjectCache<K : Any, V  : Any> {
         object NotInCache : Entry<Nothing>() { override val value = null ; override val size: Int = 0 }
     }
 
-    fun getEntry(key: K): Entry<V>
+    val size: Int
+    val maxSize: Int
 
-    operator fun get(key: K): V? = getEntry(key).value
+    val hitCount: Int
+    val missCount: Int
+    val retrieveCount: Int
+    val putCount: Int
+    val deleteCount: Int
+    val evictionCount: Int
 
-    fun getOrRetrieveEntry(key: K, retrieve: () -> Sized<V>?): Entry<V>
-
-    fun getOrRetrieve(key: K, retrieve: () -> Sized<V>?): V? = getOrRetrieveEntry(key, retrieve).value
-
-    fun put(key: K, value: V, size: Int)
-
-    fun put(key: K, sized: Sized<V>) = put(key, sized.value, sized.size)
-
-    fun delete(key: K): Entry<V>
-
-    fun remove(key: K): Entry<V>
-
-    fun batch(block: ObjectCache<K, V>.() -> Unit)
+    fun newCopy(copyMaxSize: Int): ObjectCache<K, V>
 
     companion object {
         operator fun <K : Any, V : Any> invoke(maxSize: Int): ObjectCache<K, V> = ObjectCacheImpl(maxSize)
