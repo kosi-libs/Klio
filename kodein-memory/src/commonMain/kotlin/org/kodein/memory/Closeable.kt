@@ -4,6 +4,10 @@ expect interface Closeable {
     fun close()
 }
 
+fun Closeable(onClose: () -> Unit) = object : Closeable {
+    override fun close() = onClose()
+}
+
 inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     var closed = false
 
