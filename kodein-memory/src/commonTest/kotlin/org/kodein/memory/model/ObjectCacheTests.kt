@@ -4,7 +4,7 @@ import kotlin.test.*
 
 class ObjectCacheTests  {
 
-    private inline fun <reified T : Any> assertIs(value: Any) = asserter.assertTrue({ "Expected $value to be of type ${T::class.qualifiedName} but is ${value::class.qualifiedName}" }, value is T)
+    private inline fun <reified T : Any> assertIs(value: Any) = asserter.assertTrue({ "Expected $value to be of type ${T::class} but is ${value::class}" }, value is T)
 
     @Test
     fun putGetDeleteRemove() {

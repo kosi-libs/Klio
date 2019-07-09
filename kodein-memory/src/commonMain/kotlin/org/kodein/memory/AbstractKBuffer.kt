@@ -1,7 +1,5 @@
 package org.kodein.memory
 
-import kotlin.math.min
-
 abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override var position: Int = 0
@@ -184,27 +182,27 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         unsafeSetBytes(index, src, srcOffset, length)
     }
 
-    protected abstract fun unsafeSetBytes(index: Int, src: ByteArray, offset: Int, length: Int)
+    protected abstract fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int)
 
-    final override fun setBytes(index: Int, src: ReadBuffer, srcIndex: Int, length: Int) {
+    final override fun setBytes(index: Int, src: ReadBuffer, srcOffset: Int, length: Int) {
         require(length >= 0) { "length (=$length) < 0" }
-        require(srcIndex + length <= src.limit) { "$srcIndex + $length < src.limit (=${src.limit})" }
+        require(srcOffset + length <= src.limit) { "$srcOffset + $length < src.limit (=${src.limit})" }
         checkIndex(index, length)
         if (length == 0) return
         val srcBuffer = src.internalBuffer()
         if (srcBuffer is ByteArrayKBuffer) {
-            unsafeSetBytes(index, srcBuffer.array, srcBuffer.offset + srcIndex, length)
+            unsafeSetBytes(index, srcBuffer.array, srcBuffer.offset + srcOffset, length)
         } else {
-            val hasOptimized = unsafeTrySetBytesOptimized(index, srcBuffer, srcIndex, length)
+            val hasOptimized = unsafeTrySetBytesOptimized(index, srcBuffer, srcOffset, length)
             if (!hasOptimized) {
                 for (i in 0 until length) {
-                    unsafeSet(index + i, srcBuffer[srcIndex + i])
+                    unsafeSet(index + i, srcBuffer[srcOffset + i])
                 }
             }
         }
     }
 
-    protected abstract fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcIndex: Int, length: Int): Boolean
+    protected abstract fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcOffset: Int, length: Int): Boolean
 
     final override fun readChar() = readShort().toChar()
 
@@ -277,7 +275,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override fun getDouble(index: Int): Double = Double.fromBits(getLong(index))
 
-    override fun getBytes(index: Int, dst: ByteArray, offset: Int, length: Int) {
+    final override fun getBytes(index: Int, dst: ByteArray, offset: Int, length: Int) {
         require(offset >= 0) { "offset (=$offset) < 0" }
         require(length >= 0) { "length (=$length) < 0" }
         require((offset + length) <= dst.size) { "offset (=$offset) + length (=$length) > dst.size (=${dst.size}" }

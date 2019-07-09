@@ -15,7 +15,7 @@ interface WriteBuffer : Writeable {
     fun setDouble(index: Int, value: Double)
 
     fun setBytes(index: Int, src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    fun setBytes(index: Int, src: ReadBuffer, srcIndex: Int = src.position, length: Int = src.remaining)
+    fun setBytes(index: Int, src: ReadBuffer, srcOffset: Int = src.position, length: Int = src.remaining)
 
     override fun internalBuffer(): WriteBuffer
 

@@ -1,6 +1,6 @@
 package org.kodein.memory
 
-class NativeKBUfferTests : AbstractKBufferTests() {
+class NativeKBufferTests : AbstractKBufferTests() {
     override fun alloc(size:Int): Allocation = Allocation.native(size)
 }
 

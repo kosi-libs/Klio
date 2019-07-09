@@ -1,9 +1,6 @@
 package org.kodein.memory.model
 
-import org.kodein.memory.concurent.AtomicInteger
-import org.kodein.memory.concurent.RWLock
-import org.kodein.memory.concurent.read
-import org.kodein.memory.concurent.write
+import org.kodein.memory.concurent.*
 import kotlin.jvm.Volatile
 
 internal class ObjectCacheImpl<K : Any, V : Any> private constructor(private var internals: Internals<K, V>, private val instanceMaxSize: Int) : ObjectCache<K, V> {
@@ -19,7 +16,7 @@ internal class ObjectCacheImpl<K : Any, V : Any> private constructor(private var
         }
 
         val map = LinkedHashMap<K, ObjectCache.Entry<V>>(0, 0.75f)
-        val lock = RWLock()
+        val lock = newRWLock()
         var size = 0
         val atomicHitCount = AtomicInteger(0)
         val atomicMissCount = AtomicInteger(0)

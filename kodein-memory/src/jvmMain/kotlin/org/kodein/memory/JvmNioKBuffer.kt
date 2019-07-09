@@ -1,7 +1,6 @@
 package org.kodein.memory
 
 import java.nio.ByteBuffer
-import kotlin.math.min
 
 class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
 
@@ -108,12 +107,12 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
         }
     }
 
-    override fun setBytes(index: Int, src: ReadBuffer, srcIndex: Int, length: Int) {
+    override fun setBytes(index: Int, src: ReadBuffer, srcOffset: Int, length: Int) {
         val thisPosition = byteBuffer.position()
         val srcPosition = src.position
         try {
             byteBuffer.position(index)
-            src.position = srcIndex
+            src.position = srcOffset
             putBytes(src, length)
         } finally {
             byteBuffer.position(thisPosition)

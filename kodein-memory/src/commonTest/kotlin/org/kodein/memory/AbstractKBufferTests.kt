@@ -1,5 +1,6 @@
 package org.kodein.memory
 
+import kotlin.math.absoluteValue
 import kotlin.test.*
 
 abstract class AbstractKBufferTests {
@@ -18,7 +19,7 @@ abstract class AbstractKBufferTests {
             it.putShort(12345)
             it.putInt(1234567890)
             it.putLong(1234567890123456L)
-            it.putFloat(123456.789f)
+            it.putFloat(1234.56f)
             it.putDouble(123456789.987654321)
 
             it.flip()
@@ -30,7 +31,7 @@ abstract class AbstractKBufferTests {
             assertEquals(12345, it.readShort())
             assertEquals(1234567890, it.readInt())
             assertEquals(1234567890123456L, it.readLong())
-            assertEquals(123456.789f, it.readFloat())
+            assertNear(1234.56f, it.readFloat())
             assertEquals(123456789.987654321, it.readDouble())
 
             assertEquals(0, it.remaining)
@@ -45,7 +46,7 @@ abstract class AbstractKBufferTests {
             it.setShort(30, 12345)
             it.setInt(40, 1234567890)
             it.setLong(50, 1234567890123456L)
-            it.setFloat(60, 123456.789f)
+            it.setFloat(60, 1234.56f)
             it.setDouble(70, 123456789.987654321)
 
             assertEquals(0, it.position)
@@ -55,7 +56,7 @@ abstract class AbstractKBufferTests {
             assertEquals(12345, it.getShort(30))
             assertEquals(1234567890, it.getInt(40))
             assertEquals(1234567890123456L, it.getLong(50))
-            assertEquals(123456.789f, it.getFloat(60))
+            assertNear(1234.56f, it.getFloat(60))
             assertEquals(123456789.987654321, it.getDouble(70))
 
             assertEquals(0, it.position)
@@ -179,7 +180,7 @@ abstract class AbstractKBufferTests {
                 src.putShort(12345)
                 src.putInt(1234567890)
                 src.putLong(1234567890123456L)
-                src.putFloat(123456.789f)
+                src.putFloat(1234.56f)
                 src.putDouble(123456789.987654321)
 
                 src.flip()
@@ -195,7 +196,7 @@ abstract class AbstractKBufferTests {
             assertEquals(12345, dst.readShort())
             assertEquals(1234567890, dst.readInt())
             assertEquals(1234567890123456L, dst.readLong())
-            assertEquals(123456.789f, dst.readFloat())
+            assertNear(1234.56f, dst.readFloat())
             assertEquals(123456789.987654321, dst.readDouble())
 
             assertEquals(0, dst.remaining)

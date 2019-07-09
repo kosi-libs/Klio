@@ -13,13 +13,13 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
 
     override fun unsafeView(index: Int, length: Int) = CPointerKBuffer((pointer + index)!!, length)
 
-    override fun unsafeSetBytes(index: Int, src: ByteArray, offset: Int, length: Int) {
-        memcpy((pointer + index)!!, src.refTo(offset), length.convert())
+    override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
+        memcpy((pointer + index)!!, src.refTo(srcOffset), length.convert())
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcIndex: Int, length: Int): Boolean {
+    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcOffset: Int, length: Int): Boolean {
         if (src !is CPointerKBuffer) return false
-        memcpy((pointer + index)!!, (src.pointer + srcIndex)!!, length.convert())
+        memcpy((pointer + index)!!, (src.pointer + srcOffset)!!, length.convert())
         return true
     }
 

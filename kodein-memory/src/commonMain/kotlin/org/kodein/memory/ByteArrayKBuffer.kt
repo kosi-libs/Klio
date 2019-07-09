@@ -8,13 +8,13 @@ class ByteArrayKBuffer constructor(val array: ByteArray, val offset: Int = 0, ca
 
     override fun unsafeView(index: Int, length: Int): KBuffer = ByteArrayKBuffer(array, offset + index, length)
 
-    override fun unsafeSetBytes(index: Int, src: ByteArray, offset: Int, length: Int) {
-        src.copyInto(array, destinationOffset = this.offset + index, startIndex = offset, endIndex = offset + length)
+    override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
+        src.copyInto(array, destinationOffset = this.offset + index, startIndex = srcOffset, endIndex = srcOffset + length)
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcIndex:Int, length: Int): Boolean {
+    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcOffset:Int, length: Int): Boolean {
         if (src !is ByteArrayKBuffer) return false
-        unsafeSetBytes(index, src.array, srcIndex, length)
+        unsafeSetBytes(index, src.array, srcOffset, length)
         return true
     }
 

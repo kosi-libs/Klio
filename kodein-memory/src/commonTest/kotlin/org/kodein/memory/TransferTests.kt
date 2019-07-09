@@ -20,7 +20,7 @@ class TransferTests {
                 it.putShort(12345)
                 it.putInt(1234567890)
                 it.putLong(1234567890123456L)
-                it.putFloat(123456.789f)
+                it.putFloat(1234.56f)
                 it.putDouble(123456789.987654321)
                 it.flip()
             }
@@ -40,13 +40,13 @@ class TransferTests {
         }
     }
 
-    fun transfer(from: KBuffer, to: KBuffer) {
+    private fun transfer(from: KBuffer, to: KBuffer) {
         from.put(123)
         from.putChar('*')
         from.putShort(12345)
         from.putInt(1234567890)
         from.putLong(1234567890123456L)
-        from.putFloat(123456.789f)
+        from.putFloat(1234.56f)
         from.putDouble(123456789.987654321)
         from.flip()
 
@@ -60,7 +60,7 @@ class TransferTests {
         assertEquals(12345, to.readShort())
         assertEquals(1234567890, to.readInt())
         assertEquals(1234567890123456L, to.readLong())
-        assertEquals(123456.789f, to.readFloat())
+        assertNear(1234.56f, to.readFloat())
         assertEquals(123456789.987654321, to.readDouble())
 
         assertEquals(0, to.remaining)

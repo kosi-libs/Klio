@@ -16,7 +16,7 @@ kodein {
             }
         }
 
-//        add(kodeinTargets.js)
+        add(kodeinTargets.js)
 
         add(kodeinTargets.native.allNonWeb) {
 
@@ -25,5 +25,11 @@ kodein {
             }
 
         }
+    }
+}
+
+afterEvaluate {
+    tasks.withType<AbstractTestTask>().forEach {
+        it.outputs.upToDateWhen { false }
     }
 }
