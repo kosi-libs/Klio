@@ -1,7 +1,8 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.Readable
-import org.kodein.memory.Writeable
+import org.kodein.memory.io.Readable
+import org.kodein.memory.io.Writeable
+
 
 abstract class Charset(val name: String) {
 

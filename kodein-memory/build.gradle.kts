@@ -5,7 +5,8 @@ plugins {
 kodein {
     kotlin {
 
-        common {
+        val allNonJvmMain = sourceSets.create("allNonJvmMain") {
+            dependsOn(common.main)
         }
 
         add(kodeinTargets.jvm) {
@@ -16,14 +17,20 @@ kodein {
             }
         }
 
-        add(kodeinTargets.js)
+        add(kodeinTargets.js) {
+            main.dependsOn(allNonJvmMain)
+        }
 
         add(kodeinTargets.native.allNonWeb) {
-
             mainCompilation.cinterops.apply {
                 create("bits")
             }
 
+            main.dependsOn(allNonJvmMain)
+        }
+
+        sourceSets.all {
+            languageSettings.useExperimentalAnnotation("kotlin.Experimental")
         }
     }
 }

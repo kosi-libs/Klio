@@ -1,5 +1,7 @@
 package org.kodein.memory
 
+import org.kodein.memory.util.addShadowed
+
 expect interface Closeable {
     fun close()
 }
@@ -18,7 +20,7 @@ inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
             closed = true
             close()
         } catch (second: Throwable) {
-            first.addSuppressedInternal(second)
+            first.addShadowed(second)
         }
 
         throw first
@@ -29,5 +31,3 @@ inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     }
 }
 
-@PublishedApi
-internal expect fun Throwable.addSuppressedInternal(other: Throwable)

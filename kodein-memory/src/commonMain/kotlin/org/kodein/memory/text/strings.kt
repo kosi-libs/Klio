@@ -1,9 +1,9 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.KBuffer
-import org.kodein.memory.Readable
-import org.kodein.memory.Writeable
-import org.kodein.memory.array
+import org.kodein.memory.io.KBuffer
+import org.kodein.memory.io.Readable
+import org.kodein.memory.io.Writeable
+import org.kodein.memory.io.array
 
 
 fun Charset.sizeOf(str: CharSequence): Int =
