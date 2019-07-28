@@ -29,6 +29,18 @@ fun ReadBuffer.getBytes(index: Int, length: Int = limit - index): ByteArray {
     return array
 }
 
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUByte() = get(position).toUByte()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUShort() = getShort(position).toUShort()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUInt() = getInt(position).toUInt()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getULong() = getLong(position).toULong()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUBytes() = getBytes(position).asUByteArray()
+
+fun ReadBuffer.getHere() = get(position)
 fun ReadBuffer.getCharHere() = getChar(position)
 fun ReadBuffer.getShortHere() = getShort(position)
 fun ReadBuffer.getIntHere() = getInt(position)
@@ -36,6 +48,17 @@ fun ReadBuffer.getLongHere() = getLong(position)
 fun ReadBuffer.getFloatHere() = getFloat(position)
 fun ReadBuffer.getDoubleHere() = getDouble(position)
 fun ReadBuffer.getBytesHere() = getBytes(position)
+
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUByteHere() = get(position).toUByte()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUShortHere() = getShort(position).toUShort()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUIntHere() = getInt(position).toUInt()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getULongHere() = getLong(position).toULong()
+@ExperimentalUnsignedTypes
+fun ReadBuffer.getUBytesHere() = getBytes(position).asUByteArray()
 
 inline fun mark(buffer: ReadBuffer, block: () -> Unit) {
     val mark = buffer.position

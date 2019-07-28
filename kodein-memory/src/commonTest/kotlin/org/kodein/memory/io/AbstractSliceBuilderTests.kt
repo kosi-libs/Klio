@@ -4,7 +4,7 @@ import org.kodein.memory.use
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-abstract class AbstractSliceBuilderTest {
+abstract class AbstractSliceBuilderTests {
 
     companion object {
         const val DEFAULT_SIZE = 16384

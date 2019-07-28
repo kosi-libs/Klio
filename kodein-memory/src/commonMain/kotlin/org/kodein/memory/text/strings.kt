@@ -1,9 +1,6 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.io.KBuffer
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.array
+import org.kodein.memory.io.*
 
 
 fun Charset.sizeOf(str: CharSequence): Int =
@@ -12,11 +9,11 @@ fun Charset.sizeOf(str: CharSequence): Int =
 fun Writeable.putString(str: CharSequence, charset: Charset = Charset.UTF8): Int =
         str.fold(0) { count, char -> count + charset.encode(char, this) }
 
-fun Readable.readString(charset: Charset = Charset.UTF8, size: Int = remaining, maxChars: Int = Int.MAX_VALUE): String {
+fun Readable.readString(charset: Charset = Charset.UTF8, sizeBytes: Int = remaining, maxChars: Int = Int.MAX_VALUE): String {
     var readSize = 0
     var countChars = 0
     val builder = StringBuilder()
-    while (readSize < size && countChars < maxChars) {
+    while (readSize < sizeBytes && countChars < maxChars) {
         val char = charset.decode(this)
         builder.append(char)
         readSize += charset.sizeOf(char)
@@ -25,6 +22,8 @@ fun Readable.readString(charset: Charset = Charset.UTF8, size: Int = remaining, 
     return builder.toString()
 }
 
+fun ReadBuffer.getString(index: Int, charset: Charset = Charset.UTF8, sizeBytes: Int = limit - index, maxChars: Int = Int.MAX_VALUE): String = slice(index).readString(charset, sizeBytes, maxChars)
+
 fun Writeable.putSizeAndString(str: CharSequence, charset: Charset = Charset.UTF8): Int {
     putInt(charset.sizeOf(str))
     return putString(str, charset)
@@ -32,7 +31,7 @@ fun Writeable.putSizeAndString(str: CharSequence, charset: Charset = Charset.UTF
 
 fun Readable.readSizeAndString(charset: Charset = Charset.UTF8): String {
     val size = readInt()
-    return readString(charset, size = size)
+    return readString(charset, sizeBytes = size)
 }
 
 fun KBuffer.Companion.wrap(str: CharSequence, charset: Charset = Charset.UTF8): KBuffer =

@@ -46,3 +46,16 @@ fun Readable.skipAtMost(count: Int): Int {
     skip(skip)
     return skip
 }
+
+@ExperimentalUnsignedTypes
+fun Readable.peekUByte() = peek().toUByte()
+@ExperimentalUnsignedTypes
+fun Readable.readUByte() = read().toUByte()
+@ExperimentalUnsignedTypes
+fun Readable.readUShort() = readShort().toUShort()
+@ExperimentalUnsignedTypes
+fun Readable.readUInt() = readInt().toUInt()
+@ExperimentalUnsignedTypes
+fun Readable.readULong() = readLong().toULong()
+@ExperimentalUnsignedTypes
+fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = dst.size - offset) = readBytes(dst.asByteArray(), offset, length)

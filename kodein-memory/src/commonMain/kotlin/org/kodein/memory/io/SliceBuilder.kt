@@ -91,8 +91,6 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
             current.putBytes(src, length)
         }
 
-        override fun internalBuffer(): Writeable = current.internalBuffer()
-
         fun subSlice(block: () -> Unit) : ReadBuffer {
             val startOffset = current.position - startPosition
             block()
