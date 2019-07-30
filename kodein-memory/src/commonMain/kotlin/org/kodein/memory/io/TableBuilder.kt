@@ -133,6 +133,6 @@ class TableBuilder internal constructor(private val writeable: Writeable) {
 //    fun copy(table: Table, filter: (String) -> Boolean = {true})
 }
 
-fun Writeable.writeTable(builder: TableBuilder.() -> Unit) {
+fun Writeable.putTable(builder: TableBuilder.() -> Unit) {
     TableBuilder(this).builder()
 }

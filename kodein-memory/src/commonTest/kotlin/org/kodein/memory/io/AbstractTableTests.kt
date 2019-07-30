@@ -16,7 +16,7 @@ abstract class AbstractTableTests {
     @Test
     fun testPrimitives() {
         val buffer = sliceBuilder().newSlice {
-            writeTable {
+            putTable {
                 byte("byte", 21)
                 char("char", 'c')
                 short("short", 2142)
