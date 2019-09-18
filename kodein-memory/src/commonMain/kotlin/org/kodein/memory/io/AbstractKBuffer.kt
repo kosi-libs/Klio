@@ -65,7 +65,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     }
 
     final override fun put(value: Byte) {
-        checkHasRemaining(1)
+        checkHasRemaining(Byte.SIZE_BYTES)
         unsafeSet(position, value)
         position += 1
     }
@@ -73,19 +73,19 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun putChar(value: Char) = putShort(value.toShort())
 
     final override fun putShort(value: Short) {
-        checkHasRemaining(2)
+        checkHasRemaining(Short.SIZE_BYTES)
         unsafeSetShort(position, value)
         position += 2
     }
 
     final override fun putInt(value: Int) {
-        checkHasRemaining(4)
+        checkHasRemaining(Int.SIZE_BYTES)
         unsafeSetInt(position, value)
         position += 4
     }
 
     final override fun putLong(value: Long) {
-        checkHasRemaining(8)
+        checkHasRemaining(Long.SIZE_BYTES)
         unsafeSetLong(position, value)
         position += 8
     }
@@ -128,7 +128,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     }
 
     final override fun set(index: Int, value: Byte) {
-        checkIndex(index, 1)
+        checkIndex(index, Byte.SIZE_BYTES)
         unsafeSet(index, value)
     }
 
@@ -137,21 +137,21 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun setChar(index: Int, value: Char) = setShort(index, value.toShort())
 
     final override fun setShort(index: Int, value: Short) {
-        checkIndex(index, 2)
+        checkIndex(index, Short.SIZE_BYTES)
         unsafeSetShort(index, value)
     }
 
     protected abstract fun unsafeSetShort(index: Int, value: Short)
 
     final override fun setInt(index: Int, value: Int) {
-        checkIndex(index, 4)
+        checkIndex(index, Int.SIZE_BYTES)
         unsafeSetInt(index, value)
     }
 
     protected abstract fun unsafeSetInt(index: Int, value: Int)
 
     final override fun setLong(index: Int, value: Long) {
-        checkIndex(index, 8)
+        checkIndex(index, Long.SIZE_BYTES)
         unsafeSetLong(index, value)
     }
 
@@ -162,12 +162,12 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun setDouble(index: Int, value: Double) = setLong(index, value.toRawBits())
 
     final override fun peek(): Byte {
-        checkHasRemaining(1)
+        checkHasRemaining(Byte.SIZE_BYTES)
         return unsafeGet(position)
     }
 
     final override fun read(): Byte {
-        checkHasRemaining(1)
+        checkHasRemaining(Byte.SIZE_BYTES)
         val ret = unsafeGet(position)
         position += 1
         return ret
@@ -207,21 +207,21 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun readChar() = readShort().toChar()
 
     final override fun readShort(): Short {
-        checkHasRemaining(2)
+        checkHasRemaining(Short.SIZE_BYTES)
         val ret = unsafeGetShort(position)
         position += 2
         return ret
     }
 
     final override fun readInt(): Int {
-        checkHasRemaining(4)
+        checkHasRemaining(Int.SIZE_BYTES)
         val ret = unsafeGetInt(position)
         position += 4
         return ret
     }
 
     final override fun readLong(): Long {
-        checkHasRemaining(8)
+        checkHasRemaining(Long.SIZE_BYTES)
         val ret = unsafeGetLong(position)
         position += 8
         return ret
@@ -242,7 +242,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     }
 
     final override fun get(index: Int): Byte {
-        checkIndex(index, 1)
+        checkIndex(index, Byte.SIZE_BYTES)
         return unsafeGet(index)
     }
 
@@ -251,21 +251,21 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun getChar(index: Int): Char = getShort(index).toChar()
 
     final override fun getShort(index: Int): Short {
-        checkIndex(index, 2)
+        checkIndex(index, Short.SIZE_BYTES)
         return unsafeGetShort(index)
     }
 
     protected abstract fun unsafeGetShort(index: Int): Short
 
     final override fun getInt(index: Int): Int {
-        checkIndex(index, 4)
+        checkIndex(index, Int.SIZE_BYTES)
         return unsafeGetInt(index)
     }
 
     protected abstract fun unsafeGetInt(index: Int): Int
 
     final override fun getLong(index: Int): Long {
-        checkIndex(index, 8)
+        checkIndex(index, Long.SIZE_BYTES)
         return unsafeGetLong(index)
     }
 

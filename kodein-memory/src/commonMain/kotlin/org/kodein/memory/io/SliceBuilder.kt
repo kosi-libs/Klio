@@ -47,37 +47,37 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
         override val remaining: Int get() = Int.MAX_VALUE
 
         override fun put(value: Byte) {
-            checkSize(1)
+            checkSize(Byte.SIZE_BYTES)
             current.put(value)
         }
 
         override fun putChar(value: Char) {
-            checkSize(2)
+            checkSize(Char.SIZE_BYTES)
             current.putChar(value)
         }
 
         override fun putShort(value: Short) {
-            checkSize(2)
+            checkSize(Short.SIZE_BYTES)
             current.putShort(value)
         }
 
         override fun putInt(value: Int) {
-            checkSize(4)
+            checkSize(Int.SIZE_BYTES)
             current.putInt(value)
         }
 
         override fun putLong(value: Long) {
-            checkSize(8)
+            checkSize(Long.SIZE_BYTES)
             current.putLong(value)
         }
 
         override fun putFloat(value: Float) {
-            checkSize(4)
+            checkSize(Int.SIZE_BYTES)
             current.putFloat(value)
         }
 
         override fun putDouble(value: Double) {
-            checkSize(8)
+            checkSize(Long.SIZE_BYTES)
             current.putDouble(value)
         }
 

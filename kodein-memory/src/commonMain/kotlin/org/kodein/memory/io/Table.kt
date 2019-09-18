@@ -39,13 +39,13 @@ class Table internal constructor(private val buffer: ReadBuffer) {
             val name = buffer.readString(sizeBytes = nameSize)
             val type = buffer.read()
             val size = when (type) {
-                TYPE_BYTE -> 1
-                TYPE_CHAR -> 2
-                TYPE_SHORT -> 2
-                TYPE_INT -> 4
-                TYPE_LONG -> 8
-                TYPE_FLOAT -> 4
-                TYPE_DOUBLE -> 8
+                TYPE_BYTE -> Byte.SIZE_BYTES
+                TYPE_CHAR -> Char.SIZE_BYTES
+                TYPE_SHORT -> Short.SIZE_BYTES
+                TYPE_INT -> Int.SIZE_BYTES
+                TYPE_LONG -> Long.SIZE_BYTES
+                TYPE_FLOAT -> Int.SIZE_BYTES
+                TYPE_DOUBLE -> Long.SIZE_BYTES
                 else -> {
                     buffer.readUShort().toInt()
                 }
