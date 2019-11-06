@@ -31,6 +31,21 @@ inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     }
 }
 
+inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
+    return try {
+        block(this)
+    } catch (first: Throwable) {
+        try {
+            close()
+        } catch (second: Throwable) {
+            first.addShadowed(second)
+        }
+
+        throw first
+    }
+}
+
+
 fun Iterable<Closeable>.closeAll() {
     var exception: Throwable? = null
     forEach {
