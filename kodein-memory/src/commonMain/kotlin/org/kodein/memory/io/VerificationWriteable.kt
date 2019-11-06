@@ -47,3 +47,12 @@ class VerificationWriteable(private val from: Readable): Writeable {
     }
 
 }
+
+inline fun verify(from: Readable, block: Writeable.() -> Unit): Boolean {
+    try {
+        VerificationWriteable(from).block()
+        return true
+    } catch (_: VerificationWriteable.DiffException) {
+        return false
+    }
+}

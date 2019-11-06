@@ -33,3 +33,5 @@ inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): KB
     buf.flip()
     return buf
 }
+
+fun KBuffer.Companion.arrayCopy(buffer: ReadBuffer) = array(buffer.remaining) { putBytes(buffer.duplicate()) }

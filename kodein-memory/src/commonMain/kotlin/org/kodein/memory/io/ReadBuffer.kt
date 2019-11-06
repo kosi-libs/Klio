@@ -49,6 +49,15 @@ fun ReadBuffer.getFloatHere() = getFloat(position)
 fun ReadBuffer.getDoubleHere() = getDouble(position)
 fun ReadBuffer.getBytesHere() = getBytes(position)
 
+fun ReadBuffer.getRelative(offset: Int) = get(position + offset)
+fun ReadBuffer.getCharrelative(offset: Int) = getChar(position + offset)
+fun ReadBuffer.getShortrelative(offset: Int) = getShort(position + offset)
+fun ReadBuffer.getIntrelative(offset: Int) = getInt(position + offset)
+fun ReadBuffer.getLongrelative(offset: Int) = getLong(position + offset)
+fun ReadBuffer.getFloatrelative(offset: Int) = getFloat(position + offset)
+fun ReadBuffer.getDoublerelative(offset: Int) = getDouble(position + offset)
+fun ReadBuffer.getBytesrelative(offset: Int) = getBytes(position + offset)
+
 @ExperimentalUnsignedTypes
 fun ReadBuffer.getUByteHere() = get(position).toUByte()
 @ExperimentalUnsignedTypes

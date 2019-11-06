@@ -7,7 +7,7 @@ buildscript {
         maven(url = "https://kotlin.bintray.com/kotlinx")
     }
     dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.12.9")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.13.2")
     }
 }
 

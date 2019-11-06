@@ -31,3 +31,23 @@ inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     }
 }
 
+fun Iterable<Closeable>.closeAll() {
+    var exception: Throwable? = null
+    forEach {
+        try {
+            it.close()
+        } catch (thrown: Throwable) {
+            if (exception == null) exception = thrown
+            else exception!!.addShadowed(thrown)
+        }
+    }
+    if (exception != null)
+        throw exception!!
+}
+
+inline fun <R> Iterable<Closeable>.useAll(block: (Iterable<Closeable>) -> R): R =
+    try {
+        block(this)
+    } finally {
+        closeAll()
+    }
