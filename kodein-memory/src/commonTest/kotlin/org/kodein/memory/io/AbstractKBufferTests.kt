@@ -2,7 +2,10 @@ package org.kodein.memory.io
 
 import org.kodein.memory.assertNear
 import org.kodein.memory.use
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 abstract class AbstractKBufferTests {
 

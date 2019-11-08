@@ -1,6 +1,9 @@
 package org.kodein.memory.util
 
-import org.kodein.memory.io.*
+import org.kodein.memory.io.KBuffer
+import org.kodein.memory.io.array
+import org.kodein.memory.io.nextBytes
+import org.kodein.memory.io.wrap
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.decodeToString
 import kotlin.random.Random

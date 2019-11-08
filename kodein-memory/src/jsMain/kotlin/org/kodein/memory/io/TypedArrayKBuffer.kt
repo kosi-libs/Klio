@@ -1,6 +1,8 @@
 package org.kodein.memory.io
 
-import org.khronos.webgl.*
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.DataView
+import org.khronos.webgl.Int8Array
 
 class TypedArrayKBuffer(val buffer: ArrayBuffer, val offset: Int = 0, capacity: Int = buffer.byteLength - offset) : AbstractKBuffer(capacity) {
 
