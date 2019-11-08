@@ -1,5 +1,8 @@
 package org.kodein.memory.io
 
+import kotlin.math.min
+import kotlin.random.Random
+
 interface KBuffer : WriteBuffer, ReadBuffer {
 
     val capacity: Int
@@ -35,3 +38,14 @@ inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): KB
 }
 
 fun KBuffer.Companion.arrayCopy(buffer: ReadBuffer) = array(buffer.remaining) { putBytes(buffer.duplicate()) }
+
+fun Random.nextBytes(dst: Writeable, len: Int = dst.remaining) {
+    val buffer = ByteArray(min(len, 64))
+    var remaining = len
+    while (remaining > 0) {
+        val count = min(remaining, 64)
+        nextBytes(buffer, 0, count)
+        dst.putBytes(buffer, 0, count)
+        remaining -= count
+    }
+}

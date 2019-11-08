@@ -2,6 +2,7 @@ package org.kodein.memory.text
 
 import org.kodein.memory.io.Readable
 import org.kodein.memory.io.Writeable
+import org.kodein.memory.io.hasRemaining
 
 
 abstract class Charset(val name: String) {
@@ -90,4 +91,11 @@ abstract class Charset(val name: String) {
         }
     }
 
+}
+
+fun Charset.decodeToString(src: Readable): String {
+    val array = CharArray(src.remaining)
+    var pos = 0
+    while (src.hasRemaining()) array[pos++] = decode(src)
+    return String(array, 0, pos)
 }
