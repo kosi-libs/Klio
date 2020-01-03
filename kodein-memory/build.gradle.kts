@@ -7,7 +7,7 @@ plugins {
 kodein {
     kotlin {
 
-        val serializationVer = "0.13.0"
+        val serializationVer = "0.14.0"
 
         common.main.dependencies {
             compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationVer")
@@ -17,7 +17,7 @@ kodein {
             dependsOn(common.main)
         }
 
-        add(kodeinTargets.jvm) {
+        add(kodeinTargets.jvm.jvm) {
             target.setCompileClasspath()
 
             main.dependencies {
@@ -29,7 +29,7 @@ kodein {
             }
         }
 
-        add(kodeinTargets.js) {
+        add(kodeinTargets.js.js) {
             main.dependencies {
                 compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serializationVer")
             }
@@ -37,7 +37,7 @@ kodein {
             main.dependsOn(allNonJvmMain)
         }
 
-        add(kodeinTargets.native.allNonWeb) {
+        add(kodeinTargets.native.allDesktop + kodeinTargets.native.allIos) {
             main.dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationVer")
             }

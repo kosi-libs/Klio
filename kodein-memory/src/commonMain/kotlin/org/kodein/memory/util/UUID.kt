@@ -18,11 +18,11 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
     fun variant(): Int =
             (leastSignificantBits.ushr((64L - leastSignificantBits.ushr(62)).toInt()) and (leastSignificantBits shr 63)).toInt()
 
-    fun gregorianTimestampNano(): Long =
+    fun gregorianTimestamp(): Long =
             if (version() != 1) throw UnsupportedOperationException("Not a time-based UUID")
             else ((mostSignificantBits and 0xFFFL) shl 48) or (((mostSignificantBits shr 16) and 0xFFFFL) shl 32) or mostSignificantBits.ushr(32)
 
-    fun unixTimestapMillis(): Long = timestampGregorianNanoToUnixMillis(gregorianTimestampNano())
+    fun unixTimestap(): Long = timestampGregorianToUnix(gregorianTimestamp())
 
     fun clockSequence(): Int =
             if (version() != 1) throw UnsupportedOperationException("Not a time-based UUID")
@@ -77,8 +77,8 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
         private const val MIN_CLOCK_SEQ_AND_NODE = -0x7F7F7F7F7F7F7F80L
         private const val MAX_CLOCK_SEQ_AND_NODE =  0x7F7F7F7F7F7F7F7FL
         private const val START_EPOCH = -12219292800000L // 15 oct 1582 00:00:00.000
-        private val MIN_UNIX_TIMESTAMP = timestampGregorianNanoToUnixMillis(0)
-        private val MAX_UNIX_TIMESTAMP = timestampGregorianNanoToUnixMillis(0xFFFFFFFFFFFFFFFL)
+        private val MIN_UNIX_TIMESTAMP = timestampGregorianToUnix(0)
+        private val MAX_UNIX_TIMESTAMP = timestampGregorianToUnix(0xFFFFFFFFFFFFFFFL)
 
         private fun formatUnsignedLong(value: Long, shift: Int, buf: ByteArray, offset: Int, len: Int) {
             var work = value
@@ -134,21 +134,21 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             return msb
         }
 
-        private fun timestampUnixMillisToGregorianNano(unixTimestampMillis: Long): Long {
+        private fun timestampUnixToGregorian(unixTimestampMillis: Long): Long {
             return (unixTimestampMillis - START_EPOCH) * 10000
         }
 
-        private fun timestampGregorianNanoToUnixMillis(gregorianTimestampNano: Long): Long {
+        private fun timestampGregorianToUnix(gregorianTimestampNano: Long): Long {
             return (gregorianTimestampNano / 10000) + START_EPOCH
         }
 
         fun startOf(unixTimestampMillis: Long): UUID {
-            val gregorianTimestamp = timestampUnixMillisToGregorianNano(unixTimestampMillis)
+            val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis)
             return UUID(makeMsb(gregorianTimestamp), MIN_CLOCK_SEQ_AND_NODE)
         }
 
         fun endOf(unixTimestampMillis: Long): UUID {
-            val gregorianTimestamp = timestampUnixMillisToGregorianNano(unixTimestampMillis + 1) - 1
+            val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis + 1) - 1
             return UUID(makeMsb(gregorianTimestamp), MAX_CLOCK_SEQ_AND_NODE)
         }
 
@@ -166,7 +166,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             require(realClockSeq in 0L..0x3FFFL) { "Bad clock sequence (must be in 0..0x3FFF)" }
             val realNode = if (node == -1L) Random.nextLong(0x1000000000000L) else node
             require(realNode in 0L..0xFFFFFFFFFFFFL) { "Bad node (must be in 0..0xFFFFFFFFFFFF)" }
-            val gregorianTimestamp = timestampUnixMillisToGregorianNano(unixTimestampMillis)
+            val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis)
             return UUID(makeMsb(gregorianTimestamp), makeLsb(realClockSeq, realNode))
         }
     }

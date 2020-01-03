@@ -6,10 +6,7 @@ import org.kodein.memory.io.hasRemaining
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.putString
 import org.kodein.memory.text.readString
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotSame
+import kotlin.test.*
 
 class UUIDTests {
 
@@ -20,7 +17,7 @@ class UUIDTests {
         assertEquals(2, id.variant())
         assertEquals(1, id.version())
 
-        assertEquals(8506165020000, id.unixTimestapMillis())
+        assertEquals(8506165020000, id.unixTimestap())
         assertEquals(21, id.clockSequence())
         assertEquals(42, id.node())
         assertEquals("d7af3600-50f0-12e0-8015-00000000002a", id.toString())
@@ -33,7 +30,7 @@ class UUIDTests {
         assertEquals(2, id.variant())
         assertEquals(1, id.version())
 
-        assertEquals(8506165020000, id.unixTimestapMillis())
+        assertEquals(8506165020000, id.unixTimestap())
         assertEquals(21, id.clockSequence())
         assertEquals(42, id.node())
         assertEquals("d7af3600-50f0-12e0-8015-00000000002a", id.toString())
