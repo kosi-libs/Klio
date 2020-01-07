@@ -42,9 +42,7 @@ kodein {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationVer")
             }
 
-            mainCompilation.cinterops.apply {
-                create("bits")
-            }
+            mainCompilation.cinterops.create("bits")
 
             main.dependsOn(allNonJvmMain)
         }
