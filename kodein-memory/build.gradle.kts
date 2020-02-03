@@ -7,7 +7,7 @@ plugins {
 kodein {
     kotlin {
 
-        val serializationVer = "0.14.0"
+        val serializationVer = "0.14.0-1.3.70-eap-42"
 
         common.main.dependencies {
             compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationVer")

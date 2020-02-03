@@ -77,7 +77,7 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
             }
             else -> {
                 for (i in 0 until length) {
-                    byteBuffer.put(src.read())
+                    byteBuffer.put(srcBuffer.read())
                 }
             }
         }
@@ -107,16 +107,25 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : KBuffer {
         }
     }
 
-    override fun setBytes(index: Int, src: ReadBuffer, srcOffset: Int, length: Int) {
-        val thisPosition = byteBuffer.position()
-        val srcPosition = src.position
-        try {
-            byteBuffer.position(index)
-            src.position = srcOffset
-            putBytes(src, length)
-        } finally {
-            byteBuffer.position(thisPosition)
-            src.position = srcPosition
+    override fun setBytes(index: Int, src: ReadMemory, srcOffset: Int, length: Int) {
+        when (val srcBuffer = src.internalBuffer()) {
+            is ReadBuffer -> {
+                val thisPosition = byteBuffer.position()
+                val srcPosition = srcBuffer.position
+                try {
+                    byteBuffer.position(index)
+                    srcBuffer.position = srcOffset
+                    putBytes(srcBuffer, length)
+                } finally {
+                    byteBuffer.position(thisPosition)
+                    srcBuffer.position = srcPosition
+                }
+            }
+            else -> {
+                for (i in 0 until length) {
+                    byteBuffer.put(index + i, srcBuffer[srcOffset + i])
+                }
+            }
         }
     }
 

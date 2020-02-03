@@ -18,6 +18,9 @@ abstract class Charset(val name: String) {
             return 1
         }
         override fun decode(src: Readable) = src.read().toChar()
+
+        fun stringToBytes(src: String) = ByteArray(src.length) { src[it].toByte() }
+        fun bytesToString(src: ByteArray) = String(CharArray(src.size) { src[it].toChar() })
     }
 
     object UTF16 : Charset("UTF-16") {
@@ -60,11 +63,7 @@ abstract class Charset(val name: String) {
                     dst.put((createByte(code, 6)).toByte())
                     3
                 }
-//                code and -0x200000 == 0 -> { // 4-byte sequence
-//                    dst.put((code shr 18 and 0x07 or 0xF0).toByte())
-//                    dst.put((createByte(code, 12)).toByte())
-//                    dst.put((createByte(code, 6)).toByte())
-//                }
+                // TODO: Handle 4 bytes chars
                 else -> throw IllegalStateException("Unsupported character")
             }
             dst.put((code and 0x3F or 0x80).toByte())
@@ -91,11 +90,4 @@ abstract class Charset(val name: String) {
         }
     }
 
-}
-
-fun Charset.decodeToString(src: Readable): String {
-    val array = CharArray(src.remaining)
-    var pos = 0
-    while (src.hasRemaining()) array[pos++] = decode(src)
-    return String(array, 0, pos)
 }

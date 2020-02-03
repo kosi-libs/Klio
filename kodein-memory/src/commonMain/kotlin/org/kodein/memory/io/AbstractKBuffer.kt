@@ -184,20 +184,24 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     protected abstract fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int)
 
-    final override fun setBytes(index: Int, src: ReadBuffer, srcOffset: Int, length: Int) {
+    final override fun setBytes(index: Int, src: ReadMemory, srcOffset: Int, length: Int) {
         require(length >= 0) { "length (=$length) < 0" }
         require(srcOffset + length <= src.limit) { "$srcOffset + $length < src.limit (=${src.limit})" }
         checkIndex(index, length)
         if (length == 0) return
         val srcBuffer = src.internalBuffer()
-        if (srcBuffer is ByteArrayKBuffer) {
-            unsafeSetBytes(index, srcBuffer.array, srcBuffer.offset + srcOffset, length)
-        } else {
-            val hasOptimized = unsafeTrySetBytesOptimized(index, srcBuffer, srcOffset, length)
-            if (!hasOptimized) {
-                for (i in 0 until length) {
-                    unsafeSet(index + i, srcBuffer[srcOffset + i])
+        val hasOptimized =
+                when (srcBuffer) {
+                    is ByteArrayKBuffer -> {
+                        unsafeSetBytes(index, srcBuffer.array, srcBuffer.offset + srcOffset, length)
+                        true
+                    }
+                    is ReadBuffer -> unsafeTrySetBytesOptimized(index, srcBuffer, srcOffset, length)
+                    else -> false
                 }
+        if (!hasOptimized) {
+            for (i in 0 until length) {
+                unsafeSet(index + i, srcBuffer[srcOffset + i])
             }
         }
     }

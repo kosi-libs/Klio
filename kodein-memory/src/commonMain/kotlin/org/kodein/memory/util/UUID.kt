@@ -6,7 +6,7 @@ import org.kodein.memory.io.array
 import org.kodein.memory.io.nextBytes
 import org.kodein.memory.io.wrap
 import org.kodein.memory.text.Charset
-import org.kodein.memory.text.decodeToString
+import org.kodein.memory.text.readString
 import kotlin.random.Random
 
 @Serializable
@@ -43,7 +43,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
         buf[18] = 45
         buf[13] = 45
         buf[8] = 45
-        return Charset.ASCII.decodeToString(KBuffer.wrap(buf))
+        return KBuffer.wrap(buf).readString(Charset.ASCII)
     }
 
     override fun compareTo(other: UUID): Int =

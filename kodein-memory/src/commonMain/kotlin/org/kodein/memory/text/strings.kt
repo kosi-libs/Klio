@@ -1,6 +1,7 @@
 package org.kodein.memory.text
 
 import org.kodein.memory.io.*
+import kotlin.math.min
 
 
 fun Charset.sizeOf(str: CharSequence): Int =
@@ -11,18 +12,18 @@ fun Writeable.putString(str: CharSequence, charset: Charset = Charset.UTF8): Int
 
 fun Readable.readString(charset: Charset = Charset.UTF8, sizeBytes: Int = remaining, maxChars: Int = Int.MAX_VALUE): String {
     var readSize = 0
-    var countChars = 0
-    val builder = StringBuilder()
-    while (readSize < sizeBytes && countChars < maxChars) {
+    val array = CharArray(min(sizeBytes, maxChars))
+    var pos = 0
+
+    while (readSize < sizeBytes && pos < maxChars) {
         val char = charset.decode(this)
-        builder.append(char)
+        array[pos++] = char
         readSize += charset.sizeOf(char)
-        countChars += 1
     }
-    return builder.toString()
+    return String(array, 0, pos)
 }
 
-fun ReadBuffer.getString(index: Int, charset: Charset = Charset.UTF8, sizeBytes: Int = limit - index, maxChars: Int = Int.MAX_VALUE): String = slice(index).readString(charset, sizeBytes, maxChars)
+fun ReadMemory.getString(index: Int, charset: Charset = Charset.UTF8, sizeBytes: Int = limit - index, maxChars: Int = Int.MAX_VALUE): String = slice(index).readString(charset, sizeBytes, maxChars)
 
 fun Writeable.putSizeAndString(str: CharSequence, charset: Charset = Charset.UTF8): Int {
     putInt(charset.sizeOf(str))
@@ -37,3 +38,5 @@ fun Readable.readSizeAndString(charset: Charset = Charset.UTF8): String {
 fun KBuffer.Companion.wrap(str: CharSequence, charset: Charset = Charset.UTF8): KBuffer =
         KBuffer.array(charset.sizeOf(str)) { putString(str, charset) }
 
+fun String.toAsciiBytes() = Charset.ASCII.stringToBytes(this)
+fun ByteArray.toAsciiString() = Charset.ASCII.bytesToString(this)

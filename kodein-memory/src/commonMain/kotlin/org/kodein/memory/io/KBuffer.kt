@@ -30,14 +30,14 @@ inline fun KBuffer.limitHere() {
 fun KBuffer.Companion.wrap(array: ByteArray, offset: Int = 0, capacity: Int = array.size - offset) = ByteArrayKBuffer(array, offset, capacity)
 fun KBuffer.Companion.array(capacity: Int) = ByteArrayKBuffer(ByteArray(capacity))
 
-inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): KBuffer {
+inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): ByteArrayKBuffer {
     val buf = KBuffer.array(capacity)
     buf.block()
     buf.flip()
     return buf
 }
 
-fun KBuffer.Companion.arrayCopy(buffer: ReadBuffer) = array(buffer.remaining) { putBytes(buffer.duplicate()) }
+fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset) = array(length).apply { setBytes(0, src, srcOffset, length) }
 
 fun Random.nextBytes(dst: Writeable, len: Int = dst.remaining) {
     val buffer = ByteArray(min(len, 64))

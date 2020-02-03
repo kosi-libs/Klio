@@ -59,3 +59,21 @@ fun Readable.readUInt() = readInt().toUInt()
 fun Readable.readULong() = readLong().toULong()
 @ExperimentalUnsignedTypes
 fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = dst.size - offset) = readBytes(dst.asByteArray(), offset, length)
+
+
+fun Readable.asSequence(): Sequence<Byte> = sequence { while (hasRemaining()) yield(read()) }
+fun Readable.asCharSequence(): Sequence<Char> = sequence { while (hasRemaining()) yield(readChar()) }
+fun Readable.asShortSequence(): Sequence<Short> = sequence { while (hasRemaining()) yield(readShort()) }
+fun Readable.asIntSequence(): Sequence<Int> = sequence { while (hasRemaining()) yield(readInt()) }
+fun Readable.asLongSequence(): Sequence<Long> = sequence { while (hasRemaining()) yield(readLong()) }
+fun Readable.asFloatSequence(): Sequence<Float> = sequence { while (hasRemaining()) yield(readFloat()) }
+fun Readable.asDoubleSequence(): Sequence<Double> = sequence { while (hasRemaining()) yield(readDouble()) }
+
+@ExperimentalUnsignedTypes
+fun Readable.asUSequence(): Sequence<UByte> = sequence { while (hasRemaining()) yield(readUByte()) }
+@ExperimentalUnsignedTypes
+fun Readable.asUShortSequence(): Sequence<UShort> = sequence { while (hasRemaining()) yield(readUShort()) }
+@ExperimentalUnsignedTypes
+fun Readable.asUIntSequence(): Sequence<UInt> = sequence { while (hasRemaining()) yield(readUInt()) }
+@ExperimentalUnsignedTypes
+fun Readable.asULongSequence(): Sequence<ULong> = sequence { while (hasRemaining()) yield(readULong()) }

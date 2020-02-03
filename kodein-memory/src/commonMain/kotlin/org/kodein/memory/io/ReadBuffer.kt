@@ -1,88 +1,59 @@
 package org.kodein.memory.io
 
-interface ReadBuffer : Readable {
+interface ReadBuffer : Readable, ReadMemory {
 
     var position: Int
-
-    val limit: Int
-
-    fun duplicate(): ReadBuffer
-    fun slice(): ReadBuffer
-    fun slice(index: Int, length: Int = limit - index): ReadBuffer
-
-    operator fun get(index: Int): Byte
-    fun getChar(index: Int): Char
-    fun getShort(index: Int): Short
-    fun getInt(index: Int): Int
-    fun getLong(index: Int): Long
-    fun getFloat(index: Int): Float
-    fun getDouble(index: Int): Double
-
-    fun getBytes(index: Int, dst: ByteArray, offset: Int = 0, length: Int = dst.size - offset)
 
     override fun internalBuffer(): ReadBuffer
 }
 
-fun ReadBuffer.getBytes(index: Int, length: Int = limit - index): ByteArray {
-    val array = ByteArray(length)
-    getBytes(index, array)
-    return array
-}
+
+fun ReadBuffer.getHere(offset: Int = 0) = get(position + offset)
+fun ReadBuffer.getCharHere(offset: Int = 0) = getChar(position + offset)
+fun ReadBuffer.getShortHere(offset: Int = 0) = getShort(position + offset)
+fun ReadBuffer.getIntHere(offset: Int = 0) = getInt(position + offset)
+fun ReadBuffer.getLongHere(offset: Int = 0) = getLong(position + offset)
+fun ReadBuffer.getFloatHere(offset: Int = 0) = getFloat(position + offset)
+fun ReadBuffer.getDoubleHere(offset: Int = 0) = getDouble(position + offset)
+fun ReadBuffer.getBytesHere(offset: Int = 0) = getBytes(position + offset)
 
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUByte() = get(position).toUByte()
+fun ReadBuffer.getUByteHere(offset: Int = 0) = get(position + offset).toUByte()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUShort() = getShort(position).toUShort()
+fun ReadBuffer.getUShortHere(offset: Int = 0) = getShort(position + offset).toUShort()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUInt() = getInt(position).toUInt()
+fun ReadBuffer.getUIntHere(offset: Int = 0) = getInt(position + offset).toUInt()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getULong() = getLong(position).toULong()
+fun ReadBuffer.getULongHere(offset: Int = 0) = getLong(position + offset).toULong()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUBytes() = getBytes(position).asUByteArray()
+fun ReadBuffer.getUBytesHere(offset: Int = 0) = getBytes(position + offset).asUByteArray()
 
-fun ReadBuffer.getHere() = get(position)
-fun ReadBuffer.getCharHere() = getChar(position)
-fun ReadBuffer.getShortHere() = getShort(position)
-fun ReadBuffer.getIntHere() = getInt(position)
-fun ReadBuffer.getLongHere() = getLong(position)
-fun ReadBuffer.getFloatHere() = getFloat(position)
-fun ReadBuffer.getDoubleHere() = getDouble(position)
-fun ReadBuffer.getBytesHere() = getBytes(position)
-
-fun ReadBuffer.getRelative(offset: Int) = get(position + offset)
-fun ReadBuffer.getCharrelative(offset: Int) = getChar(position + offset)
-fun ReadBuffer.getShortrelative(offset: Int) = getShort(position + offset)
-fun ReadBuffer.getIntrelative(offset: Int) = getInt(position + offset)
-fun ReadBuffer.getLongrelative(offset: Int) = getLong(position + offset)
-fun ReadBuffer.getFloatrelative(offset: Int) = getFloat(position + offset)
-fun ReadBuffer.getDoublerelative(offset: Int) = getDouble(position + offset)
-fun ReadBuffer.getBytesrelative(offset: Int) = getBytes(position + offset)
-
-@ExperimentalUnsignedTypes
-fun ReadBuffer.getUByteHere() = get(position).toUByte()
-@ExperimentalUnsignedTypes
-fun ReadBuffer.getUShortHere() = getShort(position).toUShort()
-@ExperimentalUnsignedTypes
-fun ReadBuffer.getUIntHere() = getInt(position).toUInt()
-@ExperimentalUnsignedTypes
-fun ReadBuffer.getULongHere() = getLong(position).toULong()
-@ExperimentalUnsignedTypes
-fun ReadBuffer.getUBytesHere() = getBytes(position).asUByteArray()
-
-inline fun mark(buffer: ReadBuffer, block: () -> Unit) {
-    val mark = buffer.position
+inline fun <R> ReadBuffer.mark(block: () -> R): R {
+    val mark = position
     try {
-        block()
+        return block()
     } finally {
-        buffer.position = mark
+        position = mark
     }
 }
 
-inline fun mark(vararg buffers: ReadBuffer, block: () -> Unit) {
+inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     val marks = IntArray(buffers.size) { index -> buffers[index].position }
     try {
-        block()
+        return block()
     } finally {
         marks.forEachIndexed { index, mark -> buffers[index].position = mark }
     }
+}
+
+inline fun <R> ReadMemory.markBuffer(block: (ReadBuffer) -> R): R =
+    when (this) {
+        is ReadBuffer -> mark<R> { block(this) }
+        else -> block(duplicate())
+    }
+
+fun ReadBuffer.memoryHere(size: Int = remaining): ReadMemory {
+    if (position == 0 && size == remaining) return this
+
+    return slice(position, size)
 }
