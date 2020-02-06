@@ -49,12 +49,7 @@ kodein {
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.enableLanguageFeature("NewInference")
         }
-    }
-}
-
-afterEvaluate {
-    tasks.withType<AbstractTestTask>().forEach {
-        it.outputs.upToDateWhen { false }
     }
 }

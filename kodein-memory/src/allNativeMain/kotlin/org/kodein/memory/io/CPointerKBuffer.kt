@@ -11,13 +11,11 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
 
     override fun createDuplicate() = CPointerKBuffer(pointer, capacity)
 
-    override fun unsafeView(index: Int, length: Int) = CPointerKBuffer((pointer + index)!!, length)
-
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         memcpy((pointer + index)!!, src.refTo(srcOffset), length.convert())
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcOffset: Int, length: Int): Boolean {
+    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean {
         if (src !is CPointerKBuffer) return false
         memcpy((pointer + index)!!, (src.pointer + srcOffset)!!, length.convert())
         return true
@@ -51,8 +49,8 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
         }
     }
 
-    override fun unsafeGetBytes(index: Int, dst: ByteArray, offset: Int, length: Int) {
-        memcpy(dst.refTo(offset), (pointer + index)!!, length.convert())
+    override fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int) {
+        memcpy(dst.refTo(dstOffset), (pointer + index)!!, length.convert())
     }
 
     override fun unsafeGet(index: Int): Byte = pointer[index]
@@ -78,9 +76,11 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
                 slowLoadLong { pointer[index + it] }
             }
 
-    override fun tryEqualsOptimized(other: KBuffer): Boolean? {
+    override fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean? {
         if (other !is CPointerKBuffer) return null
 
-        return memcmp(pointer, other.pointer, remaining.convert()) == 0
+        return memcmp(pointer + index, other.pointer + otherIndex, length.convert()) == 0
     }
+
+    override fun backingArray(): ByteArray? = null
 }

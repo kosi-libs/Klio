@@ -248,7 +248,7 @@ abstract class AbstractKBufferTests {
             assertEquals(9, it.limit)
             assertEquals(0, it.position)
 
-            it.clear()
+            it.reset()
 
             assertEquals(DEFAULT_SIZE, it.limit)
             assertEquals(0, it.position)
@@ -257,27 +257,29 @@ abstract class AbstractKBufferTests {
 
             assertEquals(DEFAULT_SIZE, it.limit)
             assertEquals(5, it.position)
-
-            it.rewind()
-
-            assertEquals(DEFAULT_SIZE, it.limit)
-            assertEquals(0, it.position)
         }
     }
 
     @Test
     fun slice() {
         alloc().use {
-            it.putInt(1234567890)
-            val slice = it.slice()
-            assertEquals(4, it.position)
-            assertEquals(0, slice.position)
-            assertEquals(DEFAULT_SIZE, it.capacity)
-            assertEquals(DEFAULT_SIZE, it.limit)
-            assertEquals(DEFAULT_SIZE - 4, slice.capacity)
-            assertEquals(DEFAULT_SIZE - 4, slice.limit)
-            it.putLong(1234567890123456L)
-            assertEquals(1234567890123456, slice.readLong())
+            it.putBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9))
+            it.flip()
+
+            val view1 = it.slice(3, 3)
+            assertEquals(0, view1.position)
+            assertEquals(0, view1.position)
+            assertEquals(DEFAULT_SIZE, view1.capacity)
+            assertEquals(3, view1.offset)
+            assertEquals(3, view1.limit)
+            assertTrue(byteArrayOf(4, 5, 6).contentEquals(view1.readBytes()))
+
+            val view2 = it.slice(6)
+            assertEquals(0, view2.position)
+            assertEquals(DEFAULT_SIZE, view2.capacity)
+            assertEquals(6, view2.offset)
+            assertEquals(3, view2.limit)
+            assertTrue(byteArrayOf(7, 8, 9).contentEquals(view2.readBytes()))
         }
     }
 
@@ -287,19 +289,54 @@ abstract class AbstractKBufferTests {
             it.putBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9))
             it.flip()
 
-            val view1 = it.slice(3, 3)
-            assertEquals(0, view1.position)
-            assertEquals(0, view1.position)
-            assertEquals(3, view1.capacity)
-            assertEquals(3, view1.limit)
-            assertTrue(byteArrayOf(4, 5, 6).contentEquals(view1.readBytes()))
+            it.view(3, 3) {
+                assertEquals(0, it.position)
+                assertEquals(0, it.position)
+                assertEquals(DEFAULT_SIZE, it.capacity)
+                assertEquals(3, it.offset)
+                assertEquals(3, it.limit)
+                assertTrue(byteArrayOf(4, 5, 6).contentEquals(it.readBytes()))
+            }
 
-            val view2 = it.slice(6)
-            assertEquals(0, view2.position)
-            assertEquals(0, view2.position)
-            assertEquals(3, view2.capacity)
-            assertEquals(3, view2.limit)
-            assertTrue(byteArrayOf(7, 8, 9).contentEquals(view2.readBytes()))
+            it.view(6) {
+                assertEquals(0, it.position)
+                assertEquals(DEFAULT_SIZE, it.capacity)
+                assertEquals(6, it.offset)
+                assertEquals(3, it.limit)
+                assertTrue(byteArrayOf(7, 8, 9).contentEquals(it.readBytes()))
+            }
         }
     }
+
+    @Test
+    fun sliceWrite() {
+
+        alloc().use { base ->
+            base.put(123)
+            base.slice().also { slice ->
+                slice.set(0, 123)
+                slice.setChar(1, '*')
+                slice.setShort(3, 12345)
+                slice.setInt(5, 1234567890)
+                slice.setLong(9, 1234567890123456L)
+                slice.setFloat(17, 1234.56f)
+                slice.setDouble(21, 123456789.987654321)
+                slice.setBytes(29, byteArrayOf(1, 2, 3, 4, 5))
+            }
+
+            base.reset()
+            base.slice(1).also { slice ->
+                assertEquals(123, slice.get(0))
+                assertEquals('*', slice.getChar(1))
+                assertEquals(12345, slice.getShort(3))
+                assertEquals(1234567890, slice.getInt(5))
+                assertEquals(1234567890123456L, slice.getLong(9))
+                assertNear(1234.56f, slice.getFloat(17))
+                assertEquals(123456789.987654321, slice.getDouble(21))
+                assertTrue(byteArrayOf(1, 2, 3, 4, 5).contentEquals(slice.getBytes(29, 5)))
+            }
+        }
+
+    }
+
 }

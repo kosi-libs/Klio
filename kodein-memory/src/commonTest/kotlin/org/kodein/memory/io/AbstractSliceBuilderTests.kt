@@ -38,21 +38,24 @@ abstract class AbstractSliceBuilderTests {
     fun slicesInRemap() {
         sliceBuilder(5).use {
             val v1 = it.newSlice { putInt(1234567890) }
+            assertEquals(5, v1.capacity)
+            assertEquals(0, v1.offset)
             assertEquals(0, v1.position)
             assertEquals(4, v1.limit)
-            assertEquals(4, v1.capacity)
             assertEquals(1, it.allocationCount)
             assertEquals(5, it.allocationSize)
             val v2 = it.newSlice { putInt(987654321) ; putChar('S') ; put(42) ; putInt(1234567890) }
+            assertEquals(20, v2.capacity)
+            assertEquals(0, v2.offset)
             assertEquals(0, v2.position)
-            assertEquals(11, v2.limit, "LIMIT")
-            assertEquals(11, v2.capacity, "CAPACITY")
+            assertEquals(11, v2.limit)
             assertEquals(2, it.allocationCount)
             assertEquals(25, it.allocationSize)
             val v3 = it.newSlice { putInt(1234567890) }
+            assertEquals(20, v3.capacity)
+            assertEquals(11, v3.offset)
             assertEquals(0, v3.position)
             assertEquals(4, v3.limit)
-            assertEquals(4, v3.capacity)
             assertEquals(2, it.allocationCount)
             assertEquals(25, it.allocationSize)
         }

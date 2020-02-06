@@ -46,14 +46,4 @@ inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     }
 }
 
-inline fun <R> ReadMemory.markBuffer(block: (ReadBuffer) -> R): R =
-    when (this) {
-        is ReadBuffer -> mark<R> { block(this) }
-        else -> block(duplicate())
-    }
-
-fun ReadBuffer.memoryHere(size: Int = remaining): ReadMemory {
-    if (position == 0 && size == remaining) return this
-
-    return slice(position, size)
-}
+inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, remaining, block)

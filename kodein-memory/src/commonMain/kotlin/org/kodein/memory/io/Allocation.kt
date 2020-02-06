@@ -37,7 +37,7 @@ internal abstract class AbstractReadAllocation<B: ReadBuffer>(protected val buff
     final override fun getLong(index: Int) = delegate { getLong(index) }
     final override fun getFloat(index: Int) = delegate { getFloat(index) }
     final override fun getDouble(index: Int) = delegate { getDouble(index) }
-    final override fun getBytes(index: Int, dst: ByteArray, offset: Int, length: Int) = delegate { getBytes(index, dst, offset, length) }
+    final override fun getBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int) = delegate { getBytes(index, dst, dstOffset, length) }
     final override fun peek() = delegate { peek() }
     final override fun read() = delegate { read() }
     final override fun readChar() = delegate { readChar() }
@@ -46,7 +46,7 @@ internal abstract class AbstractReadAllocation<B: ReadBuffer>(protected val buff
     final override fun readLong() = delegate { readLong() }
     final override fun readFloat() = delegate { readFloat() }
     final override fun readDouble() = delegate { readDouble() }
-    final override fun readBytes(dst: ByteArray, offset: Int, length: Int) = delegate { readBytes(dst, offset, length) }
+    final override fun readBytes(dst: ByteArray, dstOffset: Int, length: Int) = delegate { readBytes(dst, dstOffset, length) }
     final override fun skip(count: Int) = delegate { skip(count) }
 
     protected abstract fun closeOnce()
@@ -69,14 +69,16 @@ internal abstract class AbstractAllocation(buffer: KBuffer): AbstractReadAllocat
         get() = delegate { limit }
         set(value) { delegate { limit = value } }
 
+    final override val offset: Int get() = delegate { offset }
+
+    override fun offset(newOffset: Int) = delegate { offset(newOffset) }
     final override fun duplicate() = delegate { duplicate() }
     final override fun slice() = delegate { slice() }
     final override fun slice(index: Int, length: Int) = delegate { slice(index, length) }
     final override fun internalBuffer() = delegate { internalBuffer() }
 
-    final override fun clear() = delegate { clear() }
+    final override fun reset() = delegate { reset() }
     final override fun flip() = delegate { flip() }
-    final override fun rewind() = delegate { rewind() }
     final override fun set(index: Int, value: Byte) = delegate { set(index, value) }
     final override fun setChar(index: Int, value: Char) = delegate { setChar(index, value) }
     final override fun setShort(index: Int, value: Short) = delegate { setShort(index, value) }
@@ -95,6 +97,7 @@ internal abstract class AbstractAllocation(buffer: KBuffer): AbstractReadAllocat
     final override fun putDouble(value: Double) = delegate { putDouble(value) }
     final override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) = delegate { putBytes(src, srcOffset, length) }
     final override fun putBytes(src: Readable, length: Int) = delegate { putBytes(src, length) }
+    final override fun backingArray() = delegate { backingArray() }
 }
 
 internal class NativeAllocation(buffer: KBuffer, private val closeFun: () -> Unit) : AbstractAllocation(buffer) {

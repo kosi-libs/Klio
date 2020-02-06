@@ -15,7 +15,7 @@ interface Readable {
     fun readFloat(): Float
     fun readDouble(): Double
 
-    fun readBytes(dst: ByteArray, offset: Int = 0, length: Int = dst.size - offset)
+    fun readBytes(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset)
 
     fun skip(count: Int)
 

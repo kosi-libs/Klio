@@ -7,7 +7,3 @@ class ByteArrayKBufferTests : AbstractKBufferTests() {
 class ByteArraySliceBuilderTests : AbstractSliceBuilderTests() {
     override fun sliceBuilder(size: Int): SliceBuilder = SliceBuilder.array(size)
 }
-
-class ByteArrayTableTests : AbstractTableTests() {
-    override fun sliceBuilder(size: Int): SliceBuilder = SliceBuilder.array(size)
-}

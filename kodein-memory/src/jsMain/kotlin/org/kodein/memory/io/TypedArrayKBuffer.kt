@@ -4,16 +4,14 @@ import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.DataView
 import org.khronos.webgl.Int8Array
 
-class TypedArrayKBuffer(val buffer: ArrayBuffer, val offset: Int = 0, capacity: Int = buffer.byteLength - offset) : AbstractKBuffer(capacity) {
+class TypedArrayKBuffer(val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLength) {
 
-    private val array = Int8Array(buffer, offset, capacity)
-    private val data = DataView(buffer, offset, capacity)
+    private val array = Int8Array(buffer, 0, capacity)
+    private val data = DataView(buffer, 0, capacity)
 
     override val name: String get() = "TypedArrayKBuffer"
 
-    override fun createDuplicate() = TypedArrayKBuffer(buffer, offset, capacity)
-
-    override fun unsafeView(index: Int, length: Int) = TypedArrayKBuffer(buffer, offset + index, length)
+    override fun createDuplicate() = TypedArrayKBuffer(buffer)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         if (srcOffset == 0 && length == src.size) {
@@ -23,7 +21,7 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer, val offset: Int = 0, capacity: 
         }
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: ReadBuffer, srcOffset: Int, length: Int): Boolean {
+    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean {
         if (src !is TypedArrayKBuffer) return false
 
         if (srcOffset == 0 && length == src.array.length) {
@@ -52,8 +50,8 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer, val offset: Int = 0, capacity: 
         data.setInt32(index + 4, (value ushr 0x00 and 0xFFFFFFFF).toInt())
     }
 
-    override fun unsafeGetBytes(index: Int, dst: ByteArray, offset: Int, length: Int) {
-        array.unsafeCast<ByteArray>().copyInto(dst, offset, index, index + length)
+    override fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int) {
+        array.unsafeCast<ByteArray>().copyInto(dst, dstOffset, index, index + length)
     }
 
     override fun unsafeGet(index: Int): Byte = data.getInt8(index)
@@ -69,5 +67,7 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer, val offset: Int = 0, capacity: 
         )
     }
 
-    override fun tryEqualsOptimized(other: KBuffer): Boolean? = null
+    override fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean? = null
+
+    override fun backingArray(): ByteArray? = null
 }

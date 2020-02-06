@@ -18,7 +18,7 @@ interface ReadMemory {
     fun getFloat(index: Int): Float
     fun getDouble(index: Int): Double
 
-    fun getBytes(index: Int, dst: ByteArray, offset: Int = 0, length: Int = dst.size - offset)
+    fun getBytes(index: Int, dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset)
 
     fun internalBuffer(): ReadMemory
 }
@@ -59,3 +59,13 @@ operator fun ReadMemory.compareTo(other: ByteArray): Int {
 }
 
 val ReadMemory.size: Int get() = limit
+
+inline fun <R> ReadMemory.markBuffer(block: (ReadBuffer) -> R): R =
+        when (this) {
+            is ReadBuffer -> mark<R> { block(this) }
+            else -> block(duplicate())
+        }
+
+inline fun <R> ReadBuffer.viewBuffer(index: Int, length: Int, block: (ReadBuffer) -> R): R =
+        if (this is KBuffer) view(index, length) { block(this) }
+        else block(slice(index, length))
