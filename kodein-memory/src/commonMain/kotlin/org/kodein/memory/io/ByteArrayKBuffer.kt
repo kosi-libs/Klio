@@ -2,7 +2,7 @@ package org.kodein.memory.io
 
 class ByteArrayKBuffer constructor(val array: ByteArray) : AbstractKBuffer(array.size) {
 
-    override val name: String get() = "ByteArrayKBuffer"
+    override val implementation: String get() = "ByteArrayKBuffer"
 
     override fun createDuplicate() = ByteArrayKBuffer(array)
 

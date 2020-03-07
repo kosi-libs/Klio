@@ -66,6 +66,6 @@ inline fun <R> ReadMemory.markBuffer(block: (ReadBuffer) -> R): R =
             else -> block(duplicate())
         }
 
-inline fun <R> ReadBuffer.viewBuffer(index: Int, length: Int, block: (ReadBuffer) -> R): R =
-        if (this is KBuffer) view(index, length) { block(this) }
+inline fun <R> ReadMemory.viewBuffer(index: Int, length: Int, block: (ReadBuffer) -> R): R =
+        if (this is KBuffer) view<R>(index, length) { block(this) }
         else block(slice(index, length))

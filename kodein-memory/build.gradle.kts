@@ -7,7 +7,7 @@ plugins {
 kodein {
     kotlin {
 
-        val serializationVer = "0.14.0-1.3.70-eap-42"
+        val serializationVer = "0.20.0"
 
         common.main.dependencies {
             compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationVer")
@@ -49,7 +49,6 @@ kodein {
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
-            languageSettings.enableLanguageFeature("NewInference")
         }
     }
 }

@@ -7,7 +7,7 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.cap
     val hasArray get() = byteBuffer.hasArray()
     val isDirect get() = byteBuffer.isDirect
 
-    override val name: String get() = "JvmNioKBuffer"
+    override val implementation: String get() = "JvmNioKBuffer"
 
     override fun createDuplicate() = JvmNioKBuffer(byteBuffer)
 
@@ -23,9 +23,8 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.cap
         }
     }
 
-    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp(ByteBuffer::limit, ByteBuffer::limit, newLimit, block)
-    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp(ByteBuffer::position, ByteBuffer::position, newPosition, block)
-
+    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp<R>(ByteBuffer::limit, { limit(it) }, newLimit, block)
+    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp<R>(ByteBuffer::position, { position(it) }, newPosition, block)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         byteBuffer.position(index) {

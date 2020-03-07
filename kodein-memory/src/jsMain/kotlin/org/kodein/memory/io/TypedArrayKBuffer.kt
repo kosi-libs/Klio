@@ -9,7 +9,7 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLe
     private val array = Int8Array(buffer, 0, capacity)
     private val data = DataView(buffer, 0, capacity)
 
-    override val name: String get() = "TypedArrayKBuffer"
+    override val implementation: String get() = "TypedArrayKBuffer"
 
     override fun createDuplicate() = TypedArrayKBuffer(buffer)
 

@@ -315,6 +315,17 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     override fun internalBuffer() = this
 
+    private fun slowEquals(other: KBuffer): Boolean {
+        var otherP = other.limit - 1
+        for (thisP in (limit - 1) downTo position) {
+            if (unsafeGet(offset + thisP) != other[otherP]) {
+                return false
+            }
+            --otherP
+        }
+        return true
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
         if (other == null) return false
@@ -326,19 +337,12 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         if (optimized != null)
             return optimized
 
-        var otherP = other.limit - 1
-        for (thisP in (limit - 1) downTo position) {
-            if (unsafeGet(offset + thisP) != otherBuffer[otherP]) {
-                return false
-            }
-            --otherP
-        }
-        return true
+        return slowEquals(otherBuffer)
     }
 
     protected abstract fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean?
 
-    override fun hashCode(): Int {
+    final override fun hashCode(): Int {
         var h = 1
         for (i in (limit - 1) downTo position) {
             h = 31 * h + unsafeGet(offset + i).toInt()
@@ -346,7 +350,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         return h
     }
 
-    override fun toString(): String = "$name[offset=$offset, position=$position, limit=$limit, capacity=$capacity]"
+    override fun toString(): String = "$implementation[offset=$offset, position=$position, limit=$limit, capacity=$capacity]"
 
-    protected abstract val name: String
+    protected abstract val implementation: String
 }
