@@ -6,7 +6,7 @@ import kotlinx.cinterop.ptr
 import platform.posix.gettimeofday
 import platform.posix.timeval
 
-@UseExperimental(ExperimentalUnsignedTypes::class)
+@OptIn(ExperimentalUnsignedTypes::class)
 actual fun currentTimestampMillis(): Long {
     memScoped {
         val tv = alloc<timeval>()

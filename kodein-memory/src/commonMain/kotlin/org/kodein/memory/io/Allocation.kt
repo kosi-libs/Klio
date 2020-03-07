@@ -1,6 +1,5 @@
 package org.kodein.memory.io
 
-import kotlinx.atomicfu.atomic
 import org.kodein.memory.Closeable
 
 interface ReadAllocation : ReadBuffer, Closeable
@@ -126,16 +125,3 @@ inline fun Allocation.Allocations.native(capacity: Int, block: KBuffer.() -> Uni
     alloc.flip()
     return alloc
 }
-
-class ArcAllocation(val delegate: Allocation) : Allocation by delegate {
-    private val rc = atomic(1)
-
-    fun attach(): Allocation = apply { rc.incrementAndGet() }
-
-    override fun close() {
-        if (rc.decrementAndGet() == 0)
-            delegate.close()
-    }
-}
-
-fun Allocation.arc() = ArcAllocation(this)
