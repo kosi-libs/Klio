@@ -49,14 +49,14 @@ inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): By
 
 fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset) = array(length).apply { setBytes(0, src, srcOffset, length) }
 
-fun Random.nextBytes(dst: Writeable, len: Int = dst.remaining) {
+fun Random.nextBytes(dst: Writeable, len: Int = dst.available) {
     val buffer = ByteArray(min(len, 64))
-    var remaining = len
-    while (remaining > 0) {
-        val count = min(remaining, 64)
+    var available = len
+    while (available > 0) {
+        val count = min(available, 64)
         nextBytes(buffer, 0, count)
         dst.putBytes(buffer, 0, count)
-        remaining -= count
+        available -= count
     }
 }
 

@@ -44,11 +44,11 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
     }
 
     inner class BuilderWriteable internal constructor(): Writeable {
-        override val remaining: Int get() = Int.MAX_VALUE
+        override val available: Int get() = Int.MAX_VALUE
 
-        override fun put(value: Byte) {
+        override fun putByte(value: Byte) {
             checkSize(Byte.SIZE_BYTES)
-            current.put(value)
+            current.putByte(value)
         }
 
         override fun putChar(value: Char) {
@@ -89,6 +89,10 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
         override fun putBytes(src: Readable, length: Int) {
             checkSize(length)
             current.putBytes(src, length)
+        }
+
+        override fun flush() {
+            current.flush()
         }
 
         fun subSlice(block: () -> Unit) : ReadBuffer {

@@ -8,7 +8,7 @@ interface ReadBuffer : Readable, ReadMemory {
 }
 
 
-fun ReadBuffer.getHere(offset: Int = 0) = get(position + offset)
+fun ReadBuffer.getHere(offset: Int = 0) = getByte(position + offset)
 fun ReadBuffer.getCharHere(offset: Int = 0) = getChar(position + offset)
 fun ReadBuffer.getShortHere(offset: Int = 0) = getShort(position + offset)
 fun ReadBuffer.getIntHere(offset: Int = 0) = getInt(position + offset)
@@ -18,7 +18,7 @@ fun ReadBuffer.getDoubleHere(offset: Int = 0) = getDouble(position + offset)
 fun ReadBuffer.getBytesHere(offset: Int = 0) = getBytes(position + offset)
 
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUByteHere(offset: Int = 0) = get(position + offset).toUByte()
+fun ReadBuffer.getUByteHere(offset: Int = 0) = getByte(position + offset).toUByte()
 @ExperimentalUnsignedTypes
 fun ReadBuffer.getUShortHere(offset: Int = 0) = getShort(position + offset).toUShort()
 @ExperimentalUnsignedTypes
@@ -46,4 +46,4 @@ inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     }
 }
 
-inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, remaining, block)
+inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, available, block)

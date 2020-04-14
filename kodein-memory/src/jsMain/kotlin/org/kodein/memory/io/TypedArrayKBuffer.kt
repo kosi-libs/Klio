@@ -33,7 +33,7 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLe
         return true
     }
 
-    override fun unsafeSet(index: Int, value: Byte) {
+    override fun unsafeSetByte(index: Int, value: Byte) {
         data.setInt8(index, value)
     }
 
@@ -54,7 +54,7 @@ class TypedArrayKBuffer(val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLe
         array.unsafeCast<ByteArray>().copyInto(dst, dstOffset, index, index + length)
     }
 
-    override fun unsafeGet(index: Int): Byte = data.getInt8(index)
+    override fun unsafeGetByte(index: Int): Byte = data.getInt8(index)
 
     override fun unsafeGetShort(index: Int): Short = data.getInt16(index)
 

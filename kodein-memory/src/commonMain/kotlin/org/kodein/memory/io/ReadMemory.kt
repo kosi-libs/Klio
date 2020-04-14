@@ -10,7 +10,8 @@ interface ReadMemory {
     fun slice(): ReadBuffer
     fun slice(index: Int, length: Int = limit - index): ReadBuffer
 
-    operator fun get(index: Int): Byte
+    operator fun get(index: Int) = getByte(index)
+    fun getByte(index: Int): Byte
     fun getChar(index: Int): Char
     fun getShort(index: Int): Short
     fun getInt(index: Int): Int
@@ -30,7 +31,7 @@ fun ReadMemory.getBytes(index: Int, length: Int = limit - index): ByteArray {
 }
 
 @ExperimentalUnsignedTypes
-fun ReadMemory.getUByte(index: Int) = get(index).toUByte()
+fun ReadMemory.getUByte(index: Int) = getByte(index).toUByte()
 @ExperimentalUnsignedTypes
 fun ReadMemory.getUShort(index: Int) = getShort(index).toUShort()
 @ExperimentalUnsignedTypes
@@ -42,8 +43,8 @@ fun ReadMemory.getUBytes(index: Int) = getBytes(index).asUByteArray()
 
 operator fun ReadMemory.compareTo(other: ReadMemory): Int {
     for (i in 0 until min(limit, other.limit)) {
-        val b1 = this[i]
-        val b2 = other[i]
+        val b1 = this.getByte(i)
+        val b2 = other.getByte(i)
         if (b1 != b2) return b1 - b2
     }
     return limit - other.limit
@@ -51,7 +52,7 @@ operator fun ReadMemory.compareTo(other: ReadMemory): Int {
 
 operator fun ReadMemory.compareTo(other: ByteArray): Int {
     for (i in 0 until min(limit, other.size)) {
-        val b1 = this[i]
+        val b1 = this.getByte(i)
         val b2 = other[i]
         if (b1 != b2) return b1 - b2
     }

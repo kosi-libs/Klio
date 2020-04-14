@@ -5,9 +5,7 @@ plugins {
 kodein {
     kotlin {
 
-        val allNonJvmMain = sourceSets.create("allNonJvmMain") {
-            dependsOn(common.main)
-        }
+        val allNonJvm = kodeinSourceSets.new("allNonJvm")
 
         add(kodeinTargets.jvm.jvm) {
             target.setCompileClasspath()
@@ -18,17 +16,18 @@ kodein {
         }
 
         add(kodeinTargets.js.js) {
-            main.dependsOn(allNonJvmMain)
+            dependsOn(allNonJvm)
         }
 
         add(kodeinTargets.native.allPosix) {
             mainCompilation.cinterops.create("bits")
 
-            main.dependsOn(allNonJvmMain)
+            dependsOn(allNonJvm)
         }
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.enableLanguageFeature("InlineClasses")
         }
     }
 }

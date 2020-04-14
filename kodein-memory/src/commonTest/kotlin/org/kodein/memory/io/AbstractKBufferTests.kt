@@ -18,7 +18,7 @@ abstract class AbstractKBufferTests {
     @Test
     fun primitivesPut() {
         alloc().use {
-            it.put(123)
+            it.putByte(123)
             it.putChar('*')
             it.putShort(12345)
             it.putInt(1234567890)
@@ -28,9 +28,9 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertEquals(29, it.remaining)
+            assertEquals(29, it.available)
 
-            assertEquals(123, it.read())
+            assertEquals(123, it.readByte())
             assertEquals('*', it.readChar())
             assertEquals(12345, it.readShort())
             assertEquals(1234567890, it.readInt())
@@ -38,7 +38,7 @@ abstract class AbstractKBufferTests {
             assertNear(1234.56f, it.readFloat())
             assertEquals(123456789.987654321, it.readDouble())
 
-            assertEquals(0, it.remaining)
+            assertEquals(0, it.available)
         }
     }
 
@@ -145,12 +145,12 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertNotEquals(0, it.remaining)
+            assertNotEquals(0, it.available)
 
             val read = ByteArray(6)
             it.readBytes(read)
 
-            assertEquals(0, it.remaining)
+            assertEquals(0, it.available)
 
             assertTrue(read.contentEquals(byteArrayOf(10, 11, 12, 13, 14, 15)))
         }
@@ -164,12 +164,12 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertNotEquals(0, it.remaining)
+            assertNotEquals(0, it.available)
 
             val read = ByteArray(8)
             it.readBytes(read, 1, 6)
 
-            assertEquals(0, it.remaining)
+            assertEquals(0, it.available)
 
             assertTrue(read.contentEquals(byteArrayOf(0, 10, 11, 12, 13, 14, 15, 0)))
         }
@@ -179,7 +179,7 @@ abstract class AbstractKBufferTests {
     fun readable() {
         alloc().use { dst ->
             alloc().use { src ->
-                src.put(123)
+                src.putByte(123)
                 src.putChar('*')
                 src.putShort(12345)
                 src.putInt(1234567890)
@@ -193,9 +193,9 @@ abstract class AbstractKBufferTests {
 
             dst.flip()
 
-            assertNotEquals(0, dst.remaining)
+            assertNotEquals(0, dst.available)
 
-            assertEquals(123, dst.read())
+            assertEquals(123, dst.readByte())
             assertEquals('*', dst.readChar())
             assertEquals(12345, dst.readShort())
             assertEquals(1234567890, dst.readInt())
@@ -203,7 +203,7 @@ abstract class AbstractKBufferTests {
             assertNear(1234.56f, dst.readFloat())
             assertEquals(123456789.987654321, dst.readDouble())
 
-            assertEquals(0, dst.remaining)
+            assertEquals(0, dst.available)
         }
     }
 
@@ -219,13 +219,13 @@ abstract class AbstractKBufferTests {
 
             dst.flip()
 
-            assertEquals(3, dst.remaining)
+            assertEquals(3, dst.available)
 
-            assertEquals(4, dst.read())
-            assertEquals(5, dst.read())
-            assertEquals(6, dst.read())
+            assertEquals(4, dst.readByte())
+            assertEquals(5, dst.readByte())
+            assertEquals(6, dst.readByte())
 
-            assertEquals(0, dst.remaining)
+            assertEquals(0, dst.available)
         }
     }
 
@@ -236,7 +236,7 @@ abstract class AbstractKBufferTests {
             assertEquals(DEFAULT_SIZE, it.limit)
             assertEquals(0, it.position)
 
-            it.put(123)
+            it.putByte(123)
             it.putChar('*')
             it.putShort(12345)
             it.putInt(1234567890)
@@ -312,9 +312,9 @@ abstract class AbstractKBufferTests {
     fun sliceWrite() {
 
         alloc().use { base ->
-            base.put(123)
+            base.putByte(123)
             base.slice().also { slice ->
-                slice.set(0, 123)
+                slice.setByte(0, 123)
                 slice.setChar(1, '*')
                 slice.setShort(3, 12345)
                 slice.setInt(5, 1234567890)
@@ -326,7 +326,7 @@ abstract class AbstractKBufferTests {
 
             base.reset()
             base.slice(1).also { slice ->
-                assertEquals(123, slice.get(0))
+                assertEquals(123, slice.getByte(0))
                 assertEquals('*', slice.getChar(1))
                 assertEquals(12345, slice.getShort(3))
                 assertEquals(1234567890, slice.getInt(5))

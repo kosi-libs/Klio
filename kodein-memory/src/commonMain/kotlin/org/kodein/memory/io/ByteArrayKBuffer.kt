@@ -12,7 +12,7 @@ class ByteArrayKBuffer constructor(val array: ByteArray) : AbstractKBuffer(array
 
     override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset:Int, length: Int): Boolean = false
 
-    override fun unsafeSet(index: Int, value: Byte) { array[index] = value }
+    override fun unsafeSetByte(index: Int, value: Byte) { array[index] = value }
 
     override fun unsafeSetShort(index: Int, value: Short) {
         slowStoreShort(value) { i, b -> array[index + i] = b }
@@ -30,7 +30,7 @@ class ByteArrayKBuffer constructor(val array: ByteArray) : AbstractKBuffer(array
         array.copyInto(dst, destinationOffset = dstOffset, startIndex = index, endIndex = index + length)
     }
 
-    override fun unsafeGet(index: Int): Byte = array[index]
+    override fun unsafeGetByte(index: Int): Byte = array[index]
 
     override fun unsafeGetShort(index: Int): Short = slowLoadShort { array[index + it] }
 

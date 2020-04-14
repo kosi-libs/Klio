@@ -17,7 +17,7 @@ class TransferTests {
         val arrayBuffer = KBuffer.array(DEFAULT_SIZE)
         Allocation.native(DEFAULT_SIZE).use { nativeBuffer ->
             listOf(arrayBuffer, nativeBuffer).forEach {
-                it.put(123)
+                it.putByte(123)
                 it.putChar('*')
                 it.putShort(12345)
                 it.putInt(1234567890)
@@ -43,7 +43,7 @@ class TransferTests {
     }
 
     private fun transfer(from: KBuffer, to: KBuffer) {
-        from.put(123)
+        from.putByte(123)
         from.putChar('*')
         from.putShort(12345)
         from.putInt(1234567890)
@@ -55,9 +55,9 @@ class TransferTests {
         to.putBytes(from)
         to.flip()
 
-        assertEquals(29, to.remaining)
+        assertEquals(29, to.available)
 
-        assertEquals(123, to.read())
+        assertEquals(123, to.readByte())
         assertEquals('*', to.readChar())
         assertEquals(12345, to.readShort())
         assertEquals(1234567890, to.readInt())
@@ -65,7 +65,7 @@ class TransferTests {
         assertNear(1234.56f, to.readFloat())
         assertEquals(123456789.987654321, to.readDouble())
 
-        assertEquals(0, to.remaining)
+        assertEquals(0, to.available)
     }
 
     @Test

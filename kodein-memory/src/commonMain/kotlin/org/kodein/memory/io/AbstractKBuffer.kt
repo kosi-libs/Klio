@@ -1,5 +1,7 @@
 package org.kodein.memory.io
 
+import kotlin.math.min
+
 abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override var offset: Int = 0
@@ -19,7 +21,9 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         field = value
     }
 
-    final override val remaining: Int get() = limit - position
+    final override val available: Int get() = limit - position
+
+    override fun valid(): Boolean = available != 0
 
     final override fun offset(newOffset: Int) {
         require(newOffset >= 0) { "$newOffset < 0" }
@@ -52,7 +56,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun slice() = createDuplicate().also {
         it.offset = offset + position
         it.position = 0
-        it.limit = remaining
+        it.limit = available
     }
 
     final override fun slice(index: Int, length: Int): KBuffer {
@@ -68,32 +72,32 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun checkHasRemaining(size: Int) {
-        require(size <= remaining) { "$size > remaining ($remaining)." }
+    private inline fun checkHasAvailable(size: Int) {
+        require(size <= available) { "$size > available ($available)." }
     }
 
-    final override fun put(value: Byte) {
-        checkHasRemaining(Byte.SIZE_BYTES)
-        unsafeSet(offset + position, value)
+    final override fun putByte(value: Byte) {
+        checkHasAvailable(Byte.SIZE_BYTES)
+        unsafeSetByte(offset + position, value)
         position += 1
     }
 
     final override fun putChar(value: Char) = putShort(value.toShort())
 
     final override fun putShort(value: Short) {
-        checkHasRemaining(Short.SIZE_BYTES)
+        checkHasAvailable(Short.SIZE_BYTES)
         unsafeSetShort(offset + position, value)
         position += 2
     }
 
     final override fun putInt(value: Int) {
-        checkHasRemaining(Int.SIZE_BYTES)
+        checkHasAvailable(Int.SIZE_BYTES)
         unsafeSetInt(offset + position, value)
         position += 4
     }
 
     final override fun putLong(value: Long) {
-        checkHasRemaining(Long.SIZE_BYTES)
+        checkHasAvailable(Long.SIZE_BYTES)
         unsafeSetLong(offset + position, value)
         position += 8
     }
@@ -106,7 +110,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         require(srcOffset >= 0) { "$srcOffset < 0" }
         require(length >= 0) { "$length < 0" }
         require((srcOffset + length) <= src.size) { "$srcOffset + $length > src.size (${src.size}" }
-        checkHasRemaining(length)
+        checkHasAvailable(length)
         if (length == 0) return
         unsafeSetBytes(offset + position, src, srcOffset, length)
         position += length
@@ -114,8 +118,8 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override fun putBytes(src: Readable, length: Int) {
         require(length >= 0) { "length ($length) < 0" }
-        require(length <= src.remaining) { "length ($length) < src.remaining (${src.remaining})" }
-        checkHasRemaining(length)
+        require(length <= src.available) { "length ($length) < src.available (${src.available})" }
+        checkHasAvailable(length)
         if (length == 0) return
         val srcBuffer = src.internalBuffer()
 
@@ -133,7 +137,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
             srcBuffer.skip(length)
         } else {
             repeat(length) {
-                unsafeSet(offset + position++, srcBuffer.read())
+                unsafeSetByte(offset + position++, srcBuffer.readByte())
             }
         }
     }
@@ -144,12 +148,12 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         require(index + size <= limit) { "$index + $size > limit ($limit)" }
     }
 
-    final override fun set(index: Int, value: Byte) {
+    final override fun setByte(index: Int, value: Byte) {
         checkIndex(index, Byte.SIZE_BYTES)
-        unsafeSet(offset + index, value)
+        unsafeSetByte(offset + index, value)
     }
 
-    protected abstract fun unsafeSet(index: Int, value: Byte)
+    protected abstract fun unsafeSetByte(index: Int, value: Byte)
 
     final override fun setChar(index: Int, value: Char) = setShort(index, value.toShort())
 
@@ -177,18 +181,6 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun setFloat(index: Int, value: Float) = setInt(index, value.toRawBits())
 
     final override fun setDouble(index: Int, value: Double) = setLong(index, value.toRawBits())
-
-    final override fun peek(): Byte {
-        checkHasRemaining(Byte.SIZE_BYTES)
-        return unsafeGet(offset + position)
-    }
-
-    final override fun read(): Byte {
-        checkHasRemaining(Byte.SIZE_BYTES)
-        val ret = unsafeGet(offset + position)
-        position += 1
-        return ret
-    }
 
     final override fun setBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         require(srcOffset >= 0) { "$srcOffset < 0" }
@@ -218,31 +210,59 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
                 }
         if (!hasOptimized) {
             repeat (length) {
-                unsafeSet(offset + index + it, srcBuffer[srcOffset + it])
+                unsafeSetByte(offset + index + it, srcBuffer.getByte(srcOffset + it))
             }
         }
     }
 
     protected abstract fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean
 
+    override fun flush() {}
+
+    final override fun receive(): Int {
+        if (available < Byte.SIZE_BYTES) return -1
+        val ret = unsafeGetByte(offset + position)
+        position += 1
+        return ret.toInt()
+    }
+
+    final override fun receive(dst: ByteArray, dstOffset: Int, length: Int): Int {
+        require(dstOffset >= 0) { "offset ($dstOffset) < 0" }
+        require(length >= 0) { "length ($length) < 0" }
+        require((dstOffset + length) <= dst.size) { "offset ($dstOffset) + length ($length) > dst.size (${dst.size}" }
+        if (available == 0) return -1
+        if (length == 0) return 0
+        val actualLength = min(length, available)
+        unsafeGetBytes(offset + position, dst, dstOffset, actualLength)
+        position += actualLength
+        return actualLength
+    }
+
+    final override fun readByte(): Byte {
+        checkHasAvailable(Byte.SIZE_BYTES)
+        val ret = unsafeGetByte(offset + position)
+        position += 1
+        return ret
+    }
+
     final override fun readChar() = readShort().toChar()
 
     final override fun readShort(): Short {
-        checkHasRemaining(Short.SIZE_BYTES)
+        checkHasAvailable(Short.SIZE_BYTES)
         val ret = unsafeGetShort(offset + position)
         position += 2
         return ret
     }
 
     final override fun readInt(): Int {
-        checkHasRemaining(Int.SIZE_BYTES)
+        checkHasAvailable(Int.SIZE_BYTES)
         val ret = unsafeGetInt(offset + position)
         position += 4
         return ret
     }
 
     final override fun readLong(): Long {
-        checkHasRemaining(Long.SIZE_BYTES)
+        checkHasAvailable(Long.SIZE_BYTES)
         val ret = unsafeGetLong(offset + position)
         position += 8
         return ret
@@ -256,18 +276,18 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         require(dstOffset >= 0) { "offset ($dstOffset) < 0" }
         require(length >= 0) { "length ($length) < 0" }
         require((dstOffset + length) <= dst.size) { "offset ($dstOffset) + length ($length) > dst.size (${dst.size}" }
-        checkHasRemaining(length)
+        checkHasAvailable(length)
         if (length == 0) return
         unsafeGetBytes(offset + position, dst, dstOffset, length)
         position += length
     }
 
-    final override fun get(index: Int): Byte {
+    final override fun getByte(index: Int): Byte {
         checkIndex(index, Byte.SIZE_BYTES)
-        return unsafeGet(offset + index)
+        return unsafeGetByte(offset + index)
     }
 
-    protected abstract fun unsafeGet(index: Int): Byte
+    protected abstract fun unsafeGetByte(index: Int): Byte
 
     final override fun getChar(index: Int): Char = getShort(index).toChar()
 
@@ -307,10 +327,11 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     protected abstract fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int)
 
-    final override fun skip(count: Int) {
+    final override fun skip(count: Int): Int {
         require(count >= 0) { "count ($count) < 0" }
-        checkHasRemaining(count)
-        position += count
+        val skipped = min(count, available)
+        position += skipped
+        return skipped
     }
 
     override fun internalBuffer() = this
@@ -318,7 +339,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     private fun slowEquals(other: KBuffer): Boolean {
         var otherP = other.limit - 1
         for (thisP in (limit - 1) downTo position) {
-            if (unsafeGet(offset + thisP) != other[otherP]) {
+            if (unsafeGetByte(offset + thisP) != other.getByte(otherP)) {
                 return false
             }
             --otherP
@@ -330,10 +351,10 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         if (other === this) return true
         if (other == null) return false
         if (other !is KBuffer) return false
-        if (other.remaining != remaining) return false
+        if (other.available != available) return false
 
         val otherBuffer = other.internalBuffer()
-        val optimized = (otherBuffer as? AbstractKBuffer)?.let { tryEqualsOptimized(offset + position, otherBuffer, otherBuffer.offset + otherBuffer.position, remaining) }
+        val optimized = (otherBuffer as? AbstractKBuffer)?.let { tryEqualsOptimized(offset + position, otherBuffer, otherBuffer.offset + otherBuffer.position, available) }
         if (optimized != null)
             return optimized
 
@@ -345,7 +366,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
     final override fun hashCode(): Int {
         var h = 1
         for (i in (limit - 1) downTo position) {
-            h = 31 * h + unsafeGet(offset + i).toInt()
+            h = 31 * h + unsafeGetByte(offset + i).toInt()
         }
         return h
     }

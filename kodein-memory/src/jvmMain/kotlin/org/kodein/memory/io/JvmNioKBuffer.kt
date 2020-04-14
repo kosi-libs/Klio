@@ -46,7 +46,7 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.cap
         return true
     }
 
-    override fun unsafeSet(index: Int, value: Byte) {
+    override fun unsafeSetByte(index: Int, value: Byte) {
         byteBuffer.put(index, value)
     }
 
@@ -62,7 +62,7 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.cap
         byteBuffer.putLong(index, value)
     }
 
-    override fun unsafeGet(index: Int): Byte = byteBuffer.get(index)
+    override fun unsafeGetByte(index: Int): Byte = byteBuffer.get(index)
 
     override fun unsafeGetShort(index: Int): Short = byteBuffer.getShort(index)
 

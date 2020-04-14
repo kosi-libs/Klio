@@ -2,7 +2,6 @@ package org.kodein.memory.util
 
 import org.kodein.memory.io.KBuffer
 import org.kodein.memory.io.array
-import org.kodein.memory.io.hasRemaining
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.putString
 import org.kodein.memory.text.readString
@@ -72,7 +71,7 @@ class UUIDTests {
         assertEquals(1234567890123456789L, buffer.readLong())
         assertEquals(buffer.readInt(), 123456789)
         assertEquals(buffer.readShort(), 2142)
-        assertFalse(buffer.hasRemaining())
+        assertFalse(buffer.valid())
     }
 
     @Test
@@ -86,6 +85,6 @@ class UUIDTests {
 
         val buffer = KBuffer.array(8) { id.write14Bytes(this, 8) }
         assertEquals("abcdefgh", buffer.readString(Charset.ASCII, 8))
-        assertFalse(buffer.hasRemaining())
+        assertFalse(buffer.valid())
     }
 }

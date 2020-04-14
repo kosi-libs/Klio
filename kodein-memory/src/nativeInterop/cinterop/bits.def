@@ -8,24 +8,24 @@ compilerOpts.ios_x64 = -DM_ALLOW_UNALIGNED_ACCESS -DM_DARWIN
 compilerOpts.android_arm64 = -DM_ALLOW_UNALIGNED_ACCESS
 ---
 
-#ifdef M_ALLOW_UNALIGNED_ACCESS
-#define UNALIGNED_ACCESS_ALLOWED 1
-#else
-#define UNALIGNED_ACCESS_ALLOWED 0
-#endif
+# ifdef M_ALLOW_UNALIGNED_ACCESS
+#   define UNALIGNED_ACCESS_ALLOWED 1
+# else
+#   define UNALIGNED_ACCESS_ALLOWED 0
+# endif
 
-#if defined(M_DARWIN)
-#include <machine/endian.h>
-#elif defined(MINGW)
-// nothing
-#else
-#include <endian.h>
-#endif
+# if defined(M_DARWIN)
+#   include <machine/endian.h>
+# elif defined(MINGW)
+    // nothing
+# else
+#   include <endian.h>
+# endif
 
-#ifdef MINGW
-#define PLATFORM_BIG_ENDIAN 0
-#elif (BYTE_ORDER == BIG_ENDIAN)
-#define PLATFORM_BIG_ENDIAN 1
-#else
-#define PLATFORM_BIG_ENDIAN 0
-#endif
+# ifdef MINGW
+#   define PLATFORM_BIG_ENDIAN 0
+# elif (BYTE_ORDER == BIG_ENDIAN)
+#   define PLATFORM_BIG_ENDIAN 1
+# else
+#   define PLATFORM_BIG_ENDIAN 0
+# endif

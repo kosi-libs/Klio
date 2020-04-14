@@ -23,14 +23,14 @@ abstract class AbstractSliceBuilderTests {
                 putChar('S')
                 putChar('B')
             }
-            assertEquals(4, v1.remaining)
-            assertEquals(4, v2.remaining)
+            assertEquals(4, v1.available)
+            assertEquals(4, v2.available)
             assertEquals(2142, v1.readShort())
             assertEquals(4221, v1.readShort())
             assertEquals('S', v2.readChar())
             assertEquals('B', v2.readChar())
-            assertEquals(0, v1.remaining)
-            assertEquals(0, v2.remaining)
+            assertEquals(0, v1.available)
+            assertEquals(0, v2.available)
         }
     }
 
@@ -44,7 +44,7 @@ abstract class AbstractSliceBuilderTests {
             assertEquals(4, v1.limit)
             assertEquals(1, it.allocationCount)
             assertEquals(5, it.allocationSize)
-            val v2 = it.newSlice { putInt(987654321) ; putChar('S') ; put(42) ; putInt(1234567890) }
+            val v2 = it.newSlice { putInt(987654321) ; putChar('S') ; putByte(42) ; putInt(1234567890) }
             assertEquals(20, v2.capacity)
             assertEquals(0, v2.offset)
             assertEquals(0, v2.position)

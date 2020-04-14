@@ -2,9 +2,9 @@ package org.kodein.memory.io
 
 interface Writeable {
 
-    val remaining: Int
+    val available: Int
 
-    fun put(value: Byte)
+    fun putByte(value: Byte)
     fun putChar(value: Char)
     fun putShort(value: Short)
     fun putInt(value: Int)
@@ -13,12 +13,14 @@ interface Writeable {
     fun putDouble(value: Double)
 
     fun putBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    fun putBytes(src: Readable, length: Int = src.remaining)
+    fun putBytes(src: Readable, length: Int = src.available)
+
+    fun flush()
 
 }
 
 @ExperimentalUnsignedTypes
-fun Writeable.putUByte(value: UByte) = put(value.toByte())
+fun Writeable.putUByte(value: UByte) = putByte(value.toByte())
 @ExperimentalUnsignedTypes
 fun Writeable.putUShort(value: UShort) = putShort(value.toShort())
 @ExperimentalUnsignedTypes
