@@ -31,3 +31,8 @@ kodein {
         }
     }
 }
+
+kodeinUpload {
+    name = "Kodein-Memory"
+    description = "Kodein Memory Library"
+}
