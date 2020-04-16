@@ -24,13 +24,21 @@ class FilesTests {
         val list = FileSystem.currentDirectory
                 .resolve("src")
                 .listDir()
-        assertEquals(6, list.size, "$list")
-        assertTrue(FileSystem.currentDirectory.resolve("src", "allNativeMain") in list)
+        assertEquals(5, list.size, "$list")
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonTest") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "jvmMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "macAndLinuxMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "mingwX64Main") in list)
+    }
+
+    @Test
+    fun listUtf() {
+        val list = FileSystem.currentDirectory
+                .resolve("src", "commonTest", "resources")
+                .listDir()
+        assertEquals(1, list.size, "$list")
+        assertEquals("L'étranger de Camus.txt", list[0].name)
     }
 
     @Test
