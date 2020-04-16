@@ -34,7 +34,7 @@ actual fun Path.getLType(): EntityType = getType(::lstat)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 actual fun Path.createDir() {
-    mkdir(path, "775".toUInt(8))
+    mkdir(path, "775".toUInt(8).convert())
 }
 
 actual fun Path.listDir(): List<Path> {

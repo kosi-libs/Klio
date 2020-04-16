@@ -5,12 +5,12 @@ plugins {
 kodein {
     kotlin {
 
-        val macAndLinux = kodeinSourceSets.new("macAndLinux")
+        val nativePosix = kodeinSourceSets.new("nativePosix")
 
         val os = org.gradle.internal.os.OperatingSystem.current()
         if (os.isLinux || os.isMacOsX || os.isUnix) {
             cpFixes.update("nativeHost") {
-                it.copy(intermediateSourceSets = it.intermediateSourceSets + macAndLinux)
+                it.copy(intermediateSourceSets = it.intermediateSourceSets + nativePosix)
             }
         }
 
@@ -26,11 +26,11 @@ kodein {
             }
         }
 
-        add(kodeinTargets.native.allPosix)
-
-        add(kodeinTargets.native.allLinux + kodeinTargets.native.macosX64) {
-            dependsOn(macAndLinux)
+        add(kodeinTargets.native.allPosix - kodeinTargets.native.mingwX64) {
+            dependsOn(nativePosix)
         }
+
+        add(kodeinTargets.native.mingwX64)
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
