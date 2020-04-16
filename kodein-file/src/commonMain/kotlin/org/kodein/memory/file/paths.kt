@@ -1,7 +1,5 @@
 package org.kodein.memory.file
 
-import kotlin.math.max
-
 
 inline class Path(val path: String) {
 
@@ -16,20 +14,6 @@ inline class Path(val path: String) {
 
 expect fun Path.isAbsolute(): Boolean
 
-fun Path.resolve(vararg values: String): Path {
-    if (values.isEmpty()) return this
-
-    return Path(buildString {
-        append(path)
-        var needsSeparator = !path.endsWith(Path.separator)
-        values.forEach { value ->
-            if (needsSeparator) append(Path.separator)
-            append(value)
-            needsSeparator = !value.endsWith(Path.separator)
-        }
-    })
-}
-
 fun Path.resolve(path: Path): Path {
     require(!path.isAbsolute()) { "Cannot resolve absolute path $path on top of $this" }
     return Path(buildString {
@@ -39,12 +23,15 @@ fun Path.resolve(path: Path): Path {
     })
 }
 
+fun Path.resolve(vararg values: String) = resolve(Path(*values))
+
+
 fun Path.toAbsolute(): Path {
     if (isAbsolute()) return this
     return FileSystem.currentDirectory.resolve(this)
 }
 
-fun Path.rationalize(): Path {
+fun Path.normalize(): Path {
     val isAbsolute = isAbsolute()
 
     val segments = path.split(Path.separator).toMutableList()
@@ -77,4 +64,6 @@ fun Path.rationalize(): Path {
     return Path(segments.joinToString(Path.separator))
 }
 
-fun Path.parent() = resolve("..").rationalize()
+fun Path.parent() = resolve("..").normalize()
+
+val Path.name get() = path.split(Path.separator).last()

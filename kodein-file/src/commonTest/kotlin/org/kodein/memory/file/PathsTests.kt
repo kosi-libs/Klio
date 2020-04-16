@@ -8,17 +8,17 @@ class PathsTests {
 
     @Test
     fun isAbsolute() {
-        assertEquals(true, FileSystem.currentDirectory.isAbsolute())
+        assertEquals(true, FileSystem.currentDirectory.isAbsolute(), "${FileSystem.currentDirectory} is not absolute")
         assertFalse(Path("something", "else").isAbsolute())
     }
 
     @Test
-    fun rationalize() {
-        assertEquals(Path("one", "two", "three"), Path("one", "other", "..", "two", ".", "three").rationalize())
-        assertEquals(Path("..", ".."), Path("..", "..", "one", "..").rationalize())
+    fun normalize() {
+        assertEquals(Path("one", "two", "three"), Path("one", "other", "..", "two", ".", "three").normalize())
+        assertEquals(Path("..", ".."), Path("..", "..", "one", "..").normalize())
 
         val root = FileSystem.roots[0]
-        assertEquals(root, root.resolve("..", ".", "..").rationalize())
+        assertEquals(root, root.resolve("..", ".", "..").normalize())
     }
 
     @Test
@@ -43,4 +43,8 @@ class PathsTests {
         assertEquals(FileSystem.roots[0], abs.parent().parent().parent().parent())
     }
 
+    @Test
+    fun name() {
+        assertEquals("c", Path("a", "b", "c").name)
+    }
 }

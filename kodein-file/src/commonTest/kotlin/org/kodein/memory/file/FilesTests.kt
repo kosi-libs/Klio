@@ -3,6 +3,8 @@ package org.kodein.memory.file
 import org.kodein.memory.io.readLine
 import org.kodein.memory.text.putString
 import org.kodein.memory.use
+import org.kodein.memory.util.nextString
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -13,8 +15,8 @@ class FilesTests {
     @Test
     fun list() {
         val list = FileSystem.currentDirectory.listDir()
-        assertTrue(FileSystem.currentDirectory.resolve("src") in list, "List is $list")
-        assertTrue(FileSystem.currentDirectory.resolve("build.gradle.kts") in list, "List is $list")
+        assertTrue(FileSystem.currentDirectory.resolve("src") in list, "No \"src\" in $list")
+        assertTrue(FileSystem.currentDirectory.resolve("build.gradle.kts") in list, "No \"build.gradle.kts\" in $list")
     }
 
     @Test
@@ -22,30 +24,31 @@ class FilesTests {
         val list = FileSystem.currentDirectory
                 .resolve("src")
                 .listDir()
-        assertEquals(5, list.size)
+        assertEquals(6, list.size, "$list")
         assertTrue(FileSystem.currentDirectory.resolve("src", "allNativeMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonTest") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "jvmMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "macAndLinuxMain") in list)
+        assertTrue(FileSystem.currentDirectory.resolve("src", "mingwX64Main") in list)
     }
 
     @Test
     fun getType() {
         val resources = FileSystem.currentDirectory.resolve("src", "commonTest", "resources")
         assertEquals(EntityType.Directory, resources.getType())
-        assertEquals(EntityType.File.Regular, resources.resolve("Letranger.txt").getType())
+        assertEquals(EntityType.File.Regular, resources.resolve("L'étranger de Camus.txt").getType())
         assertEquals(EntityType.Non.Existent, resources.resolve("other").getType())
     }
 
     @Test
     fun read() {
-        val txtFile = FileSystem.currentDirectory.resolve("src", "commonTest", "resources", "Letranger.txt")
+        val txtFile = FileSystem.currentDirectory.resolve("src", "commonTest", "resources", "L'étranger de Camus.txt")
         txtFile.openReadableFile().use { r ->
             val firstLine = r.readLine()
             val secondLine = r.readLine()
             assertEquals(
-                    "Aujourd'hui, maman est morte. Ou peut-être hier, je ne sais pas.J'ai reçu un télégramme de l'asile : « Mère décédée. Enterrement demain. Sentiments distingués. » Cela ne veut rien dire. C'était peut-être hier.",
+                    "Aujourd'hui, maman est morte. Ou peut-être hier, je ne sais pas. J'ai reçu un télégramme de l'asile : « Mère décédée. Enterrement demain. Sentiments distingués. » Cela ne veut rien dire. C'était peut-être hier.",
                     firstLine
             )
             assertEquals(
@@ -57,7 +60,7 @@ class FilesTests {
 
     @Test
     fun writeTmp() {
-        val tmpFile = FileSystem.tempDirectory.resolve("kodeinWriteTest")
+        val tmpFile = FileSystem.tempDirectory.resolve("kodein-file-${Random.nextString(10)}")
         assertEquals(EntityType.Non.Existent, tmpFile.getType())
         tmpFile.openWriteableFile().use { w ->
             w.putString("First line\n")
@@ -95,7 +98,7 @@ class FilesTests {
 
     @Test
     fun createDirs() {
-        val tmpDirRoot = FileSystem.tempDirectory.resolve("kodeinDirTest")
+        val tmpDirRoot = FileSystem.tempDirectory.resolve("kodein-dir-${Random.nextString(10)}")
         assertEquals(EntityType.Non.Existent, tmpDirRoot.getType())
         tmpDirRoot.createDir()
         assertEquals(EntityType.Directory, tmpDirRoot.getType())

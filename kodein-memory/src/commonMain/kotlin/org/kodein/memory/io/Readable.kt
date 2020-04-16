@@ -1,7 +1,6 @@
 package org.kodein.memory.io
 
 import org.kodein.memory.text.Charset
-import org.kodein.memory.text.readString
 
 interface Readable {
 
@@ -52,6 +51,18 @@ fun Readable.readLine(charset: Charset = Charset.UTF8): String? = buildString {
         }
         val nextChar = next.toChar()
         if (nextChar == '\n') break
+        if (nextChar == '\r') {
+            val after = charset.tryDecode(this@readLine)
+            if (after == -1) {
+                append(nextChar)
+                break
+            }
+            val afterChar = after.toChar()
+            if (afterChar == '\n') break
+            append(nextChar)
+            append(afterChar)
+            continue
+        }
         append(nextChar)
         ++count
     }
