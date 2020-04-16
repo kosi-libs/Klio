@@ -28,7 +28,7 @@ class FilesTests {
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "commonTest") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "jvmMain") in list)
-        assertTrue(FileSystem.currentDirectory.resolve("src", "macAndLinuxMain") in list)
+        assertTrue(FileSystem.currentDirectory.resolve("src", "nativePosixMain") in list)
         assertTrue(FileSystem.currentDirectory.resolve("src", "mingwX64Main") in list)
     }
 
