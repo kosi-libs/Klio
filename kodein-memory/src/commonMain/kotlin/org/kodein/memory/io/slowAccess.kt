@@ -25,30 +25,44 @@ internal inline fun slowStoreLong(value: Long, set: (Int, Byte) -> Unit) {
 }
 
 internal inline fun slowLoadShort(get: (Int) -> Byte): Short {
+    val b0 = get(0)
+    val b1 = get(1)
     return (
-            (get(0).toInt() and 0xFF shl 0x08) or
-            (get(1).toInt() and 0xFF shl 0x00)
+            (b0.toInt() and 0xFF shl 0x08) or
+            (b1.toInt() and 0xFF shl 0x00)
     ).toShort()
 }
 
 internal inline fun slowLoadInt(get: (Int) -> Byte): Int {
+    val b0 = get(0)
+    val b1 = get(1)
+    val b2 = get(2)
+    val b3 = get(3)
     return (
-            (get(0).toInt() and 0xFF shl 0x18) or
-            (get(1).toInt() and 0xFF shl 0x10) or
-            (get(2).toInt() and 0xFF shl 0x08) or
-            (get(3).toInt() and 0xFF shl 0x00)
+            (b0.toInt() and 0xFF shl 0x18) or
+            (b1.toInt() and 0xFF shl 0x10) or
+            (b2.toInt() and 0xFF shl 0x08) or
+            (b3.toInt() and 0xFF shl 0x00)
     )
 }
 
 internal inline fun slowLoadLong(get: (Int) -> Byte): Long {
+    val b0 = get(0)
+    val b1 = get(1)
+    val b2 = get(2)
+    val b3 = get(3)
+    val b4 = get(4)
+    val b5 = get(5)
+    val b6 = get(6)
+    val b7 = get(7)
     return (
-            (get(0).toLong() and 0xFF shl 0x38) or
-            (get(1).toLong() and 0xFF shl 0x30) or
-            (get(2).toLong() and 0xFF shl 0x28) or
-            (get(3).toLong() and 0xFF shl 0x20) or
-            (get(4).toLong() and 0xFF shl 0x18) or
-            (get(5).toLong() and 0xFF shl 0x10) or
-            (get(6).toLong() and 0xFF shl 0x08) or
-            (get(7).toLong() and 0xFF shl 0x00)
+            (b0.toLong() and 0xFF shl 0x38) or
+            (b1.toLong() and 0xFF shl 0x30) or
+            (b2.toLong() and 0xFF shl 0x28) or
+            (b3.toLong() and 0xFF shl 0x20) or
+            (b4.toLong() and 0xFF shl 0x18) or
+            (b5.toLong() and 0xFF shl 0x10) or
+            (b6.toLong() and 0xFF shl 0x08) or
+            (b7.toLong() and 0xFF shl 0x00)
     )
 }

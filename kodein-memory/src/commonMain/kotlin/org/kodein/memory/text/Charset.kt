@@ -2,7 +2,7 @@ package org.kodein.memory.text
 
 import org.kodein.memory.io.Readable
 import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.hasRemaining
+import org.kodein.memory.io.slowLoadShort
 
 
 abstract class Charset(val name: String) {
@@ -10,14 +10,16 @@ abstract class Charset(val name: String) {
     abstract fun sizeOf(char: Char): Int
     abstract fun encode(char: Char, dst: Writeable): Int
     abstract fun decode(src: Readable): Char
+    abstract fun tryDecode(src: Readable): Int
 
     object ASCII : Charset("ASCII") {
         override fun sizeOf(char: Char) = 1
         override fun encode(char: Char, dst: Writeable): Int {
-            dst.put(char.toByte())
+            dst.putByte(char.toByte())
             return 1
         }
-        override fun decode(src: Readable) = src.read().toChar()
+        override fun decode(src: Readable) = src.readByte().toChar()
+        override fun tryDecode(src: Readable): Int = src.receive()
 
         fun stringToBytes(src: String) = ByteArray(src.length) { src[it].toByte() }
         fun bytesToString(src: ByteArray) = String(CharArray(src.size) { src[it].toChar() })
@@ -30,6 +32,10 @@ abstract class Charset(val name: String) {
             return 2
         }
         override fun decode(src: Readable) = src.readShort().toChar()
+        override fun tryDecode(src: Readable): Int =
+            slowLoadShort {
+                src.receive().also { if (it < 0) return it }.toByte()
+            }.toInt()
     }
 
     object UTF8 : Charset("UTF-8") {
@@ -49,45 +55,51 @@ abstract class Charset(val name: String) {
 
             val code = char.toInt()
             if (code and 0x7F.inv() == 0) { // 1-byte sequence
-                dst.put(code.toByte())
+                dst.putByte(code.toByte())
                 return 1
             }
 
             val count = when {
                 code and 0x7FF.inv() == 0 -> { // 2-byte sequence
-                    dst.put((code shr 6 and 0x1F or 0xC0).toByte())
+                    dst.putByte((code shr 6 and 0x1F or 0xC0).toByte())
                     2
                 }
                 code and 0xFFFF.inv() == 0 -> { // 3-byte sequence
-                    dst.put((code shr 12 and 0x0F or 0xE0).toByte())
-                    dst.put((createByte(code, 6)).toByte())
+                    dst.putByte((code shr 12 and 0x0F or 0xE0).toByte())
+                    dst.putByte((createByte(code, 6)).toByte())
                     3
                 }
                 // TODO: Handle 4 bytes chars
                 else -> throw IllegalStateException("Unsupported character")
             }
-            dst.put((code and 0x3F or 0x80).toByte())
+            dst.putByte((code and 0x3F or 0x80).toByte())
             return count
         }
 
-        override fun decode(src: Readable): Char {
-            val c0 = src.read().toInt() and 0xFF
+        private inline fun decode(readByte: () -> Byte): Char {
+            val c0 = readByte().toInt() and 0xFF
             when (c0 shr 4) {
                 in 0..7 -> { // 0xxxxxxx
                     return c0.toChar()
                 }
                 in 12..13 -> { // 110x xxxx   10xx xxxx
-                    val c1 = src.read().toInt()
+                    val c1 = readByte().toInt()
                     return (c0 and 0x1F shl 6 or (c1 and 0x3F)).toChar()
                 }
                 14 -> { // 1110 xxxx  10xx xxxx  10xx xxxx
-                    val c1 = src.read().toInt()
-                    val c2 = src.read().toInt()
+                    val c1 = readByte().toInt()
+                    val c2 = readByte().toInt()
                     return (c0 and 0x0F shl 12 or (c1 and 0x3F shl 6) or (c2 and 0x3F)).toChar()
                 }
                 else -> throw IllegalStateException("Unsupported character")
             }
         }
+
+        override fun decode(src: Readable): Char =
+                decode { src.readByte() }
+
+        override fun tryDecode(src: Readable): Int =
+                decode { src.receive().also { if (it < 0) return it }.toByte() }.toInt()
     }
 
 }

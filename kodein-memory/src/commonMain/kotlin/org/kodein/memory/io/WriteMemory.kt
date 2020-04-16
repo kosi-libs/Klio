@@ -6,7 +6,8 @@ interface WriteMemory {
 
     fun duplicate(): WriteBuffer
 
-    operator fun set(index: Int, value: Byte)
+    operator fun set(index: Int, value: Byte) = setByte(index, value)
+    fun setByte(index: Int, value: Byte)
     fun setChar(index: Int, value: Char)
     fun setShort(index: Int, value: Short)
     fun setInt(index: Int, value: Int)
@@ -20,7 +21,7 @@ interface WriteMemory {
 }
 
 @ExperimentalUnsignedTypes
-fun WriteMemory.setUByte(index: Int, value: UByte) = set(index, value.toByte())
+fun WriteMemory.setUByte(index: Int, value: UByte) = setByte(index, value.toByte())
 @ExperimentalUnsignedTypes
 fun WriteMemory.setUShort(index: Int, value: UShort) = setShort(index, value.toShort())
 @ExperimentalUnsignedTypes

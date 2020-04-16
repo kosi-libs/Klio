@@ -10,7 +10,7 @@ fun Charset.sizeOf(str: CharSequence): Int =
 fun Writeable.putString(str: CharSequence, charset: Charset = Charset.UTF8): Int =
         str.fold(0) { count, char -> count + charset.encode(char, this) }
 
-fun Readable.readString(charset: Charset = Charset.UTF8, sizeBytes: Int = remaining, maxChars: Int = Int.MAX_VALUE): String {
+fun Readable.readString(charset: Charset = Charset.UTF8, sizeBytes: Int = available, maxChars: Int = Int.MAX_VALUE): String {
     var readSize = 0
     val array = CharArray(min(sizeBytes, maxChars))
     var pos = 0

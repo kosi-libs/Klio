@@ -2,7 +2,6 @@ package org.kodein.memory.text
 
 import org.kodein.memory.io.KBuffer
 import org.kodein.memory.io.array
-import org.kodein.memory.io.hasRemaining
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,7 +18,7 @@ class CharsetTests {
         val buffer = KBuffer.array(12)
         buffer.putString(name, Charset.ASCII)
 
-        assertFalse(buffer.hasRemaining())
+        assertFalse(buffer.valid())
 
         buffer.flip()
 
@@ -34,7 +33,7 @@ class CharsetTests {
         val buffer = KBuffer.array(palindrome.length * 2)
         buffer.putString(palindrome, Charset.UTF16)
 
-        assertFalse(buffer.hasRemaining())
+        assertFalse(buffer.valid())
 
         buffer.flip()
 
@@ -46,8 +45,8 @@ class CharsetTests {
     fun testUTF8() {
         val buffer = KBuffer.wrap(palindrome, Charset.UTF8)
 
-        assertTrue(palindrome.length < buffer.remaining)
-        assertTrue((palindrome.length * 2) > buffer.remaining)
+        assertTrue(palindrome.length < buffer.available)
+        assertTrue((palindrome.length * 2) > buffer.available)
 
         val read = buffer.readString(Charset.UTF8)
 

@@ -21,7 +21,7 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
         return true
     }
 
-    override fun unsafeSet(index: Int, value: Byte) {
+    override fun unsafeSetByte(index: Int, value: Byte) {
         pointer[index] = value
     }
 
@@ -53,7 +53,7 @@ class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractK
         memcpy(dst.refTo(dstOffset), (pointer + index)!!, length.convert())
     }
 
-    override fun unsafeGet(index: Int): Byte = pointer[index]
+    override fun unsafeGetByte(index: Int): Byte = pointer[index]
 
     override fun unsafeGetShort(index: Int): Short =
             if (unalignedAccessAllowed) {

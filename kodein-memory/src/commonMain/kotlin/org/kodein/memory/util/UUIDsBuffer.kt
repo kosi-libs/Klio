@@ -1,9 +1,6 @@
 package org.kodein.memory.util
 
-import org.kodein.memory.io.KBuffer
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.array
+import org.kodein.memory.io.*
 import kotlin.math.min
 
 fun Writeable.putUUID(uuid: UUID) {
@@ -18,39 +15,38 @@ fun Readable.readUUID(): UUID {
 }
 
 fun UUID.Companion.from14Bytes(src: Readable): UUID {
-    val remaining = src.remaining
-    val fullSrc = if (remaining < 14) KBuffer.array(14) { putBytes(src) ; skip(14 - remaining) } else src
-    val data = KBuffer.array(16) {
-        putBytes(fullSrc, 6)
-        put(0xC0.toByte())
-        putBytes(fullSrc, 1)
-        put(0x80.toByte())
-        putBytes(fullSrc, 7)
-    }
+    val array = ByteArray(16)
+    src.receive(array, 0, 6)
+    array[6] = 0xC0.toByte()
+    src.receive(array, 7, 1)
+    array[8] = 0x80.toByte()
+    src.receive(array, 9, 7)
+
+    val data = KBuffer.wrap(array)
     return UUID(data.readLong(), data.readLong())
 }
 
 fun UUID.write14Bytes(dst: Writeable, len: Int = 14) {
     require(len in 1..14) { "Bad length ($len)" }
-    var remaining = len
+    var available = len
 
     val buffer = KBuffer.array(16) {
         putLong(mostSignificantBits)
         putLong(leastSignificantBits)
     }
 
-    val count = min(remaining, 6)
+    val count = min(available, 6)
 
     dst.putBytes(buffer, count)
-    remaining -= count
-    if (remaining <= 0) return
+    available -= count
+    if (available <= 0) return
 
     buffer.skip(1)
 
     dst.putBytes(buffer, 1)
-    if (--remaining <= 0) return
+    if (--available <= 0) return
 
     buffer.skip(1)
 
-    dst.putBytes(buffer, min(remaining, 7))
+    dst.putBytes(buffer, min(available, 7))
 }

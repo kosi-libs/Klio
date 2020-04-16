@@ -3,16 +3,15 @@ package org.kodein.memory.io
 class VerificationWriteable(private val from: Readable): Writeable {
     class DiffException : Exception()
 
-    override val remaining: Int get() = from.remaining
+    override val available: Int get() = from.available
 
     private inline fun check(count: Int, assertion: () -> Boolean) {
-        if (remaining >= count && !assertion()) {
-            from.skip(from.remaining)
+        if (available >= count && !assertion()) {
             throw DiffException()
         }
     }
 
-    override fun put(value: Byte) = check(Byte.SIZE_BYTES) { from.read() == value }
+    override fun putByte(value: Byte) = check(Byte.SIZE_BYTES) { from.readByte() == value }
 
     override fun putChar(value: Char) = check(Char.SIZE_BYTES) { from.readChar() == value }
 
@@ -30,22 +29,22 @@ class VerificationWriteable(private val from: Readable): Writeable {
         require(src.size - srcOffset >= length) { "Failed: src.size - srcOffset >= length (${src.size} - $srcOffset >= $length)" }
         check(length) {
             src.forEach {
-                if (from.read() != it) return@check false
+                if (from.readByte() != it) return@check false
             }
             true
         }
     }
 
     override fun putBytes(src: Readable, length: Int) {
-        require(src.remaining >= length) { "Failed: src.remaining >= length (${src.remaining} >= $length)" }
         check(length) {
             repeat(length) {
-                if (from.read() != src.read()) return@check false
+                if (from.readByte() != src.readByte()) return@check false
             }
             true
         }
     }
 
+    override fun flush() {}
 }
 
 inline fun verify(from: Readable, block: Writeable.() -> Unit): Boolean {
