@@ -22,7 +22,7 @@ jobs:
         run: ./gradlew assemble
         shell: bash
       - name: Test
-        run: ./gradlew check
+        run: ./gradlew check -x :kodein-file:iosX64Test -x :kodein-file:tvosX64Test -x :kodein-file:watchosX86Test
         shell: bash
       - name: Upload snapshot to Bintray
         env:
