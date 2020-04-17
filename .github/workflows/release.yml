@@ -17,15 +17,15 @@ jobs:
         with:
           java-version: 11
       - name: Assemble
-        run: ./gradlew assemble
+        run: ./gradlew :kodein-memory:assemble
         shell: bash
       - name: Test
-        run: ./gradlew check
+        run: ./gradlew :kodein-memory:check
         shell: bash
       - name: Upload to Bintray
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
           BINTRAY_APIKEY: ${{ secrets.BINTRAY_APIKEY }}
           BINTRAY_USER_ORG: ${{ secrets.BINTRAY_USER_ORG }}
-        run: ./gradlew bintrayUpload
+        run: ./gradlew :kodein-memory:bintrayUpload
         shell: bash

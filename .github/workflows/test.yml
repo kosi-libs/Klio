@@ -23,8 +23,8 @@ jobs:
         with:
           java-version: 11
       - name: Assemble
-        run: ./gradlew assemble
+        run: ./gradlew :kodein-memory:assemble
         shell: bash
       - name: Test
-        run: ./gradlew check -x :kodein-file:iosX64Test -x :kodein-file:tvosX64Test -x :kodein-file:watchosX86Test
+        run: ./gradlew :kodein-memory:check
         shell: bash
