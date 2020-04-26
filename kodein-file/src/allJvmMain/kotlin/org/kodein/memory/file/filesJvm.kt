@@ -32,7 +32,7 @@ private interface FileTypeGetter {
     class Nio : FileTypeGetter {
         fun getType(of: Path, lOpts: Array<out LinkOption>): EntityType {
             return try {
-                val attrs = Files.readAttributes(java.nio.file.Path.of(of.path), BasicFileAttributes::class.java, *lOpts)
+                val attrs = Files.readAttributes(java.nio.file.Paths.get(of.path), BasicFileAttributes::class.java, *lOpts)
                 when {
                     attrs.isRegularFile -> EntityType.File.Regular
                     attrs.isDirectory -> EntityType.Directory

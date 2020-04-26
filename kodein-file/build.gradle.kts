@@ -1,5 +1,5 @@
 plugins {
-    id("org.kodein.library.mpp")
+    id("org.kodein.library.mpp-with-android")
 }
 
 kodein {
@@ -21,6 +21,12 @@ kodein {
         add(kodeinTargets.jvm.jvm) {
             target.setCompileClasspath()
 
+            test.dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-reflect")
+            }
+        }
+
+        add(kodeinTargets.jvm.android) {
             test.dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-reflect")
             }
