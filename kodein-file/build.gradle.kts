@@ -55,3 +55,8 @@ afterEvaluate {
         enabled = false
     }
 }
+
+kodeinUpload {
+    name = "Kodein-File"
+    description = "Kodein File Library"
+}
