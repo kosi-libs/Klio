@@ -19,12 +19,14 @@ class PathsTests {
 
         val root = FileSystem.roots[0]
         assertEquals(root, root.resolve("..", ".", "..").normalize())
+
+        assertEquals(Path("a", "b"), Path("a${Path.separator}${Path.separator}b").normalize())
     }
 
     @Test
     fun toAbsolute() {
-        val path = Path("something", "else")
-        assertEquals(FileSystem.currentDirectory.path + Path.separator + "something" + Path.separator + "else", path.toAbsolute().path)
+        assertEquals(FileSystem.currentDirectory.resolve("a", "b"), Path("a", "b").toAbsolute())
+        assertEquals(FileSystem.roots[0].resolve("a", "b"), FileSystem.roots[0].resolve("a", "b").toAbsolute())
     }
 
     @Test

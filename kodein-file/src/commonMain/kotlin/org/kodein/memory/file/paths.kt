@@ -47,6 +47,11 @@ fun Path.normalize(): Path {
                 removed = true
                 break
             }
+            if (i >= 1 && segments[i] == "") {
+                segments.removeAt(i)
+                removed = true
+                break
+            }
             if (i >= 1 && segments[i] == ".." && segments[i - 1] != "..") {
                 segments.removeAt(i)
                 if (i != 1 || !isAbsolute) segments.removeAt(i - 1)
