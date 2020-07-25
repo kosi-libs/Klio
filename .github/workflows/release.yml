@@ -1,11 +1,11 @@
-name: build and publish a release
+name: Build and deploy a release
 
 on:
   release:
     types: [published]
 
 jobs:
-  ubuntu-and-platform-independent-targets:
+  linux-platform-independent-targets:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,8 +20,8 @@ jobs:
           BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
           BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         with:
-          arguments: publish
-  macos-and-windows:
+          arguments: publish --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes
+  windows-macos:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,4 +39,4 @@ jobs:
           BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
           BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         with:
-          arguments: hostOnlyPublish
+          arguments: publish --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes

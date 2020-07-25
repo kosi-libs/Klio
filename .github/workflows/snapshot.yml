@@ -1,34 +1,27 @@
-name: build and publish a snapshot
+name: Build and deploy a snapshot
 
 on:
   push:
     branches:
       - master
       - 'snapshot/[0-9]+.[0-9]+'
-    paths-ignore:
-      - '**.md'
-      - '**.adoc'
-      - '**/.gitignore'
-      - './github/**'
-      - '!./github/workflow/snapshot.yml'
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
+  linux-windows:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Assemble
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: assemble
       - name: Check
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: check
+          arguments: hostOnlyTest --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes
       - name: Publish
         uses: eskatos/gradle-command-action@v1
         env:
@@ -36,32 +29,8 @@ jobs:
           BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
           BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         with:
-          arguments: publish -PsnapshotNumber=${{ github.run_number }}
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Assemble
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: assemble
-      - name: Check
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: hostOnlyTest
-      - name: Publish
-        uses: eskatos/gradle-command-action@v1
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
-          BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
-        with:
-          arguments: hostOnlyPublish -PsnapshotNumber=${{ github.run_number }}
-  macos:
+          arguments: hostOnlyPublish -PsnapshotNumber=${{ github.run_number }} --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes
+  macos-platform-independent-targets:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v2
@@ -69,14 +38,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Assemble
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: assemble
       - name: Check
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: hostOnlyTest
+          arguments: check --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes
       - name: Android Instrumentation Test
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -89,4 +54,4 @@ jobs:
           BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
           BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         with:
-          arguments: hostOnlyPublish -PsnapshotNumber=${{ github.run_number }}
+          arguments: publish -PsnapshotNumber=${{ github.run_number }} --no-daemon --scan -PbuildScan.termsOfServiceAgree=yes

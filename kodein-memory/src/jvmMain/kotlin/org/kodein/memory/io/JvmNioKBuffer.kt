@@ -1,5 +1,6 @@
 package org.kodein.memory.io
 
+import java.nio.Buffer
 import java.nio.ByteBuffer
 
 class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.capacity()) {
@@ -23,8 +24,10 @@ class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.cap
         }
     }
 
-    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp<R>(ByteBuffer::limit, { limit(it) }, newLimit, block)
-    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp<R>(ByteBuffer::position, { position(it) }, newPosition, block)
+    private fun ByteBuffer.asJ8Buffer(): Buffer = this
+
+    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp<R>(ByteBuffer::limit, { asJ8Buffer().limit(it) }, newLimit, block)
+    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp<R>(ByteBuffer::position, { asJ8Buffer().position(it) }, newPosition, block)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         byteBuffer.position(index) {
