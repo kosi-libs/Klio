@@ -26,7 +26,7 @@ public actual fun Path.getType(): EntityType {
     }
 }
 
-public actual fun Path.getLType() = getType()
+public actual fun Path.getLType(): EntityType = getType()
 
 public actual fun Path.createDir() {
     CreateDirectoryW(path, null)

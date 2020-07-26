@@ -6,7 +6,7 @@ import platform.posix.*
 import platform.windows.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-fun getLastErrorMessage(): String? {
+public fun getLastErrorMessage(): String? {
     memScoped {
         val lpstr = alloc<LPWSTRVar>()
         val ret = FormatMessageW(
@@ -30,7 +30,7 @@ fun getLastErrorMessage(): String? {
     }
 }
 
-fun IOException.Companion.fromLastError(type: String) = IOException(getLastErrorMessage() ?: "Unknown $type error")
+public fun IOException.Companion.fromLastError(type: String): IOException = IOException(getLastErrorMessage() ?: "Unknown $type error")
 
 @OptIn(ExperimentalUnsignedTypes::class)
 public actual object FileSystem {
