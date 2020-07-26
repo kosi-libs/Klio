@@ -13,13 +13,18 @@ on:
       - './github/**'
       - '!./github/workflow/snapshot.yml'
 
+env:
+  BINTRAY_USER: ${{ secrets.bintray_user }}
+  BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
+  BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
+
 jobs:
 
   build-upload:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [macOS-latest, windows-latest]
     steps:
       - name: Check out
         uses: actions/checkout@v2
@@ -42,24 +47,23 @@ jobs:
       - name: Check
         run: ./gradlew hostOnlyTest
         shell: bash
+      - name: Android Instrumentation Test
+        if: matrix.os == 'macOS-latest'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          script: ./gradlew connectedCheck
       - name: Upload
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
-          BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         run: ./gradlew hostOnlyPublish -PsnapshotNumber=${{ github.run_number }} -PgitRef=${{ github.ref }}
         shell: bash
       - name: Discard
         if: ${{ failure() || cancelled() }}
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
         run: ./gradlew postBintrayDiscard -PsnapshotNumber=${{ github.run_number }} -PgitRef=${{ github.ref }}
         shell: bash
 
   build-upload-publish:
     needs: build-upload
-    runs-on: macOS-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v2
@@ -82,28 +86,13 @@ jobs:
       - name: Check
         run: ./gradlew check
         shell: bash
-      - name: Android Instrumentation Test
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          script: ./gradlew connectedCheck
       - name: Upload
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
-          BINTRAY_USER_ORG: ${{ secrets.bintray_user_org }}
         run: ./gradlew publish -PsnapshotNumber=${{ github.run_number }} -PgitRef=${{ github.ref }}
         shell: bash
       - name: Discard
         if: ${{ failure() || cancelled() }}
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
         run: ./gradlew postBintrayDiscard -PsnapshotNumber=${{ github.run_number }} -PgitRef=${{ github.ref }}
         shell: bash
       - name: Publish
-        env:
-          BINTRAY_USER: ${{ secrets.bintray_user }}
-          BINTRAY_APIKEY: ${{ secrets.bintray_apikey }}
         run: ./gradlew postBintrayPublish -PsnapshotNumber=${{ github.run_number }} -PgitRef=${{ github.ref }}
         shell: bash
