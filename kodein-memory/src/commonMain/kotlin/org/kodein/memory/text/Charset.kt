@@ -5,40 +5,40 @@ import org.kodein.memory.io.Writeable
 import org.kodein.memory.io.slowLoadShort
 
 
-abstract class Charset(val name: String) {
+public abstract class Charset(public val name: String) {
 
-    abstract fun sizeOf(char: Char): Int
-    abstract fun encode(char: Char, dst: Writeable): Int
-    abstract fun decode(src: Readable): Char
-    abstract fun tryDecode(src: Readable): Int
+    public abstract fun sizeOf(char: Char): Int
+    public abstract fun encode(char: Char, dst: Writeable): Int
+    public abstract fun decode(src: Readable): Char
+    public abstract fun tryDecode(src: Readable): Int
 
-    object ASCII : Charset("ASCII") {
-        override fun sizeOf(char: Char) = 1
+    public object ASCII : Charset("ASCII") {
+        override fun sizeOf(char: Char): Int = 1
         override fun encode(char: Char, dst: Writeable): Int {
             dst.putByte(char.toByte())
             return 1
         }
-        override fun decode(src: Readable) = src.readByte().toChar()
+        override fun decode(src: Readable): Char = src.readByte().toChar()
         override fun tryDecode(src: Readable): Int = src.receive()
 
-        fun stringToBytes(src: String) = ByteArray(src.length) { src[it].toByte() }
-        fun bytesToString(src: ByteArray) = String(CharArray(src.size) { src[it].toChar() })
+        public fun stringToBytes(src: String): ByteArray = ByteArray(src.length) { src[it].toByte() }
+        public fun bytesToString(src: ByteArray): String = CharArray(src.size) { src[it].toChar() }.concatToString()
     }
 
-    object UTF16 : Charset("UTF-16") {
-        override fun sizeOf(char: Char) = 2
+    public object UTF16 : Charset("UTF-16") {
+        override fun sizeOf(char: Char): Int = 2
         override fun encode(char: Char, dst: Writeable): Int {
             dst.putShort(char.toShort())
             return 2
         }
-        override fun decode(src: Readable) = src.readShort().toChar()
+        override fun decode(src: Readable): Char = src.readShort().toChar()
         override fun tryDecode(src: Readable): Int =
             slowLoadShort {
                 src.receive().also { if (it < 0) return it }.toByte()
             }.toInt()
     }
 
-    object UTF8 : Charset("UTF-8") {
+    public object UTF8 : Charset("UTF-8") {
 
         override fun sizeOf(char: Char): Int {
             val code = char.toInt()

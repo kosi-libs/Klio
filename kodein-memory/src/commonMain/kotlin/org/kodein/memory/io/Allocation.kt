@@ -2,10 +2,10 @@ package org.kodein.memory.io
 
 import org.kodein.memory.Closeable
 
-interface ReadAllocation : ReadBuffer, Closeable
+public interface ReadAllocation : ReadBuffer, Closeable
 
-interface Allocation : KBuffer, ReadAllocation, Closeable {
-    companion object Allocations
+public interface Allocation : KBuffer, ReadAllocation, Closeable {
+    public companion object Allocations
 }
 
 internal abstract class AbstractReadAllocation<B: ReadBuffer>(protected val buffer: B): ReadAllocation {
@@ -118,15 +118,15 @@ internal class ManagedReadAllocation(buffer: ReadBuffer) : AbstractReadAllocatio
     override fun closeOnce() {}
 }
 
-expect fun Allocation.Allocations.native(capacity: Int): Allocation
+public expect fun Allocation.Allocations.native(capacity: Int): Allocation
 
-fun Allocation.Allocations.nativeCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset) = native(length).apply { setBytes(0, src, srcOffset, length) }
+public fun Allocation.Allocations.nativeCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset): Allocation = native(length).apply { setBytes(0, src, srcOffset, length) }
 
-fun KBuffer.asManagedAllocation(): Allocation = ManagedAllocation(this)
+public fun KBuffer.asManagedAllocation(): Allocation = ManagedAllocation(this)
 
-fun ReadBuffer.asManagedReadAllocation(): ReadAllocation = ManagedReadAllocation(this)
+public fun ReadBuffer.asManagedReadAllocation(): ReadAllocation = ManagedReadAllocation(this)
 
-inline fun Allocation.Allocations.native(capacity: Int, block: KBuffer.() -> Unit): Allocation {
+public inline fun Allocation.Allocations.native(capacity: Int, block: KBuffer.() -> Unit): Allocation {
     val alloc = Allocation.native(capacity)
     alloc.block()
     alloc.flip()

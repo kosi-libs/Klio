@@ -1,3 +1,3 @@
 package org.kodein.memory.util
 
-expect fun currentTimestampMillis(): Long
+public expect fun currentTimestampMillis(): Long

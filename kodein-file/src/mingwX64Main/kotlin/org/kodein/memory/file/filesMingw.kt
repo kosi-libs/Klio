@@ -9,7 +9,7 @@ import platform.windows.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
-actual fun Path.getType(): EntityType {
+public actual fun Path.getType(): EntityType {
 
     if (PathFileExistsW(path) == 0) return EntityType.Non.Existent
 
@@ -26,13 +26,13 @@ actual fun Path.getType(): EntityType {
     }
 }
 
-actual fun Path.getLType() = getType()
+public actual fun Path.getLType() = getType()
 
-actual fun Path.createDir() {
+public actual fun Path.createDir() {
     CreateDirectoryW(path, null)
 }
 
-actual fun Path.listDir(): List<Path> {
+public actual fun Path.listDir(): List<Path> {
     memScoped {
         val ffd = alloc<WIN32_FIND_DATAW>()
         val handle = FindFirstFileW(if (path.endsWith('\\')) "$path*" else "$path\\*", ffd.ptr)
@@ -51,7 +51,7 @@ actual fun Path.listDir(): List<Path> {
     }
 }
 
-actual fun Path.delete() {
+public actual fun Path.delete() {
     val ret = when (getType()) {
         is EntityType.Directory -> RemoveDirectoryW(path)
         is EntityType.File -> DeleteFileW(path)
@@ -174,7 +174,7 @@ private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
 
 }
 
-actual fun Path.openReadableFile(): ReadableFile {
+public actual fun Path.openReadableFile(): ReadableFile {
     val handle = CreateFileW(
             path,
             GENERIC_READ,
@@ -265,7 +265,7 @@ private class WinWriteableFile(private val handle: HANDLE?) : WriteableFile {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-actual fun Path.openWriteableFile(append: Boolean): WriteableFile {
+public actual fun Path.openWriteableFile(append: Boolean): WriteableFile {
     val handle = CreateFileW(
             path,
             GENERIC_WRITE,

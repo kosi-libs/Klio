@@ -1,34 +1,34 @@
 package org.kodein.memory.io
 
-interface ReadBuffer : Readable, ReadMemory {
+public interface ReadBuffer : Readable, ReadMemory {
 
-    var position: Int
+    public var position: Int
 
     override fun internalBuffer(): ReadBuffer
 }
 
 
-fun ReadBuffer.getHere(offset: Int = 0) = getByte(position + offset)
-fun ReadBuffer.getCharHere(offset: Int = 0) = getChar(position + offset)
-fun ReadBuffer.getShortHere(offset: Int = 0) = getShort(position + offset)
-fun ReadBuffer.getIntHere(offset: Int = 0) = getInt(position + offset)
-fun ReadBuffer.getLongHere(offset: Int = 0) = getLong(position + offset)
-fun ReadBuffer.getFloatHere(offset: Int = 0) = getFloat(position + offset)
-fun ReadBuffer.getDoubleHere(offset: Int = 0) = getDouble(position + offset)
-fun ReadBuffer.getBytesHere(offset: Int = 0) = getBytes(position + offset)
+public fun ReadBuffer.getHere(offset: Int = 0): Byte = getByte(position + offset)
+public fun ReadBuffer.getCharHere(offset: Int = 0): Char = getChar(position + offset)
+public fun ReadBuffer.getShortHere(offset: Int = 0): Short = getShort(position + offset)
+public fun ReadBuffer.getIntHere(offset: Int = 0): Int = getInt(position + offset)
+public fun ReadBuffer.getLongHere(offset: Int = 0): Long = getLong(position + offset)
+public fun ReadBuffer.getFloatHere(offset: Int = 0): Float = getFloat(position + offset)
+public fun ReadBuffer.getDoubleHere(offset: Int = 0): Double = getDouble(position + offset)
+public fun ReadBuffer.getBytesHere(offset: Int = 0): ByteArray = getBytes(position + offset)
 
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUByteHere(offset: Int = 0) = getByte(position + offset).toUByte()
+public fun ReadBuffer.getUByteHere(offset: Int = 0): UByte = getByte(position + offset).toUByte()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUShortHere(offset: Int = 0) = getShort(position + offset).toUShort()
+public fun ReadBuffer.getUShortHere(offset: Int = 0): UShort = getShort(position + offset).toUShort()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUIntHere(offset: Int = 0) = getInt(position + offset).toUInt()
+public fun ReadBuffer.getUIntHere(offset: Int = 0): UInt = getInt(position + offset).toUInt()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getULongHere(offset: Int = 0) = getLong(position + offset).toULong()
+public fun ReadBuffer.getULongHere(offset: Int = 0): ULong = getLong(position + offset).toULong()
 @ExperimentalUnsignedTypes
-fun ReadBuffer.getUBytesHere(offset: Int = 0) = getBytes(position + offset).asUByteArray()
+public fun ReadBuffer.getUBytesHere(offset: Int = 0): UByteArray = getBytes(position + offset).asUByteArray()
 
-inline fun <R> ReadBuffer.mark(block: () -> R): R {
+public inline fun <R> ReadBuffer.mark(block: () -> R): R {
     val mark = position
     try {
         return block()
@@ -37,7 +37,7 @@ inline fun <R> ReadBuffer.mark(block: () -> R): R {
     }
 }
 
-inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
+public inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     val marks = IntArray(buffers.size) { index -> buffers[index].position }
     try {
         return block()
@@ -46,4 +46,4 @@ inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     }
 }
 
-inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, available, block)
+public inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, available, block)

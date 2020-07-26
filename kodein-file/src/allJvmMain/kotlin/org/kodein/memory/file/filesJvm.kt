@@ -9,18 +9,18 @@ import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.attribute.BasicFileAttributes
 
-class JVMReadableFile(inputStream: FileInputStream): ReadableFile,
+public class JVMReadableFile(inputStream: FileInputStream): ReadableFile,
         Readable by inputStream.asReadable(),
         Closeable by inputStream
 
-actual fun Path.openReadableFile(): ReadableFile =
+public actual fun Path.openReadableFile(): ReadableFile =
         JVMReadableFile(FileInputStream(File(path)))
 
-class JVMWriteableFile(outputStream: FileOutputStream): WriteableFile,
+public class JVMWriteableFile(outputStream: FileOutputStream): WriteableFile,
         Writeable by outputStream.asWriteable(),
         Closeable by outputStream
 
-actual fun Path.openWriteableFile(append: Boolean): WriteableFile =
+public actual fun Path.openWriteableFile(append: Boolean): WriteableFile =
         JVMWriteableFile(FileOutputStream(File(path), append))
 
 
@@ -78,16 +78,16 @@ private interface FileTypeGetter {
     }
 }
 
-actual fun Path.getType() = FileTypeGetter.instance.getType(this)
+public actual fun Path.getType(): EntityType = FileTypeGetter.instance.getType(this)
 
-actual fun Path.getLType() = FileTypeGetter.instance.getLType(this)
+public actual fun Path.getLType(): EntityType = FileTypeGetter.instance.getLType(this)
 
-actual fun Path.listDir(): List<Path> = File(path).list()?.map { resolve(it) } ?: throw FileNotFoundException(path)
+public actual fun Path.listDir(): List<Path> = File(path).list()?.map { resolve(it) } ?: throw FileNotFoundException(path)
 
-actual fun Path.createDir() {
+public actual fun Path.createDir() {
     File(path).mkdir()
 }
 
-actual fun Path.delete() {
+public actual fun Path.delete() {
     if (!File(path).delete()) throw IOException("Error deleting $path")
 }

@@ -1,5 +1,5 @@
 package org.kodein.memory
 
-actual interface Closeable {
-    actual fun close()
+public actual interface Closeable {
+    public actual fun close()
 }

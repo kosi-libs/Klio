@@ -4,10 +4,10 @@ import kotlinx.cinterop.*
 import org.kodein.memory.io.IOException
 import platform.posix.*
 
-actual object FileSystem {
+public actual object FileSystem {
     internal actual val pathSeparator: String = "/"
 
-    actual val tempDirectory: Path by lazy {
+    public actual val tempDirectory: Path by lazy {
         var path: String? = null
 
         for (v in listOf("TMPDIR", "TMP", "TEMP", "TEMPDIR")) {
@@ -18,7 +18,7 @@ actual object FileSystem {
         Path(path ?: "/tmp")
     }
 
-    actual var currentDirectory: Path
+    public actual var currentDirectory: Path
         get() {
             memScoped {
                 val ptr = allocArray<ByteVar>(4096)
@@ -29,5 +29,5 @@ actual object FileSystem {
             chdir(value.path)
         }
 
-    actual val roots: List<Path> = listOf(Path("/"))
+    public actual val roots: List<Path> = listOf(Path("/"))
 }

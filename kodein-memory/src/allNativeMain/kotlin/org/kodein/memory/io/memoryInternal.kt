@@ -10,17 +10,17 @@ internal const val platformBigEndian: Boolean = (PLATFORM_BIG_ENDIAN == 1)
 
 internal const val unalignedAccessAllowed: Boolean = (UNALIGNED_ACCESS_ALLOWED == 1)
 
-inline fun Short.toBigEndian(): Short = when {
+public inline fun Short.toBigEndian(): Short = when {
     platformBigEndian -> this
     else -> swap(this)
 }
 
-inline fun Int.toBigEndian(): Int = when {
+public inline fun Int.toBigEndian(): Int = when {
     platformBigEndian -> this
     else -> swap(this)
 }
 
-inline fun Long.toBigEndian(): Long = when {
+public inline fun Long.toBigEndian(): Long = when {
     platformBigEndian -> this
     else -> swap(this)
 }

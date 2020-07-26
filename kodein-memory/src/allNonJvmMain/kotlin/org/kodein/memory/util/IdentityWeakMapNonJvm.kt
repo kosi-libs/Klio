@@ -1,6 +1,6 @@
 package org.kodein.memory.util
 
-actual fun <K : Any, V : Any> WeakIdentityMap<K, V>.getOrSet(key: K, creator: () -> V): V {
+public actual fun <K : Any, V : Any> WeakIdentityMap<K, V>.getOrSet(key: K, creator: () -> V): V {
     val res = get(key)
     if (res != null)
         return res

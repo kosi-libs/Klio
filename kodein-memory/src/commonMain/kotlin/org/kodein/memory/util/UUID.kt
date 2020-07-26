@@ -8,25 +8,25 @@ import org.kodein.memory.text.Charset
 import org.kodein.memory.text.readString
 import kotlin.random.Random
 
-class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comparable<UUID> {
+public class UUID(public val mostSignificantBits: Long, public val leastSignificantBits: Long) : Comparable<UUID> {
 
-    fun version(): Int =
+    public fun version(): Int =
             (mostSignificantBits shr 12 and 0xFL).toInt()
 
-    fun variant(): Int =
+    public fun variant(): Int =
             (leastSignificantBits.ushr((64L - leastSignificantBits.ushr(62)).toInt()) and (leastSignificantBits shr 63)).toInt()
 
-    fun gregorianTimestamp(): Long =
+    public fun gregorianTimestamp(): Long =
             if (version() != 1) throw UnsupportedOperationException("Not a time-based UUID")
             else ((mostSignificantBits and 0xFFFL) shl 48) or (((mostSignificantBits shr 16) and 0xFFFFL) shl 32) or mostSignificantBits.ushr(32)
 
-    fun unixTimestap(): Long = timestampGregorianToUnix(gregorianTimestamp())
+    public fun unixTimestamp(): Long = timestampGregorianToUnix(gregorianTimestamp())
 
-    fun clockSequence(): Int =
+    public fun clockSequence(): Int =
             if (version() != 1) throw UnsupportedOperationException("Not a time-based UUID")
             else ((leastSignificantBits and 0x3FFF000000000000L).ushr(48)).toInt()
 
-    fun node(): Long =
+    public fun node(): Long =
             if (version() != 1) throw UnsupportedOperationException("Not a time-based UUID")
             else leastSignificantBits and 0xFFFFFFFFFFFFL
 
@@ -70,7 +70,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
         return true
     }
 
-    companion object {
+    public companion object {
         private val digits = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z')
         private const val MIN_CLOCK_SEQ_AND_NODE = -0x7F7F7F7F7F7F7F80L
         private const val MAX_CLOCK_SEQ_AND_NODE =  0x7F7F7F7F7F7F7F7FL
@@ -91,7 +91,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             } while (charPos > offset)
         }
 
-        fun randomUUID(): UUID {
+        public fun randomUUID(): UUID {
             val data = KBuffer.array(16) { Random.nextBytes(this) }
             data[6] = (data[6].toInt() and 0x0F).toByte()
             data[6] = (data[6].toInt() or 0x40).toByte()
@@ -100,7 +100,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             return UUID(data.readLong(), data.readLong())
         }
 
-        fun fromString(name: String): UUID {
+        public fun fromString(name: String): UUID {
             val len = name.length
             require(len <= 36) { "UUID string too large" }
             val dash1 = name.indexOf(45.toChar(), 0)
@@ -140,12 +140,12 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             return (gregorianTimestampNano / 10000) + START_EPOCH
         }
 
-        fun startOf(unixTimestampMillis: Long): UUID {
+        public fun startOf(unixTimestampMillis: Long): UUID {
             val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis)
             return UUID(makeMsb(gregorianTimestamp), MIN_CLOCK_SEQ_AND_NODE)
         }
 
-        fun endOf(unixTimestampMillis: Long): UUID {
+        public fun endOf(unixTimestampMillis: Long): UUID {
             val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis + 1) - 1
             return UUID(makeMsb(gregorianTimestamp), MAX_CLOCK_SEQ_AND_NODE)
         }
@@ -158,7 +158,7 @@ class UUID(val mostSignificantBits: Long, val leastSignificantBits: Long) : Comp
             return lsb
         }
 
-        fun timeUUID(unixTimestampMillis: Long = currentTimestampMillis(), clockSequence: Int = -1, node: Long = -1L): UUID {
+        public fun timeUUID(unixTimestampMillis: Long = currentTimestampMillis(), clockSequence: Int = -1, node: Long = -1L): UUID {
             require(unixTimestampMillis in MIN_UNIX_TIMESTAMP..MAX_UNIX_TIMESTAMP) { "Bad timestamp (must be in $MIN_UNIX_TIMESTAMP..$MAX_UNIX_TIMESTAMP)" }
             val realClockSeq = if (clockSequence == -1) Random.nextLong(0x4000L) else clockSequence.toLong()
             require(realClockSeq in 0L..0x3FFFL) { "Bad clock sequence (must be in 0..0x3FFF)" }

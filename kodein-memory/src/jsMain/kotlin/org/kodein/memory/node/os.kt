@@ -2,6 +2,6 @@ package org.kodein.memory.node
 
 @JsModule("fs")
 @JsNonModule
-external object NodeOs {
-    fun tmpdir(): String
+public external object NodeOs {
+    public fun tmpdir(): String
 }

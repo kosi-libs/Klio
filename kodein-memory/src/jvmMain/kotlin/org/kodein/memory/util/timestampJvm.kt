@@ -1,3 +1,3 @@
 package org.kodein.memory.util
 
-actual fun currentTimestampMillis(): Long = System.currentTimeMillis()
+public actual fun currentTimestampMillis(): Long = System.currentTimeMillis()

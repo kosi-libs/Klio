@@ -2,46 +2,46 @@ package org.kodein.memory.io
 
 import org.kodein.memory.text.Charset
 
-interface Readable {
+public interface Readable {
 
-    val available: Int
-    fun valid(): Boolean
+    public val available: Int
+    public fun valid(): Boolean
 
-    fun receive(): Int
-    fun receive(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size): Int
+    public fun receive(): Int
+    public fun receive(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size): Int
 
-    fun readByte(): Byte
-    fun readChar(): Char
-    fun readShort(): Short
-    fun readInt(): Int
-    fun readLong(): Long
-    fun readFloat(): Float
-    fun readDouble(): Double
-    fun readBytes(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset)
+    public fun readByte(): Byte
+    public fun readChar(): Char
+    public fun readShort(): Short
+    public fun readInt(): Int
+    public fun readLong(): Long
+    public fun readFloat(): Float
+    public fun readDouble(): Double
+    public fun readBytes(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset)
 
-    fun skip(count: Int): Int
+    public fun skip(count: Int): Int
 
-    fun internalBuffer(): Readable
+    public fun internalBuffer(): Readable
 }
 
-fun Readable.readBytes(length: Int = available): ByteArray {
+public fun Readable.readBytes(length: Int = available): ByteArray {
     val array = ByteArray(length)
     readBytes(array)
     return array
 }
 
 @ExperimentalUnsignedTypes
-fun Readable.readUByte() = readByte().toUByte()
+public fun Readable.readUByte(): UByte = readByte().toUByte()
 @ExperimentalUnsignedTypes
-fun Readable.readUShort() = readShort().toUShort()
+public fun Readable.readUShort(): UShort = readShort().toUShort()
 @ExperimentalUnsignedTypes
-fun Readable.readUInt() = readInt().toUInt()
+public fun Readable.readUInt(): UInt = readInt().toUInt()
 @ExperimentalUnsignedTypes
-fun Readable.readULong() = readLong().toULong()
+public fun Readable.readULong(): ULong = readLong().toULong()
 @ExperimentalUnsignedTypes
-fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = dst.size - offset) = readBytes(dst.asByteArray(), offset, length)
+public fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = dst.size - offset): Unit = readBytes(dst.asByteArray(), offset, length)
 
-fun Readable.readLine(charset: Charset = Charset.UTF8): String? = buildString {
+public fun Readable.readLine(charset: Charset = Charset.UTF8): String? = buildString {
     var count = 0
     while (true) {
         val next = charset.tryDecode(this@readLine)

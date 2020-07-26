@@ -2,15 +2,15 @@ package org.kodein.memory
 
 import org.kodein.memory.util.addShadowed
 
-expect interface Closeable {
-    fun close()
+public expect interface Closeable {
+    public fun close()
 }
 
-fun Closeable(onClose: () -> Unit) = object : Closeable {
+public fun Closeable(onClose: () -> Unit): Closeable = object : Closeable {
     override fun close() = onClose()
 }
 
-inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
+public inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     var closed = false
 
     return try {
@@ -31,7 +31,7 @@ inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
     }
 }
 
-inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
+public inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
     return try {
         block(this)
     } catch (first: Throwable) {
@@ -46,7 +46,7 @@ inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
 }
 
 
-fun Iterable<Closeable>.closeAll() {
+public fun Iterable<Closeable>.closeAll() {
     var exception: Throwable? = null
     forEach {
         try {
@@ -60,7 +60,7 @@ fun Iterable<Closeable>.closeAll() {
         throw exception!!
 }
 
-inline fun <R> Iterable<Closeable>.useAll(block: (Iterable<Closeable>) -> R): R =
+public inline fun <R> Iterable<Closeable>.useAll(block: (Iterable<Closeable>) -> R): R =
     try {
         block(this)
     } finally {

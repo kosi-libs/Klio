@@ -2,7 +2,7 @@ package org.kodein.memory.io
 
 import kotlin.math.min
 
-abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
+public abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     final override var offset: Int = 0
         private set
@@ -53,7 +53,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         it.limit = limit
     }
 
-    final override fun slice() = createDuplicate().also {
+    final override fun slice(): AbstractKBuffer = createDuplicate().also {
         it.offset = offset + position
         it.position = 0
         it.limit = available
@@ -82,7 +82,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         position += 1
     }
 
-    final override fun putChar(value: Char) = putShort(value.toShort())
+    final override fun putChar(value: Char): Unit = putShort(value.toShort())
 
     final override fun putShort(value: Short) {
         checkHasAvailable(Short.SIZE_BYTES)
@@ -102,9 +102,9 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         position += 8
     }
 
-    final override fun putFloat(value: Float) = putInt(value.toRawBits())
+    final override fun putFloat(value: Float): Unit = putInt(value.toRawBits())
 
-    final override fun putDouble(value: Double) = putLong(value.toRawBits())
+    final override fun putDouble(value: Double): Unit = putLong(value.toRawBits())
 
     final override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
         require(srcOffset >= 0) { "$srcOffset < 0" }
@@ -155,7 +155,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     protected abstract fun unsafeSetByte(index: Int, value: Byte)
 
-    final override fun setChar(index: Int, value: Char) = setShort(index, value.toShort())
+    final override fun setChar(index: Int, value: Char): Unit = setShort(index, value.toShort())
 
     final override fun setShort(index: Int, value: Short) {
         checkIndex(index, Short.SIZE_BYTES)
@@ -178,9 +178,9 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
 
     protected abstract fun unsafeSetLong(index: Int, value: Long)
 
-    final override fun setFloat(index: Int, value: Float) = setInt(index, value.toRawBits())
+    final override fun setFloat(index: Int, value: Float): Unit = setInt(index, value.toRawBits())
 
-    final override fun setDouble(index: Int, value: Double) = setLong(index, value.toRawBits())
+    final override fun setDouble(index: Int, value: Double): Unit = setLong(index, value.toRawBits())
 
     final override fun setBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         require(srcOffset >= 0) { "$srcOffset < 0" }
@@ -245,7 +245,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         return ret
     }
 
-    final override fun readChar() = readShort().toChar()
+    final override fun readChar(): Char = readShort().toChar()
 
     final override fun readShort(): Short {
         checkHasAvailable(Short.SIZE_BYTES)
@@ -334,7 +334,7 @@ abstract class AbstractKBuffer(final override val capacity: Int) : KBuffer {
         return skipped
     }
 
-    override fun internalBuffer() = this
+    override fun internalBuffer(): AbstractKBuffer = this
 
     private fun slowEquals(other: KBuffer): Boolean {
         var otherP = other.limit - 1

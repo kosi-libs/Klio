@@ -1,11 +1,11 @@
 package org.kodein.memory.util
 
 
-expect fun Throwable.addShadowed(other: Throwable)
+public expect fun Throwable.addShadowed(other: Throwable)
 
-expect fun Throwable.getShadowed(): List<Throwable>
+public expect fun Throwable.getShadowed(): List<Throwable>
 
-inline fun <T> Iterable<T>.forEachCatchTo(catchTo: MaybeThrowable, action: (T) -> Unit) {
+public inline fun <T> Iterable<T>.forEachCatchTo(catchTo: MaybeThrowable, action: (T) -> Unit) {
     for (element in this) {
         try {
             action(element)
@@ -15,20 +15,20 @@ inline fun <T> Iterable<T>.forEachCatchTo(catchTo: MaybeThrowable, action: (T) -
     }
 }
 
-inline fun <T> Iterable<T>.forEachCatch(action: (T) -> Unit) = MaybeThrowable().also { forEachCatchTo(it, action) }.throwable
+public inline fun <T> Iterable<T>.forEachCatch(action: (T) -> Unit): Throwable? = MaybeThrowable().also { forEachCatchTo(it, action) }.throwable
 
-inline fun <T> Iterable<T>.forEachResilient(action: (T) -> Unit) = MaybeThrowable().also { forEachCatchTo(it, action) }.shoot()
+public inline fun <T> Iterable<T>.forEachResilient(action: (T) -> Unit): Unit = MaybeThrowable().also { forEachCatchTo(it, action) }.shoot()
 
-class MaybeThrowable {
-    var throwable: Throwable? = null
+public class MaybeThrowable {
+    public var throwable: Throwable? = null
     private set
 
-    fun add(ex: Throwable?) {
+    public fun add(ex: Throwable?) {
         if (ex == null)
             return
 
         throwable?.addShadowed(ex) ?: run { throwable = ex }
     }
 
-    fun shoot() { throwable?.let { throw it } }
+    public fun shoot() { throwable?.let { throw it } }
 }

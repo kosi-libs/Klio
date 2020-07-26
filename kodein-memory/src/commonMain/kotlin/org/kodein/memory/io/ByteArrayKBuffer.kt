@@ -1,10 +1,10 @@
 package org.kodein.memory.io
 
-class ByteArrayKBuffer constructor(val array: ByteArray) : AbstractKBuffer(array.size) {
+public class ByteArrayKBuffer constructor(public val array: ByteArray) : AbstractKBuffer(array.size) {
 
     override val implementation: String get() = "ByteArrayKBuffer"
 
-    override fun createDuplicate() = ByteArrayKBuffer(array)
+    override fun createDuplicate(): ByteArrayKBuffer = ByteArrayKBuffer(array)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         src.copyInto(array, destinationOffset = index, startIndex = srcOffset, endIndex = srcOffset + length)

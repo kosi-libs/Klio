@@ -1,20 +1,20 @@
 package org.kodein.memory.file
 
 
-inline class Path(val path: String) {
+public inline class Path(public val path: String) {
 
-    constructor(vararg values: String) : this(values.joinToString(separator))
+    public constructor(vararg values: String) : this(values.joinToString(separator))
 
-    companion object {
-        val separator: String get() = FileSystem.pathSeparator
+    public companion object {
+        public val separator: String get() = FileSystem.pathSeparator
     }
 
-    override fun toString() = path
+    override fun toString(): String = path
 }
 
-expect fun Path.isAbsolute(): Boolean
+public expect fun Path.isAbsolute(): Boolean
 
-fun Path.resolve(path: Path): Path {
+public fun Path.resolve(path: Path): Path {
     require(!path.isAbsolute()) { "Cannot resolve absolute path $path on top of $this" }
     return Path(buildString {
         append(this@resolve.path)
@@ -23,15 +23,15 @@ fun Path.resolve(path: Path): Path {
     })
 }
 
-fun Path.resolve(vararg values: String) = resolve(Path(*values))
+public fun Path.resolve(vararg values: String): Path = resolve(Path(*values))
 
 
-fun Path.toAbsolute(): Path {
+public fun Path.toAbsolute(): Path {
     if (isAbsolute()) return this
     return FileSystem.currentDirectory.resolve(this)
 }
 
-fun Path.normalize(): Path {
+public fun Path.normalize(): Path {
     val isAbsolute = isAbsolute()
 
     val segments = path.split(Path.separator).toMutableList()
@@ -69,6 +69,6 @@ fun Path.normalize(): Path {
     return Path(segments.joinToString(Path.separator))
 }
 
-fun Path.parent() = resolve("..").normalize()
+public fun Path.parent(): Path = resolve("..").normalize()
 
-val Path.name get() = path.split(Path.separator).last()
+public val Path.name: String get() = path.split(Path.separator).last()

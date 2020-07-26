@@ -1,11 +1,11 @@
 package org.kodein.memory.file
 
-expect object FileSystem {
+public expect object FileSystem {
     internal val pathSeparator: String
 
-    val tempDirectory: Path
+    public val tempDirectory: Path
 
-    var currentDirectory: Path
+    public var currentDirectory: Path
 
-    val roots: List<Path>
+    public val roots: List<Path>
 }

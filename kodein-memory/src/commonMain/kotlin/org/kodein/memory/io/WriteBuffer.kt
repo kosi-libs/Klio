@@ -1,7 +1,7 @@
 package org.kodein.memory.io
 
-interface WriteBuffer : Writeable, WriteMemory {
+public interface WriteBuffer : Writeable, WriteMemory {
 
-    var position: Int
+    public var position: Int
 
 }

@@ -16,7 +16,7 @@ class UUIDTests {
         assertEquals(2, id.variant())
         assertEquals(1, id.version())
 
-        assertEquals(8506165020000, id.unixTimestap())
+        assertEquals(8506165020000, id.unixTimestamp())
         assertEquals(21, id.clockSequence())
         assertEquals(42, id.node())
         assertEquals("d7af3600-50f0-12e0-8015-00000000002a", id.toString())
@@ -29,7 +29,7 @@ class UUIDTests {
         assertEquals(2, id.variant())
         assertEquals(1, id.version())
 
-        assertEquals(8506165020000, id.unixTimestap())
+        assertEquals(8506165020000, id.unixTimestamp())
         assertEquals(21, id.clockSequence())
         assertEquals(42, id.node())
         assertEquals("d7af3600-50f0-12e0-8015-00000000002a", id.toString())

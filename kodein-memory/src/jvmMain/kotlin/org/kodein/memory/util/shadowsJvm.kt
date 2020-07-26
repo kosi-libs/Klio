@@ -16,14 +16,14 @@ private val shadows: WeakIdentityMap<Throwable, MutableList<Throwable>>? by lazy
     }
 }
 
-actual fun Throwable.addShadowed(other: Throwable) {
+public actual fun Throwable.addShadowed(other: Throwable) {
     if (shadows == null)
         return addSuppressed(other)
 
     shadows!!.getOrSet(this) { ArrayList() } .add(other)
 }
 
-actual fun Throwable.getShadowed(): List<Throwable> {
+public actual fun Throwable.getShadowed(): List<Throwable> {
     if (shadows == null)
         return suppressed.asList()
 

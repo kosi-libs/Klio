@@ -6,7 +6,7 @@ import kotlinx.cinterop.ptr
 import platform.posix.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-actual fun currentTimestampMillis(): Long {
+public actual fun currentTimestampMillis(): Long {
     memScoped {
         val ts = alloc<timespec>()
         clock_gettime(CLOCK_REALTIME, ts.ptr)

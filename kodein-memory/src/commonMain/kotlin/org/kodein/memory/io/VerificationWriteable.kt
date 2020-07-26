@@ -1,7 +1,7 @@
 package org.kodein.memory.io
 
-class VerificationWriteable(private val from: Readable): Writeable {
-    class DiffException : Exception()
+public class VerificationWriteable(private val from: Readable): Writeable {
+    public class DiffException : Exception()
 
     override val available: Int get() = from.available
 
@@ -11,19 +11,19 @@ class VerificationWriteable(private val from: Readable): Writeable {
         }
     }
 
-    override fun putByte(value: Byte) = check(Byte.SIZE_BYTES) { from.readByte() == value }
+    override fun putByte(value: Byte): Unit = check(Byte.SIZE_BYTES) { from.readByte() == value }
 
-    override fun putChar(value: Char) = check(Char.SIZE_BYTES) { from.readChar() == value }
+    override fun putChar(value: Char): Unit = check(Char.SIZE_BYTES) { from.readChar() == value }
 
-    override fun putShort(value: Short) = check(Short.SIZE_BYTES) { from.readShort() == value }
+    override fun putShort(value: Short): Unit = check(Short.SIZE_BYTES) { from.readShort() == value }
 
-    override fun putInt(value: Int) = check(Int.SIZE_BYTES) { from.readInt() == value }
+    override fun putInt(value: Int): Unit = check(Int.SIZE_BYTES) { from.readInt() == value }
 
-    override fun putLong(value: Long) = check(Long.SIZE_BYTES) { from.readLong() == value }
+    override fun putLong(value: Long): Unit = check(Long.SIZE_BYTES) { from.readLong() == value }
 
-    override fun putFloat(value: Float) = check(Int.SIZE_BYTES) { from.readFloat() == value }
+    override fun putFloat(value: Float): Unit = check(Int.SIZE_BYTES) { from.readFloat() == value }
 
-    override fun putDouble(value: Double) = check(Long.SIZE_BYTES) { from.readDouble() == value }
+    override fun putDouble(value: Double): Unit = check(Long.SIZE_BYTES) { from.readDouble() == value }
 
     override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
         require(src.size - srcOffset >= length) { "Failed: src.size - srcOffset >= length (${src.size} - $srcOffset >= $length)" }
@@ -47,7 +47,7 @@ class VerificationWriteable(private val from: Readable): Writeable {
     override fun flush() {}
 }
 
-inline fun verify(from: Readable, block: Writeable.() -> Unit): Boolean {
+public inline fun verify(from: Readable, block: Writeable.() -> Unit): Boolean {
     try {
         VerificationWriteable(from).block()
         return true

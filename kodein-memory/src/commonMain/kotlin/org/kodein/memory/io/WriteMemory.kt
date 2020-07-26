@@ -1,32 +1,32 @@
 package org.kodein.memory.io
 
-interface WriteMemory {
+public interface WriteMemory {
 
-    val limit: Int
+    public val limit: Int
 
-    fun duplicate(): WriteBuffer
+    public fun duplicate(): WriteBuffer
 
-    operator fun set(index: Int, value: Byte) = setByte(index, value)
-    fun setByte(index: Int, value: Byte)
-    fun setChar(index: Int, value: Char)
-    fun setShort(index: Int, value: Short)
-    fun setInt(index: Int, value: Int)
-    fun setLong(index: Int, value: Long)
-    fun setFloat(index: Int, value: Float)
-    fun setDouble(index: Int, value: Double)
+    public operator fun set(index: Int, value: Byte): Unit = setByte(index, value)
+    public fun setByte(index: Int, value: Byte)
+    public fun setChar(index: Int, value: Char)
+    public fun setShort(index: Int, value: Short)
+    public fun setInt(index: Int, value: Int)
+    public fun setLong(index: Int, value: Long)
+    public fun setFloat(index: Int, value: Float)
+    public fun setDouble(index: Int, value: Double)
 
-    fun setBytes(index: Int, src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    fun setBytes(index: Int, src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset)
+    public fun setBytes(index: Int, src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
+    public fun setBytes(index: Int, src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset)
 
 }
 
 @ExperimentalUnsignedTypes
-fun WriteMemory.setUByte(index: Int, value: UByte) = setByte(index, value.toByte())
+public fun WriteMemory.setUByte(index: Int, value: UByte): Unit = setByte(index, value.toByte())
 @ExperimentalUnsignedTypes
-fun WriteMemory.setUShort(index: Int, value: UShort) = setShort(index, value.toShort())
+public fun WriteMemory.setUShort(index: Int, value: UShort): Unit = setShort(index, value.toShort())
 @ExperimentalUnsignedTypes
-fun WriteMemory.setUInt(index: Int, value: UInt) = setInt(index, value.toInt())
+public fun WriteMemory.setUInt(index: Int, value: UInt): Unit = setInt(index, value.toInt())
 @ExperimentalUnsignedTypes
-fun WriteMemory.setULong(index: Int, value: ULong) = setLong(index, value.toLong())
+public fun WriteMemory.setULong(index: Int, value: ULong): Unit = setLong(index, value.toLong())
 @ExperimentalUnsignedTypes
-fun WriteMemory.setUBytes(index: Int, src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset) = setBytes(index, src.asByteArray(), srcOffset, length)
+public fun WriteMemory.setUBytes(index: Int, src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset): Unit = setBytes(index, src.asByteArray(), srcOffset, length)

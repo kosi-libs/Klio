@@ -1,3 +1,3 @@
 package org.kodein.memory.io
 
-actual typealias IOException = java.io.IOException
+public actual typealias IOException = java.io.IOException

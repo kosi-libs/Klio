@@ -18,7 +18,7 @@ internal class WriteableOutputStream(private val writeable: Writeable, private v
     }
 }
 
-fun Writeable.asOuputStream(transientClose: Boolean = false): OutputStream = WriteableOutputStream(this, transientClose)
+public fun Writeable.asOuputStream(transientClose: Boolean = false): OutputStream = WriteableOutputStream(this, transientClose)
 
 internal class ReadableInputStream(private val readable: Readable, private val transientClose: Boolean = false) : InputStream() {
 
@@ -55,7 +55,7 @@ internal class ReadableInputStream(private val readable: Readable, private val t
     }
 }
 
-fun Readable.asInputStream(transientClose: Boolean = false): InputStream = ReadableInputStream(this, transientClose)
+public fun Readable.asInputStream(transientClose: Boolean = false): InputStream = ReadableInputStream(this, transientClose)
 
 
 internal class InputStreamReadable(private val stream: InputStream): Readable {
@@ -113,7 +113,7 @@ internal class InputStreamReadable(private val stream: InputStream): Readable {
     override fun internalBuffer(): Readable = this
 }
 
-fun InputStream.asReadable(): Readable = InputStreamReadable(this)
+public fun InputStream.asReadable(): Readable = InputStreamReadable(this)
 
 
 internal class OutputStreamWriteable(private val stream: OutputStream) : Writeable {
@@ -146,4 +146,4 @@ internal class OutputStreamWriteable(private val stream: OutputStream) : Writeab
 
 }
 
-fun OutputStream.asWriteable(): Writeable = OutputStreamWriteable(this)
+public fun OutputStream.asWriteable(): Writeable = OutputStreamWriteable(this)

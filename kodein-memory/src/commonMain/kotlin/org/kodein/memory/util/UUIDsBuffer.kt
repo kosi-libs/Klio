@@ -3,18 +3,18 @@ package org.kodein.memory.util
 import org.kodein.memory.io.*
 import kotlin.math.min
 
-fun Writeable.putUUID(uuid: UUID) {
+public fun Writeable.putUUID(uuid: UUID) {
     putLong(uuid.mostSignificantBits)
     putLong(uuid.leastSignificantBits)
 }
 
-fun Readable.readUUID(): UUID {
+public fun Readable.readUUID(): UUID {
     val msb = readLong()
     val lsb = readLong()
     return UUID(msb, lsb)
 }
 
-fun UUID.Companion.from14Bytes(src: Readable): UUID {
+public fun UUID.Companion.from14Bytes(src: Readable): UUID {
     val array = ByteArray(16)
     src.receive(array, 0, 6)
     array[6] = 0xC0.toByte()
@@ -26,7 +26,7 @@ fun UUID.Companion.from14Bytes(src: Readable): UUID {
     return UUID(data.readLong(), data.readLong())
 }
 
-fun UUID.write14Bytes(dst: Writeable, len: Int = 14) {
+public fun UUID.write14Bytes(dst: Writeable, len: Int = 14) {
     require(len in 1..14) { "Bad length ($len)" }
     var available = len
 

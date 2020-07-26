@@ -29,15 +29,15 @@ private fun Path.getType(statFun: (String?, CValuesRef<stat>?) -> Int): EntityTy
     }
 }
 
-actual fun Path.getType(): EntityType = getType(::stat)
-actual fun Path.getLType(): EntityType = getType(::lstat)
+public actual fun Path.getType(): EntityType = getType(::stat)
+public actual fun Path.getLType(): EntityType = getType(::lstat)
 
 @OptIn(ExperimentalUnsignedTypes::class)
-actual fun Path.createDir() {
+public actual fun Path.createDir() {
     mkdir(path, "775".toUInt(8).convert())
 }
 
-actual fun Path.listDir(): List<Path> {
+public actual fun Path.listDir(): List<Path> {
     val dir = opendir(path)
     try {
         return sequence {
@@ -52,7 +52,7 @@ actual fun Path.listDir(): List<Path> {
     }
 }
 
-actual fun Path.delete() {
+public actual fun Path.delete() {
     if (remove(path) != 0) throw IOException.fromErrno("delete")
 }
 
@@ -135,7 +135,7 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
     }
 }
 
-actual fun Path.openReadableFile(): ReadableFile {
+public actual fun Path.openReadableFile(): ReadableFile {
     val file = fopen(path, "r") ?: throw IOException.fromErrno("open")
     return PosixReadableFile(file)
 }
@@ -195,7 +195,7 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
     }
 }
 
-actual fun Path.openWriteableFile(append: Boolean): WriteableFile {
+public actual fun Path.openWriteableFile(append: Boolean): WriteableFile {
     val mode = if (append) "a" else "w"
     val file = fopen(path, mode) ?: throw IOException.fromErrno("write")
     return PosixWriteableFile(file)

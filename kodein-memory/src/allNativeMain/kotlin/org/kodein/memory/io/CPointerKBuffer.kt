@@ -5,11 +5,11 @@ import platform.posix.memcmp
 import platform.posix.memcpy
 
 @Suppress("ConstantConditionIf")
-class CPointerKBuffer(val pointer: CPointer<ByteVar>, capacity: Int) : AbstractKBuffer(capacity) {
+public class CPointerKBuffer(public val pointer: CPointer<ByteVar>, capacity: Int) : AbstractKBuffer(capacity) {
 
     override val implementation: String get() = "CPointerKBuffer"
 
-    override fun createDuplicate() = CPointerKBuffer(pointer, capacity)
+    override fun createDuplicate(): CPointerKBuffer = CPointerKBuffer(pointer, capacity)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         memcpy((pointer + index)!!, src.refTo(srcOffset), length.convert())

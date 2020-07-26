@@ -1,3 +1,3 @@
 package org.kodein.memory.file
 
-actual fun Path.isAbsolute(): Boolean = path.startsWith("/")
+public actual fun Path.isAbsolute(): Boolean = path.startsWith("/")

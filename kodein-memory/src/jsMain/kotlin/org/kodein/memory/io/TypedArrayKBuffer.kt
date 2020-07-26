@@ -4,14 +4,14 @@ import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.DataView
 import org.khronos.webgl.Int8Array
 
-class TypedArrayKBuffer(val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLength) {
+public class TypedArrayKBuffer(public val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLength) {
 
     private val array = Int8Array(buffer, 0, capacity)
     private val data = DataView(buffer, 0, capacity)
 
     override val implementation: String get() = "TypedArrayKBuffer"
 
-    override fun createDuplicate() = TypedArrayKBuffer(buffer)
+    override fun createDuplicate(): TypedArrayKBuffer = TypedArrayKBuffer(buffer)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         if (srcOffset == 0 && length == src.size) {

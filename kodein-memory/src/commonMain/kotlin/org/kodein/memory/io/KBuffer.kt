@@ -3,18 +3,18 @@ package org.kodein.memory.io
 import kotlin.math.min
 import kotlin.random.Random
 
-interface KBuffer : WriteBuffer, ReadBuffer {
+public interface KBuffer : WriteBuffer, ReadBuffer {
 
-    val offset: Int
+    public val offset: Int
 
-    val capacity: Int
+    public val capacity: Int
 
     override var limit: Int
 
-    fun offset(newOffset: Int)
+    public fun offset(newOffset: Int)
 
-    fun reset()
-    fun flip()
+    public fun reset()
+    public fun flip()
 
     override fun duplicate(): KBuffer
     override fun slice(): KBuffer
@@ -22,34 +22,34 @@ interface KBuffer : WriteBuffer, ReadBuffer {
 
     override fun internalBuffer(): KBuffer
 
-    fun backingArray(): ByteArray?
+    public fun backingArray(): ByteArray?
 
-    companion object
+    public companion object
 }
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun KBuffer.limitHere() {
+public inline fun KBuffer.limitHere() {
     limit = position
 }
 
-fun KBuffer.Companion.wrap(array: ByteArray, offset: Int = 0, limit: Int = array.size - offset) =
+public fun KBuffer.Companion.wrap(array: ByteArray, offset: Int = 0, limit: Int = array.size - offset): ByteArrayKBuffer =
         ByteArrayKBuffer(array).also {
             it.offset(offset)
             it.limit = limit
         }
 
-fun KBuffer.Companion.array(capacity: Int) = ByteArrayKBuffer(ByteArray(capacity))
+public fun KBuffer.Companion.array(capacity: Int): ByteArrayKBuffer = ByteArrayKBuffer(ByteArray(capacity))
 
-inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): ByteArrayKBuffer {
+public inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Unit): ByteArrayKBuffer {
     val buf = KBuffer.array(capacity)
     buf.block()
     buf.flip()
     return buf
 }
 
-fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset) = array(length).apply { setBytes(0, src, srcOffset, length) }
+public fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset): ByteArrayKBuffer = array(length).apply { setBytes(0, src, srcOffset, length) }
 
-fun Random.nextBytes(dst: Writeable, len: Int = dst.available) {
+public fun Random.nextBytes(dst: Writeable, len: Int = dst.available) {
     val buffer = ByteArray(min(len, 64))
     var available = len
     while (available > 0) {
@@ -60,9 +60,9 @@ fun Random.nextBytes(dst: Writeable, len: Int = dst.available) {
     }
 }
 
-val KBuffer.absPosition: Int get() = offset + position
+public val KBuffer.absPosition: Int get() = offset + position
 
-inline fun <R> KBuffer.view(index: Int = position, length: Int = limit - index, block: () -> R): R {
+public inline fun <R> KBuffer.view(index: Int = position, length: Int = limit - index, block: () -> R): R {
     val offsetMark = offset
     val positionMark = position
     val limitMark = limit

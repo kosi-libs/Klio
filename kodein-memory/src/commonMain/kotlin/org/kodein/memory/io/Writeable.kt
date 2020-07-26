@@ -2,37 +2,37 @@ package org.kodein.memory.io
 
 import kotlin.math.min
 
-interface Writeable {
+public interface Writeable {
 
-    val available: Int
+    public val available: Int
 
-    fun putByte(value: Byte)
-    fun putChar(value: Char)
-    fun putShort(value: Short)
-    fun putInt(value: Int)
-    fun putLong(value: Long)
-    fun putFloat(value: Float)
-    fun putDouble(value: Double)
+    public fun putByte(value: Byte)
+    public fun putChar(value: Char)
+    public fun putShort(value: Short)
+    public fun putInt(value: Int)
+    public fun putLong(value: Long)
+    public fun putFloat(value: Float)
+    public fun putDouble(value: Double)
 
-    fun putBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    fun putBytes(src: Readable, length: Int = src.available)
+    public fun putBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
+    public fun putBytes(src: Readable, length: Int = src.available)
 
-    fun flush()
+    public fun flush()
 
 }
 
 @ExperimentalUnsignedTypes
-fun Writeable.putUByte(value: UByte) = putByte(value.toByte())
+public fun Writeable.putUByte(value: UByte): Unit = putByte(value.toByte())
 @ExperimentalUnsignedTypes
-fun Writeable.putUShort(value: UShort) = putShort(value.toShort())
+public fun Writeable.putUShort(value: UShort): Unit = putShort(value.toShort())
 @ExperimentalUnsignedTypes
-fun Writeable.putUInt(value: UInt) = putInt(value.toInt())
+public fun Writeable.putUInt(value: UInt): Unit = putInt(value.toInt())
 @ExperimentalUnsignedTypes
-fun Writeable.putULong(value: ULong) = putLong(value.toLong())
+public fun Writeable.putULong(value: ULong): Unit = putLong(value.toLong())
 @ExperimentalUnsignedTypes
-fun Writeable.putUBytes(src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset) = putBytes(src.asByteArray(), srcOffset, length)
+public fun Writeable.putUBytes(src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset): Unit = putBytes(src.asByteArray(), srcOffset, length)
 
-fun Writeable.putBytesBuffered(src: Readable, length: Int = src.available, bufferSize: Int = 16384) {
+public fun Writeable.putBytesBuffered(src: Readable, length: Int = src.available, bufferSize: Int = 16384) {
     val buffer = ByteArray(min(length, bufferSize))
     var left = length
     while (left > 0) {

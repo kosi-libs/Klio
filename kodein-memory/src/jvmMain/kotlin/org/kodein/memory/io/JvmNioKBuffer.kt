@@ -3,14 +3,14 @@ package org.kodein.memory.io
 import java.nio.Buffer
 import java.nio.ByteBuffer
 
-class JvmNioKBuffer(val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.capacity()) {
+public class JvmNioKBuffer(public val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.capacity()) {
 
-    val hasArray get() = byteBuffer.hasArray()
-    val isDirect get() = byteBuffer.isDirect
+    public val hasArray: Boolean get() = byteBuffer.hasArray()
+    public val isDirect: Boolean get() = byteBuffer.isDirect
 
     override val implementation: String get() = "JvmNioKBuffer"
 
-    override fun createDuplicate() = JvmNioKBuffer(byteBuffer)
+    override fun createDuplicate(): JvmNioKBuffer = JvmNioKBuffer(byteBuffer)
 
     private inline fun <R> ByteBuffer.tmp(g: ByteBuffer.() -> Int, s: ByteBuffer.(Int) -> Unit, new: Int, block: () -> R): R {
         val old = g()

@@ -6,47 +6,47 @@ import org.kodein.memory.io.Readable
 import org.kodein.memory.io.Writeable
 
 
-interface ReadableFile : Readable, Closeable
+public interface ReadableFile : Readable, Closeable
 
-expect fun Path.openReadableFile(): ReadableFile
-
-
-interface WriteableFile : Writeable, Closeable
-
-expect fun Path.openWriteableFile(append: Boolean = false): WriteableFile
+public expect fun Path.openReadableFile(): ReadableFile
 
 
-sealed class EntityType {
-    sealed class File : EntityType() {
-        object Regular : File()
-        object SymbolicLink : File()
-        object Other: File()
+public interface WriteableFile : Writeable, Closeable
+
+public expect fun Path.openWriteableFile(append: Boolean = false): WriteableFile
+
+
+public sealed class EntityType {
+    public sealed class File : EntityType() {
+        public object Regular : File()
+        public object SymbolicLink : File()
+        public object Other: File()
     }
-    object Directory : EntityType()
+    public object Directory : EntityType()
 
-    sealed class Non(val what: String) : EntityType() {
-        object Existent : Non("existent")
-        object Accessible : Non("accessible")
-        object Understandable : Non("understandable")
+    public sealed class Non(public val what: String) : EntityType() {
+        public object Existent : Non("existent")
+        public object Accessible : Non("accessible")
+        public object Understandable : Non("understandable")
     }
 }
 
-expect fun Path.getType(): EntityType
+public expect fun Path.getType(): EntityType
 
-expect fun Path.getLType(): EntityType
+public expect fun Path.getLType(): EntityType
 
-expect fun Path.listDir(): List<Path>
+public expect fun Path.listDir(): List<Path>
 
-expect fun Path.createDir()
+public expect fun Path.createDir()
 
-fun Path.createDirs() {
+public fun Path.createDirs() {
     if (getType() is EntityType.Non.Existent) {
         parent().createDirs()
         createDir()
     }
 }
 
-expect fun Path.delete()
+public expect fun Path.delete()
 
 private fun Path.deleteRecursive(check: Boolean) {
     when (val type = getLType()) {
@@ -61,4 +61,4 @@ private fun Path.deleteRecursive(check: Boolean) {
     }
 }
 
-fun Path.deleteRecursive() = deleteRecursive(false)
+public fun Path.deleteRecursive(): Unit = deleteRecursive(false)

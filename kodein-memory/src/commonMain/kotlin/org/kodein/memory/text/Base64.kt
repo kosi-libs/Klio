@@ -7,7 +7,7 @@ import org.kodein.memory.io.wrap
 import kotlin.math.min
 
 
-object Base64 {
+public object Base64 {
     private val toBase64    = charArrayOf('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/')
     private val toBase64URL = charArrayOf('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_')
 
@@ -26,10 +26,10 @@ object Base64 {
     }
 
 
-    val encoder get() = Encoder.RFC4648
-    val urlEncoder get() = Encoder.RFC4648_URLSAFE
-    val mimeEncoder get() = Encoder.RFC2045
-    fun mimeEncoder(lineLength: Int, lineSeparator: String): Encoder {
+    public val encoder: Encoder get() = Encoder.RFC4648
+    public val urlEncoder: Encoder get() = Encoder.RFC4648_URLSAFE
+    public val mimeEncoder: Encoder get() = Encoder.RFC2045
+    public fun mimeEncoder(lineLength: Int, lineSeparator: String): Encoder {
         for (b in lineSeparator) {
             if (fromBase64[b.toInt() and 0xff] != -1)
                 throw IllegalArgumentException("Illegal base64 line separator character 0x" + b.toInt().toString(16))
@@ -41,13 +41,13 @@ object Base64 {
         }
     }
 
-    val decoder get() = Decoder.RFC4648
-    val urlDecoder get() = Decoder.RFC4648_URLSAFE
-    val mimeDecoder get() = Decoder.RFC2045
+    public val decoder: Decoder get() = Decoder.RFC4648
+    public val urlDecoder: Decoder get() = Decoder.RFC4648_URLSAFE
+    public val mimeDecoder: Decoder get() = Decoder.RFC2045
 
-    class Encoder internal constructor(private val isURL: Boolean, private val newline: String?, private val linemax: Int, private val doPadding: Boolean) {
+    public class Encoder internal constructor(private val isURL: Boolean, private val newline: String?, private val linemax: Int, private val doPadding: Boolean) {
 
-        fun outLength(srclen: Int): Int {
+        public fun outLength(srclen: Int): Int {
             val len = if (doPadding) {
                 4 * ((srclen + 2) / 3)
             } else {
@@ -60,19 +60,19 @@ object Base64 {
             return len
         }
 
-        fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
+        public fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
 
-        fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len))
+        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len))
 
-        fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst)
+        public fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst)
 
-        fun encode(src: Readable, length: Int = src.available): String {
+        public fun encode(src: Readable, length: Int = src.available): String {
             val dst = ByteArray(outLength(length))
             val realLength = encode(src, KBuffer.wrap(dst))
-            return String(CharArray(realLength) { dst[it].toChar() })
+            return CharArray(realLength) { dst[it].toChar() }.concatToString()
         }
 
-        fun encode(src: Readable, dst: Writeable, len: Int = src.available): Int {
+        public fun encode(src: Readable, dst: Writeable, len: Int = src.available): Int {
             val base64 = if (isURL) toBase64URL else toBase64
             var sp = 0
             var slen = len / 3 * 3
@@ -130,7 +130,7 @@ object Base64 {
             return dp
         }
 
-        companion object {
+        public companion object {
             private val MIMELINEMAX = 76
             private val CRLF = "\r\n"
 
@@ -140,9 +140,9 @@ object Base64 {
         }
     }
 
-    class Decoder internal constructor(private val isURL: Boolean, private val isMIME: Boolean) {
+    public class Decoder internal constructor(private val isURL: Boolean, private val isMIME: Boolean) {
 
-        fun outLength(src: Readable, len: Int = src.available): Int {
+        public fun outLength(src: Readable, len: Int = src.available): Int {
             if (len == 0)
                 return 0
             val base64 = if (isURL) fromBase64URL else fromBase64
@@ -180,24 +180,24 @@ object Base64 {
             return 3 * ((slen + 3) / 4) - paddings
         }
 
-        fun decode(src: String): ByteArray {
+        public fun decode(src: String): ByteArray {
             val dst = ByteArray(src.length)
             val len = decode(src, KBuffer.wrap(dst))
             return if (len != dst.size) dst.copyOf(len) else dst
         }
 
-        fun decode(src: String, dst: Writeable): Int {
+        public fun decode(src: String, dst: Writeable): Int {
             val buffer = KBuffer.wrap(ByteArray(src.length) { src[it].toByte() })
             return decode(buffer, dst)
         }
 
-        fun decode(src: Readable, length: Int = src.available): ByteArray {
+        public fun decode(src: Readable, length: Int = src.available): ByteArray {
             val dst = ByteArray(src.available)
             val realLength = decode(src, KBuffer.wrap(dst), length)
             return if (realLength != dst.size) dst.copyOf(realLength) else dst
         }
 
-        fun decode(src: Readable, dst: Writeable, len: Int = src.available): Int {
+        public fun decode(src: Readable, dst: Writeable, len: Int = src.available): Int {
             var sp = 0
             val base64 = if (isURL) fromBase64URL else fromBase64
             var dp = 0
@@ -252,7 +252,7 @@ object Base64 {
             return dp
         }
 
-        companion object {
+        public companion object {
             internal val RFC4648 = Decoder(false, false)
             internal val RFC4648_URLSAFE = Decoder(true, false)
             internal val RFC2045 = Decoder(false, true)

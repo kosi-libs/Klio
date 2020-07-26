@@ -33,10 +33,10 @@ fun getLastErrorMessage(): String? {
 fun IOException.Companion.fromLastError(type: String) = IOException(getLastErrorMessage() ?: "Unknown $type error")
 
 @OptIn(ExperimentalUnsignedTypes::class)
-actual object FileSystem {
+public actual object FileSystem {
     internal actual val pathSeparator: String = "\\"
 
-    actual val tempDirectory: Path by lazy {
+    public actual val tempDirectory: Path by lazy {
         memScoped {
             val lpstr = allocArray<WCHARVar>(MAX_PATH + 1)
 
@@ -50,7 +50,7 @@ actual object FileSystem {
         }
     }
 
-    actual var currentDirectory: Path
+    public actual var currentDirectory: Path
         get() {
             memScoped {
                 val lpstr = allocArray<WCHARVar>(PATH_MAX + 1)
@@ -81,5 +81,5 @@ actual object FileSystem {
         }
     }
 
-    actual val roots: List<Path> by lazy { getRoots(129) }
+    public actual val roots: List<Path> by lazy { getRoots(129) }
 }

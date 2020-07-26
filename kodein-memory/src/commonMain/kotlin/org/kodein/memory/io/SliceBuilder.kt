@@ -2,7 +2,7 @@ package org.kodein.memory.io
 
 import org.kodein.memory.Closeable
 
-class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) -> Allocation) : Closeable {
+public class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) -> Allocation) : Closeable {
 
     private val allocs = ArrayList<Allocation>()
 
@@ -12,7 +12,7 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
 
     private var hasSubSlice = false
 
-    var copies: Int = 0
+    public var copies: Int = 0
         private set
 
     private fun checkSize(size: Int) {
@@ -43,7 +43,7 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
         }
     }
 
-    inner class BuilderWriteable internal constructor(): Writeable {
+    public inner class BuilderWriteable internal constructor(): Writeable {
         override val available: Int get() = Int.MAX_VALUE
 
         override fun putByte(value: Byte) {
@@ -95,7 +95,7 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
             current.flush()
         }
 
-        fun subSlice(block: () -> Unit) : ReadBuffer {
+        public fun subSlice(block: () -> Unit) : ReadBuffer {
             val startOffset = current.position - startPosition
             block()
             hasSubSlice = true
@@ -106,22 +106,22 @@ class SliceBuilder(private val initialCapacity: Int, private val alloc: (Int) ->
 
     private val writeable = BuilderWriteable()
 
-    fun newSlice(block: BuilderWriteable.() -> Unit): KBuffer {
+    public fun newSlice(block: BuilderWriteable.() -> Unit): KBuffer {
         startPosition = current.position
         writeable.block()
         return current.slice(startPosition, current.position - startPosition)
     }
 
-    val allocationCount get() = allocs.size
+    public val allocationCount: Int get() = allocs.size
 
-    val allocationSize get() = allocs.sumBy { it.capacity }
+    public val allocationSize: Int get() = allocs.sumBy { it.capacity }
 
     override fun close() {
         allocs.forEach { it.close() }
     }
 
-    companion object {
-        fun native(initialCapacity: Int) = SliceBuilder(initialCapacity) { Allocation.native(it) }
-        fun array(initialCapacity: Int) = SliceBuilder(initialCapacity) { KBuffer.array(it).asManagedAllocation() }
+    public companion object {
+        public fun native(initialCapacity: Int): SliceBuilder = SliceBuilder(initialCapacity) { Allocation.native(it) }
+        public fun array(initialCapacity: Int): SliceBuilder = SliceBuilder(initialCapacity) { KBuffer.array(it).asManagedAllocation() }
     }
 }

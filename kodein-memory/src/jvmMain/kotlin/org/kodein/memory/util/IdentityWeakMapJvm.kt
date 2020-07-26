@@ -4,7 +4,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 
 
-actual class WeakIdentityMap<in K : Any, V : Any> actual constructor() {
+public actual class WeakIdentityMap<in K : Any, V : Any> actual constructor() {
 
     private interface Identity<T> {
         fun get(): T?
@@ -37,29 +37,29 @@ actual class WeakIdentityMap<in K : Any, V : Any> actual constructor() {
     internal fun getOrSet(key: K, creator: () -> V): V =
             map[IdentityWrapper(key)] ?: creator().let { map.putIfAbsent(IdentityReference(key), it) ?: it }
 
-    actual operator fun get(key: K): V? {
+    public actual operator fun get(key: K): V? {
         cleanUp()
         return map[IdentityWrapper(key)]
     }
 
-    actual operator fun set(key: K, value: V) {
+    public actual operator fun set(key: K, value: V) {
         cleanUp()
         map[IdentityReference(key)] = value
     }
 
-    actual fun delete(key: K): Boolean {
+    public actual fun delete(key: K): Boolean {
         val prev = map.remove(IdentityWrapper(key))
         cleanUp()
         return prev != null
     }
 
-    actual fun has(key: K): Boolean {
+    public actual fun has(key: K): Boolean {
         cleanUp()
         return map.containsKey(IdentityWrapper(key))
     }
 
 }
 
-actual fun WeakIdentityMap<*, *>.cleanUp() = cleanUp()
+public actual fun WeakIdentityMap<*, *>.cleanUp(): Unit = cleanUp()
 
-actual fun <K : Any, V : Any> WeakIdentityMap<K, V>.getOrSet(key: K, creator: () -> V): V = getOrSet(key, creator)
+public actual fun <K : Any, V : Any> WeakIdentityMap<K, V>.getOrSet(key: K, creator: () -> V): V = getOrSet(key, creator)
