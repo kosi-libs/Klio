@@ -57,6 +57,6 @@ afterEvaluate {
 }
 
 kodeinUpload {
-    name = "Kodein-File"
+    name = "Kodein-Memory-Files"
     description = "Kodein File Library"
 }
