@@ -7,4 +7,6 @@ public actual object Environment {
 
     public actual fun findVariable(name: String): String? = null
 
+    public actual fun allVariables(): Map<String, String> = emptyMap()
+
 }

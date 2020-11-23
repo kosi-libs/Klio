@@ -7,4 +7,6 @@ public expect object Environment {
 
     public fun findVariable(name: String): String?
 
+    public fun allVariables(): Map<String, String>
+
 }

@@ -7,4 +7,6 @@ public actual object Environment {
 
     public actual fun findVariable(name: String): String? = System.getenv(name)
 
+    public actual fun allVariables(): Map<String, String> = System.getenv()
+
 }

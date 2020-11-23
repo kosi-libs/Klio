@@ -1,0 +1,4 @@
+package = org.kodein.memory.internal
+---
+
+extern char **environ;

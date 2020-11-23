@@ -21,6 +21,7 @@ kodein {
 
         add(kodeinTargets.native.allPosix) {
             mainCompilation.cinterops.create("bits")
+            mainCompilation.cinterops.create("environ")
 
             dependsOn(allNonJvm)
         }
@@ -29,6 +30,20 @@ kodein {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
             languageSettings.enableLanguageFeature("InlineClasses")
         }
+    }
+}
+
+afterEvaluate {
+    tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest> {
+        environment("TEST_VARIABLE", "Working!")
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest> {
+        environment("TEST_VARIABLE", "Working!")
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest> {
+        environment("SIMCTL_CHILD_TEST_VARIABLE", "Working!")
     }
 }
 
