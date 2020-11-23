@@ -97,7 +97,7 @@ internal class InputStreamReadable(private val stream: InputStream): Readable {
     override fun readDouble(): Double = Double.fromBits(readLong())
 
     override fun readBytes(dst: ByteArray, dstOffset: Int, length: Int) {
-        require(dstOffset > 0)
+        require(dstOffset >= 0)
         require(dstOffset + length <= dst.size)
 
         var read = 0
