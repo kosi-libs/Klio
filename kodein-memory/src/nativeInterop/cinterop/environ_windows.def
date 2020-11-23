@@ -1,0 +1,6 @@
+package = org.kodein.memory.internal
+---
+
+extern char **_environ;
+
+#define environ _environ

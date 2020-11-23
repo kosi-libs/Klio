@@ -19,9 +19,16 @@ kodein {
             dependsOn(allNonJvm)
         }
 
-        add(kodeinTargets.native.allPosix) {
+        add(kodeinTargets.native.allPosix - kodeinTargets.native.mingwX64) {
             mainCompilation.cinterops.create("bits")
             mainCompilation.cinterops.create("environ")
+
+            dependsOn(allNonJvm)
+        }
+
+        add(kodeinTargets.native.mingwX64) {
+            mainCompilation.cinterops.create("bits")
+            mainCompilation.cinterops.create("environ_windows")
 
             dependsOn(allNonJvm)
         }
