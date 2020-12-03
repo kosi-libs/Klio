@@ -28,7 +28,7 @@ public fun Path.resolve(vararg values: String): Path = resolve(Path(*values))
 
 public fun Path.toAbsolute(): Path {
     if (isAbsolute()) return this
-    return FileSystem.currentDirectory.resolve(this)
+    return FileSystem.workingDir().resolve(this)
 }
 
 public fun Path.normalize(): Path {

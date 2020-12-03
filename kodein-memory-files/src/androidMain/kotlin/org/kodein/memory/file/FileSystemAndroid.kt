@@ -16,9 +16,8 @@ public actual object FileSystem {
 
     public actual val tempDirectory: Path get() = Path(context.cacheDir.absolutePath)
 
-    public actual var currentDirectory: Path
-        get() = Path(System.getProperty("user.dir") ?: throw IllegalStateException("No user.dir system property"))
-        set(value) { System.setProperty("user.dir", value.path) }
+    public actual fun workingDir(): Path = Path(System.getProperty("user.dir") ?: throw IllegalStateException("No user.dir system property"))
+    public actual fun changeWorkingDir(path: Path) { System.setProperty("user.dir", path.path) }
 
     public actual val roots: List<Path> = File.listRoots().map { Path(it.absolutePath) }
 }

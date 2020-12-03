@@ -18,16 +18,13 @@ public actual object FileSystem {
         Path(path ?: "/tmp")
     }
 
-    public actual var currentDirectory: Path
-        get() {
-            memScoped {
-                val ptr = allocArray<ByteVar>(4096)
-                return Path(getcwd(ptr, 4096.convert())?.toKString() ?: throw IOException.fromErrno("directory"))
-            }
+    public actual fun workingDir(): Path {
+        memScoped {
+            val ptr = allocArray<ByteVar>(4096)
+            return Path(getcwd(ptr, 4096.convert())?.toKString() ?: throw IOException.fromErrno("directory"))
         }
-        set(value) {
-            chdir(value.path)
-        }
+    }
+    public actual fun changeWorkingDir(path: Path) { chdir(path.path) }
 
     public actual val roots: List<Path> = listOf(Path("/"))
 }

@@ -50,18 +50,15 @@ public actual object FileSystem {
         }
     }
 
-    public actual var currentDirectory: Path
-        get() {
-            memScoped {
-                val lpstr = allocArray<WCHARVar>(PATH_MAX + 1)
-                val ret = GetCurrentDirectoryW((PATH_MAX + 1).toUInt(), lpstr)
-                if (ret == 0u) throw IOException.fromLastError("file system")
-                return Path(lpstr.toKString())
-            }
+    public actual fun workingDir(): Path {
+        memScoped {
+            val lpstr = allocArray<WCHARVar>(PATH_MAX + 1)
+            val ret = GetCurrentDirectoryW((PATH_MAX + 1).toUInt(), lpstr)
+            if (ret == 0u) throw IOException.fromLastError("file system")
+            return Path(lpstr.toKString())
         }
-        set(value) {
-            SetCurrentDirectoryW(value.path)
-        }
+    }
+    public actual fun changeWorkingDir(path: Path) { SetCurrentDirectoryW(path.path) }
 
     private fun getRoots(size: Int): List<Path> {
         memScoped {

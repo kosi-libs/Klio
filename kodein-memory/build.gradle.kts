@@ -1,9 +1,16 @@
 plugins {
     id("org.kodein.library.mpp")
+    id("kotlinx-serialization")
 }
 
 kodein {
     kotlin {
+
+        val kotlinxSerializationVer: String by rootProject.extra
+
+        common.main.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVer")
+        }
 
         val allNonJvm = kodeinSourceSets.new("allNonJvm")
 

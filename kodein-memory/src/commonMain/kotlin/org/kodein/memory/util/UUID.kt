@@ -1,5 +1,6 @@
 package org.kodein.memory.util
 
+import kotlinx.serialization.Serializable
 import org.kodein.memory.io.KBuffer
 import org.kodein.memory.io.array
 import org.kodein.memory.io.nextBytes
@@ -8,6 +9,8 @@ import org.kodein.memory.text.Charset
 import org.kodein.memory.text.readString
 import kotlin.random.Random
 
+
+@Serializable
 public class UUID(public val mostSignificantBits: Long, public val leastSignificantBits: Long) : Comparable<UUID> {
 
     public fun version(): Int =

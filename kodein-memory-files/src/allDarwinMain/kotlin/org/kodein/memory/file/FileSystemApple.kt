@@ -9,9 +9,8 @@ public actual object FileSystem {
 
     public actual val tempDirectory: Path get() = Path(NSFileManager.defaultManager.temporaryDirectory.path!!)
 
-    public actual var currentDirectory: Path
-        get() = Path(NSFileManager.defaultManager.currentDirectoryPath)
-        set(value) { NSFileManager.defaultManager.changeCurrentDirectoryPath(value.path) }
+    public actual fun workingDir(): Path = Path(NSFileManager.defaultManager.currentDirectoryPath)
+    public actual fun changeWorkingDir(path: Path) { NSFileManager.defaultManager.changeCurrentDirectoryPath(path.path) }
 
     public actual val roots: List<Path> = listOf(Path("/"))
 

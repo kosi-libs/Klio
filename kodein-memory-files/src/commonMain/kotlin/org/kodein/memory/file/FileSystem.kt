@@ -5,7 +5,8 @@ public expect object FileSystem {
 
     public val tempDirectory: Path
 
-    public var currentDirectory: Path
+    public fun workingDir(): Path
+    public fun changeWorkingDir(path: Path)
 
     public val roots: List<Path>
 }
