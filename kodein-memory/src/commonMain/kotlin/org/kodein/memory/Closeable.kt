@@ -1,7 +1,5 @@
 package org.kodein.memory
 
-import org.kodein.memory.util.addShadowed
-
 public expect interface Closeable {
     public fun close()
 }
@@ -20,7 +18,7 @@ public inline fun <C : Closeable, R> C.use(block: (C) -> R): R {
             closed = true
             close()
         } catch (second: Throwable) {
-            first.addShadowed(second)
+            first.addSuppressed(second)
         }
 
         throw first
@@ -38,7 +36,7 @@ public inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
         try {
             close()
         } catch (second: Throwable) {
-            first.addShadowed(second)
+            first.addSuppressed(second)
         }
 
         throw first
@@ -53,7 +51,7 @@ public fun Iterable<Closeable>.closeAll() {
             it.close()
         } catch (thrown: Throwable) {
             if (exception == null) exception = thrown
-            else exception!!.addShadowed(thrown)
+            else exception!!.addSuppressed(thrown)
         }
     }
     if (exception != null)

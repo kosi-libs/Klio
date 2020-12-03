@@ -1,10 +1,6 @@
 package org.kodein.memory.util
 
 
-public expect fun Throwable.addShadowed(other: Throwable)
-
-public expect fun Throwable.getShadowed(): List<Throwable>
-
 public inline fun <T> Iterable<T>.forEachCatchTo(catchTo: MaybeThrowable, action: (T) -> Unit) {
     for (element in this) {
         try {
@@ -27,7 +23,7 @@ public class MaybeThrowable {
         if (ex == null)
             return
 
-        throwable?.addShadowed(ex) ?: run { throwable = ex }
+        throwable?.addSuppressed(ex) ?: run { throwable = ex }
     }
 
     public fun shoot() { throwable?.let { throw it } }
