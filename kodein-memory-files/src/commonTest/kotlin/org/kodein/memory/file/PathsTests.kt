@@ -8,7 +8,7 @@ class PathsTests {
 
     @Test
     fun isAbsolute() {
-        assertEquals(true, FileSystem.currentDirectory.isAbsolute(), "${FileSystem.currentDirectory} is not absolute")
+        assertEquals(true, FileSystem.workingDir().isAbsolute(), "${FileSystem.workingDir()} is not absolute")
         assertFalse(Path("something", "else").isAbsolute())
     }
 
@@ -25,7 +25,7 @@ class PathsTests {
 
     @Test
     fun toAbsolute() {
-        assertEquals(FileSystem.currentDirectory.resolve("a", "b"), Path("a", "b").toAbsolute())
+        assertEquals(FileSystem.workingDir().resolve("a", "b"), Path("a", "b").toAbsolute())
         assertEquals(FileSystem.roots[0].resolve("a", "b"), FileSystem.roots[0].resolve("a", "b").toAbsolute())
     }
 
