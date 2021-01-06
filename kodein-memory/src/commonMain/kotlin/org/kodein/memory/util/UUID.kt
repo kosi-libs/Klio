@@ -1,16 +1,19 @@
 package org.kodein.memory.util
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import org.kodein.memory.io.KBuffer
-import org.kodein.memory.io.array
-import org.kodein.memory.io.nextBytes
-import org.kodein.memory.io.wrap
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import org.kodein.memory.io.*
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.readString
 import kotlin.random.Random
 
 
-@Serializable
+@Serializable(with = UUID.KXSerializer::class)
 public class UUID(public val mostSignificantBits: Long, public val leastSignificantBits: Long) : Comparable<UUID> {
 
     public fun version(): Int =
@@ -94,8 +97,8 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
             } while (charPos > offset)
         }
 
-        public fun randomUUID(): UUID {
-            val data = KBuffer.array(16) { Random.nextBytes(this) }
+        public fun randomUUID(random: Random = Random.Default): UUID {
+            val data = KBuffer.array(16) { random.nextBytes(this) }
             data[6] = (data[6].toInt() and 0x0F).toByte()
             data[6] = (data[6].toInt() or 0x40).toByte()
             data[8] = (data[8].toInt() and 0x3F).toByte()
@@ -170,5 +173,15 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
             val gregorianTimestamp = timestampUnixToGregorian(unixTimestampMillis)
             return UUID(makeMsb(gregorianTimestamp), makeLsb(realClockSeq, realNode))
         }
+    }
+
+    public object KXSerializer : KSerializer<UUID> {
+
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+
+        override fun serialize(encoder: Encoder, value: UUID) { encoder.encodeString(value.toString()) }
+
+        override fun deserialize(decoder: Decoder): UUID = fromString(decoder.decodeString())
+
     }
 }

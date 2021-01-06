@@ -41,7 +41,7 @@ kodein {
         add(kodeinTargets.native.allDarwin)
 
         // Remove mingwX64 from allPosix
-        add(kodeinTargets.native.mingwX64.copy(dependencies = listOf(kodeinSourceSets.allNative)))
+        add(kodeinTargets.native.mingwX64)
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
