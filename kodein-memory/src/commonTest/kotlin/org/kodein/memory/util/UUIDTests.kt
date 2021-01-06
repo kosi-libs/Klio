@@ -1,5 +1,9 @@
 package org.kodein.memory.util
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.kodein.memory.io.KBuffer
 import org.kodein.memory.io.array
 import org.kodein.memory.text.Charset
@@ -86,5 +90,29 @@ class UUIDTests {
         val buffer = KBuffer.array(8) { id.write14Bytes(this, 8) }
         assertEquals("abcdefgh", buffer.readString(Charset.ASCII, 8))
         assertFalse(buffer.valid())
+    }
+
+    @Serializable
+    data class StringDocument(val id: UUID)
+
+    @Test
+    fun serializedStrings() {
+        val doc = StringDocument(UUID.fromString("d7af3600-50f0-12e0-8015-00000000002a"))
+        val str = Json.encodeToString(doc)
+        assertEquals("""{"id":"d7af3600-50f0-12e0-8015-00000000002a"}""", str)
+        val doc2 = Json.decodeFromString<StringDocument>(str)
+        assertEquals(doc, doc2)
+    }
+
+    @Serializable
+    data class BinaryDocument(@Serializable(with = UUID.KXBinarySerializer::class) val id: UUID)
+
+    @Test
+    fun serializedBits() {
+        val doc = BinaryDocument(UUID.fromString("d7af3600-50f0-12e0-8015-00000000002a"))
+        val str = Json.encodeToString(doc)
+        assertEquals("""{"id":[-2905043859644869920,-9217461062343851990]}""", str)
+        val doc2 = Json.decodeFromString<BinaryDocument>(str)
+        assertEquals(doc, doc2)
     }
 }

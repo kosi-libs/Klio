@@ -12,6 +12,10 @@ kodein {
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVer")
         }
 
+        common.test.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVer")
+        }
+
         val allNonJvm = kodeinSourceSets.new("allNonJvm")
 
         add(kodeinTargets.jvm.jvm) {

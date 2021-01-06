@@ -1,19 +1,26 @@
 package org.kodein.memory.util
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.listSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import org.kodein.memory.io.*
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.readString
+import kotlin.native.concurrent.ThreadLocal
 import kotlin.random.Random
 
 
-@Serializable(with = UUID.KXSerializer::class)
+@Serializable(with = UUID.KXStringSerializer::class)
 public class UUID(public val mostSignificantBits: Long, public val leastSignificantBits: Long) : Comparable<UUID> {
 
     public fun version(): Int =
@@ -76,6 +83,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         return true
     }
 
+    @ThreadLocal
     public companion object {
         private val digits = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z')
         private const val MIN_CLOCK_SEQ_AND_NODE = -0x7F7F7F7F7F7F7F80L
@@ -175,13 +183,45 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         }
     }
 
-    public object KXSerializer : KSerializer<UUID> {
+    @OptIn(ExperimentalSerializationApi::class)
+    public object KXStringSerializer : KSerializer<UUID> {
 
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 
-        override fun serialize(encoder: Encoder, value: UUID) { encoder.encodeString(value.toString()) }
+        override fun serialize(encoder: Encoder, value: UUID) {
+            encoder.encodeString(value.toString())
+        }
 
         override fun deserialize(decoder: Decoder): UUID = fromString(decoder.decodeString())
+
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    public object KXBinarySerializer : KSerializer<UUID> {
+
+        override val descriptor: SerialDescriptor = listSerialDescriptor(PrimitiveSerialDescriptor("bits", PrimitiveKind.LONG))
+
+        override fun serialize(encoder: Encoder, value: UUID) {
+            encoder.encodeStructure(descriptor) {
+                encodeLongElement(descriptor, 0, value.mostSignificantBits)
+                encodeLongElement(descriptor, 1, value.leastSignificantBits)
+            }
+        }
+
+        override fun deserialize(decoder: Decoder): UUID {
+            decoder.decodeStructure(descriptor) {
+                var most: Long = 0
+                var least: Long = 0
+
+                repeat(2) {
+                    when (decodeElementIndex(descriptor)) {
+                        0 -> most = decodeLongElement(descriptor, 0)
+                        1 -> least = decodeLongElement(descriptor, 1)
+                    }
+                }
+                return UUID(most, least)
+            }
+        }
 
     }
 }
