@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "org.kodein.memory"
-    version = "0.5.0"
+    version = "0.6.0"
 
     repositories {
         maven(url = "https://kotlin.bintray.com/kotlinx")
