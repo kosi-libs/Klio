@@ -7,3 +7,7 @@ class NativeKBufferTests : AbstractKBufferTests() {
 class NativeSliceBuilderTests : AbstractSliceBuilderTests() {
     override fun sliceBuilder(size: Int): SliceBuilder = SliceBuilder.native(size)
 }
+
+class NativeExpandableBufferTests : AbstractExpandableBufferTests() {
+    override fun alloc(size:Int): Allocation = Allocation.native(size)
+}

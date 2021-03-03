@@ -3,8 +3,6 @@ package org.kodein.memory.util
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -106,7 +104,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         }
 
         public fun randomUUID(random: Random = Random.Default): UUID {
-            val data = KBuffer.array(16) { random.nextBytes(this) }
+            val data = KBuffer.array(16) { random.nextBytes(this, 16) }
             data[6] = (data[6].toInt() and 0x0F).toByte()
             data[6] = (data[6].toInt() or 0x40).toByte()
             data[8] = (data[8].toInt() and 0x3F).toByte()

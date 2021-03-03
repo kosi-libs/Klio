@@ -7,8 +7,8 @@ public interface ReadMemory {
     public val limit: Int
 
     public fun duplicate(): ReadBuffer
-    public fun slice(): ReadBuffer
-    public fun slice(index: Int, length: Int = limit - index): ReadBuffer
+    public fun slice(index: Int): ReadBuffer = slice(index, limit - index) // Bug in non-IR JS backend that prevents default param values here.
+    public fun slice(index: Int, length: Int /*= limit - index*/): ReadBuffer
 
     public operator fun get(index: Int): Byte = getByte(index)
     public fun getByte(index: Int): Byte
@@ -59,12 +59,45 @@ public operator fun ReadMemory.compareTo(other: ByteArray): Int {
     return limit - other.size
 }
 
+public fun ReadMemory.firstIndexOf(search: Byte, startAt: Int = 0): Int {
+    for (index in startAt until limit) {
+        if (get(index) == search)
+            return index
+    }
+
+    return -1
+}
+
+public fun ReadMemory.startsWith(prefix: ReadMemory): Boolean {
+    if (this.size < prefix.size)
+        return false
+
+    val start = this.slice(0, prefix.size)
+
+    return prefix.compareTo(start) == 0
+}
+
+public fun ReadMemory.startsWith(prefix: ByteArray): Boolean {
+    if (this.size < prefix.size)
+        return false
+
+    val start = this.getBytes(0, prefix.size)
+
+    return prefix.contentEquals(start)
+}
+
 public val ReadMemory.size: Int get() = limit
 
 public inline fun <R> ReadMemory.markBuffer(block: (ReadBuffer) -> R): R =
         when (this) {
-            is ReadBuffer -> mark<R> { block(this) }
+            is ReadBuffer -> mark { block(this) }
             else -> block(duplicate())
+        }
+
+public inline fun <R> ReadMemory.markBuffer(index: Int, block: (ReadBuffer) -> R): R =
+        markBuffer {
+            it.position = index
+            block(it)
         }
 
 public inline fun <R> ReadMemory.viewBuffer(index: Int, length: Int, block: (ReadBuffer) -> R): R =

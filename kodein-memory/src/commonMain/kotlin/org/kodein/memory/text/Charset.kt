@@ -12,21 +12,39 @@ public abstract class Charset(public val name: String) {
     public abstract fun decode(src: Readable): Char
     public abstract fun tryDecode(src: Readable): Int
 
-    public object ASCII : Charset("ASCII") {
-        override fun sizeOf(char: Char): Int = 1
-        override fun encode(char: Char, dst: Writeable): Int {
-            dst.putByte(char.toByte())
-            return 1
+    public object Type {
+        public abstract class FixedSizeCharset(name: String, public val bytesPerChar: Int) : Charset(name) {
+            final override fun sizeOf(char: Char): Int = bytesPerChar
         }
-        override fun decode(src: Readable): Char = src.readByte().toChar()
-        override fun tryDecode(src: Readable): Int = src.receive()
 
-        public fun stringToBytes(src: String): ByteArray = ByteArray(src.length) { src[it].toByte() }
-        public fun bytesToString(src: ByteArray): String = CharArray(src.size) { src[it].toChar() }.concatToString()
+        public abstract class ByteCharset(name: String, private val max: Int) : FixedSizeCharset(name, bytesPerChar = 1) {
+            private fun check(char: Char) {
+                if (char.toInt() !in 0..max) error("Character '$char' (0x${char.toInt().toString(radix = 16)}) is not an $name character")
+            }
+            override fun encode(char: Char, dst: Writeable): Int {
+                check(char)
+                dst.putByte(char.toByte())
+                return 1
+            }
+            override fun decode(src: Readable): Char = src.readByte().toChar()
+            override fun tryDecode(src: Readable): Int = src.receive()
+
+            public fun stringToBytes(src: String): ByteArray =
+                ByteArray(src.length) {
+                    val char = src[it]
+                    check(char)
+                    char.toByte()
+                }
+            public fun bytesToString(src: ByteArray): String = CharArray(src.size) { src[it].toChar() }.concatToString()
+        }
     }
 
-    public object UTF16 : Charset("UTF-16") {
-        override fun sizeOf(char: Char): Int = 2
+    public object ASCII : Type.ByteCharset("ASCII", 0x7F)
+
+    @Suppress("ClassName")
+    public object ISO8859_1 : Type.ByteCharset("ISO-8859-1", 0xFF)
+
+    public object UTF16 : Type.FixedSizeCharset("UTF-16", bytesPerChar = 2) {
         override fun encode(char: Char, dst: Writeable): Int {
             dst.putShort(char.toShort())
             return 2
@@ -39,14 +57,13 @@ public abstract class Charset(public val name: String) {
     }
 
     public object UTF8 : Charset("UTF-8") {
-
         override fun sizeOf(char: Char): Int {
             val code = char.toInt()
             return when {
                 code and 0x7F.inv() == 0 -> 1
                 code and 0x7FF.inv() == 0 -> 2
                 code and 0xFFFF.inv() == 0 -> 3
-                else -> throw IllegalStateException("Unsupported character")
+                else -> throw IllegalStateException("Unsupported character '$char' (0x${char.toInt().toString(radix = 16)})")
             }
         }
 
@@ -69,7 +86,8 @@ public abstract class Charset(public val name: String) {
                     dst.putByte((createByte(code, 6)).toByte())
                     3
                 }
-                // TODO: Handle 4 bytes chars
+                // It is impossible to handle 4 bytes character as they
+                // do not exist in UTF-16 (which the Char type represents).
                 else -> throw IllegalStateException("Unsupported character")
             }
             dst.putByte((code and 0x3F or 0x80).toByte())
@@ -102,4 +120,14 @@ public abstract class Charset(public val name: String) {
                 decode { src.receive().also { if (it < 0) return it }.toByte() }.toInt()
     }
 
+    public companion object {
+        public fun named(name: String): Charset =
+            when (name) {
+                UTF8.name -> UTF8
+                UTF16.name -> UTF16
+                ASCII.name -> ASCII
+                ISO8859_1.name -> ISO8859_1
+                else -> throw NoSuchElementException("Unknown charset $name")
+            }
+    }
 }

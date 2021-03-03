@@ -23,14 +23,14 @@ abstract class AbstractSliceBuilderTests {
                 putChar('S')
                 putChar('B')
             }
-            assertEquals(4, v1.available)
-            assertEquals(4, v2.available)
+            assertEquals(4, v1.remaining)
+            assertEquals(4, v2.remaining)
             assertEquals(2142, v1.readShort())
             assertEquals(4221, v1.readShort())
             assertEquals('S', v2.readChar())
             assertEquals('B', v2.readChar())
-            assertEquals(0, v1.available)
-            assertEquals(0, v2.available)
+            assertEquals(0, v1.remaining)
+            assertEquals(0, v2.remaining)
         }
     }
 

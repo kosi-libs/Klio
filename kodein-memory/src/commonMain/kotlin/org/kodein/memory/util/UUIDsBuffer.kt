@@ -28,25 +28,25 @@ public fun UUID.Companion.from14Bytes(src: Readable): UUID {
 
 public fun UUID.write14Bytes(dst: Writeable, len: Int = 14) {
     require(len in 1..14) { "Bad length ($len)" }
-    var available = len
+    var remaining = len
 
     val buffer = KBuffer.array(16) {
         putLong(mostSignificantBits)
         putLong(leastSignificantBits)
     }
 
-    val count = min(available, 6)
+    val count = min(remaining, 6)
 
-    dst.putBytes(buffer, count)
-    available -= count
-    if (available <= 0) return
-
-    buffer.skip(1)
-
-    dst.putBytes(buffer, 1)
-    if (--available <= 0) return
+    dst.putReadableBytes(buffer, count)
+    remaining -= count
+    if (remaining <= 0) return
 
     buffer.skip(1)
 
-    dst.putBytes(buffer, min(available, 7))
+    dst.putReadableBytes(buffer, 1)
+    if (--remaining <= 0) return
+
+    buffer.skip(1)
+
+    dst.putReadableBytes(buffer, min(remaining, 7))
 }

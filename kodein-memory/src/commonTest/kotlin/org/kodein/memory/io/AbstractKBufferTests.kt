@@ -28,7 +28,7 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertEquals(29, it.available)
+            assertEquals(29, it.remaining)
 
             assertEquals(123, it.readByte())
             assertEquals('*', it.readChar())
@@ -38,7 +38,7 @@ abstract class AbstractKBufferTests {
             assertNear(1234.56f, it.readFloat())
             assertEquals(123456789.987654321, it.readDouble())
 
-            assertEquals(0, it.available)
+            assertEquals(0, it.remaining)
         }
     }
 
@@ -77,13 +77,13 @@ abstract class AbstractKBufferTests {
             alloc().use { src ->
                 src.putBytes(byteArrayOf(10, 11, 12))
                 src.flip()
-                it.putBytes(src)
+                it.putReadableBytes(src)
             }
 
             alloc().use { src ->
                 src.putBytes(byteArrayOf(13, 14, 15, 16, 17, 18))
                 src.flip()
-                it.putBytes(src, 3)
+                it.putReadableBytes(src, 3)
             }
 
             it.flip()
@@ -114,13 +114,13 @@ abstract class AbstractKBufferTests {
             alloc().use { src ->
                 src.putBytes(byteArrayOf(10, 11, 12))
                 src.flip()
-                it.setBytes(9, src)
+                it.setReadableBytes(9, src)
             }
 
             alloc().use { src ->
                 src.putBytes(byteArrayOf(10, 11, 12, 13, 14, 15, 16, 17, 18))
                 src.flip()
-                it.setBytes(12, src, 3, 3)
+                it.setMemoryBytes(12, src, 3, 3)
             }
 
             val dst1 = ByteArray(5)
@@ -145,12 +145,12 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertNotEquals(0, it.available)
+            assertNotEquals(0, it.remaining)
 
             val read = ByteArray(6)
             it.readBytes(read)
 
-            assertEquals(0, it.available)
+            assertEquals(0, it.remaining)
 
             assertTrue(read.contentEquals(byteArrayOf(10, 11, 12, 13, 14, 15)))
         }
@@ -164,12 +164,12 @@ abstract class AbstractKBufferTests {
 
             it.flip()
 
-            assertNotEquals(0, it.available)
+            assertNotEquals(0, it.remaining)
 
             val read = ByteArray(8)
             it.readBytes(read, 1, 6)
 
-            assertEquals(0, it.available)
+            assertEquals(0, it.remaining)
 
             assertTrue(read.contentEquals(byteArrayOf(0, 10, 11, 12, 13, 14, 15, 0)))
         }
@@ -188,12 +188,12 @@ abstract class AbstractKBufferTests {
                 src.putDouble(123456789.987654321)
 
                 src.flip()
-                dst.putBytes(src)
+                dst.putReadableBytes(src)
             }
 
             dst.flip()
 
-            assertNotEquals(0, dst.available)
+            assertNotEquals(0, dst.remaining)
 
             assertEquals(123, dst.readByte())
             assertEquals('*', dst.readChar())
@@ -203,7 +203,7 @@ abstract class AbstractKBufferTests {
             assertNear(1234.56f, dst.readFloat())
             assertEquals(123456789.987654321, dst.readDouble())
 
-            assertEquals(0, dst.available)
+            assertEquals(0, dst.remaining)
         }
     }
 
@@ -214,18 +214,18 @@ abstract class AbstractKBufferTests {
                 src.putBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9))
                 src.flip()
                 src.skip(3)
-                dst.putBytes(src, 3)
+                dst.putReadableBytes(src, 3)
             }
 
             dst.flip()
 
-            assertEquals(3, dst.available)
+            assertEquals(3, dst.remaining)
 
             assertEquals(4, dst.readByte())
             assertEquals(5, dst.readByte())
             assertEquals(6, dst.readByte())
 
-            assertEquals(0, dst.available)
+            assertEquals(0, dst.remaining)
         }
     }
 
@@ -272,14 +272,14 @@ abstract class AbstractKBufferTests {
             assertEquals(DEFAULT_SIZE, view1.capacity)
             assertEquals(3, view1.offset)
             assertEquals(3, view1.limit)
-            assertTrue(byteArrayOf(4, 5, 6).contentEquals(view1.readBytes()))
+            assertTrue(byteArrayOf(4, 5, 6).contentEquals(view1.readAllBytes()))
 
             val view2 = it.slice(6)
             assertEquals(0, view2.position)
             assertEquals(DEFAULT_SIZE, view2.capacity)
             assertEquals(6, view2.offset)
             assertEquals(3, view2.limit)
-            assertTrue(byteArrayOf(7, 8, 9).contentEquals(view2.readBytes()))
+            assertTrue(byteArrayOf(7, 8, 9).contentEquals(view2.readAllBytes()))
         }
     }
 
@@ -295,7 +295,7 @@ abstract class AbstractKBufferTests {
                 assertEquals(DEFAULT_SIZE, it.capacity)
                 assertEquals(3, it.offset)
                 assertEquals(3, it.limit)
-                assertTrue(byteArrayOf(4, 5, 6).contentEquals(it.readBytes()))
+                assertTrue(byteArrayOf(4, 5, 6).contentEquals(it.readAllBytes()))
             }
 
             it.view(6) {
@@ -303,7 +303,7 @@ abstract class AbstractKBufferTests {
                 assertEquals(DEFAULT_SIZE, it.capacity)
                 assertEquals(6, it.offset)
                 assertEquals(3, it.limit)
-                assertTrue(byteArrayOf(7, 8, 9).contentEquals(it.readBytes()))
+                assertTrue(byteArrayOf(7, 8, 9).contentEquals(it.readAllBytes()))
             }
         }
     }
@@ -313,7 +313,7 @@ abstract class AbstractKBufferTests {
 
         alloc().use { base ->
             base.putByte(123)
-            base.slice().also { slice ->
+            base.sliceHere().also { slice ->
                 slice.setByte(0, 123)
                 slice.setChar(1, '*')
                 slice.setShort(3, 12345)

@@ -1,10 +1,14 @@
 package org.kodein.memory.io
 
+import kotlin.math.min
+
 public interface WriteMemory {
 
     public val limit: Int
 
     public fun duplicate(): WriteBuffer
+    public fun slice(index: Int): WriteBuffer = slice(index, limit - index) // Bug in non-IR JS backend that prevents default param values here.
+    public fun slice(index: Int, length: Int /*= limit - index*/): WriteBuffer
 
     public operator fun set(index: Int, value: Byte): Unit = setByte(index, value)
     public fun setByte(index: Int, value: Byte)
@@ -16,8 +20,14 @@ public interface WriteMemory {
     public fun setDouble(index: Int, value: Double)
 
     public fun setBytes(index: Int, src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    public fun setBytes(index: Int, src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset)
+    public fun setMemoryBytes(index: Int, src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset)
+    public fun setReadableBytes(index: Int, src: Readable, length: Int)
+}
 
+public fun WriteMemory.setReadableBytes(index: Int, src: ReadBuffer): Int {
+    val count = src.remaining
+    setReadableBytes(index, src, src.remaining)
+    return count
 }
 
 @ExperimentalUnsignedTypes

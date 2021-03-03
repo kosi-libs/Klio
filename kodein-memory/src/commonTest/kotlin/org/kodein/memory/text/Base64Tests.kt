@@ -38,7 +38,7 @@ class Base64Tests {
     @Test
     fun bigText() {
         val src = KBuffer.wrap(palindrome)
-        val size = src.available
+        val size = src.remaining
 
         val base64 = Base64.mimeEncoder.encode(src)
 

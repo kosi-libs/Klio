@@ -2,6 +2,8 @@ package org.kodein.memory.file
 
 import kotlinx.cinterop.*
 import org.kodein.memory.io.IOException
+import org.kodein.memory.io.OutOfMemoryException
+import org.kodein.memory.io.ReadMemory
 import org.kodein.memory.io.Readable
 import org.kodein.memory.io.toBigEndian
 import platform.posix.*
@@ -69,9 +71,15 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
         fseek(file, 0.convert(), SEEK_SET)
     }
 
-    override val available: Int get() = size - ftell(file).toInt()
+    override val position: Int get() = ftell(file).toInt()
 
-    override fun valid() = available != 0
+    override fun requireCanRead(needed: Int) {
+        if (remaining < needed) throw OutOfMemoryException.NotEnoughRemaining(needed, remaining)
+    }
+
+    public val remaining: Int get() = size - ftell(file).toInt()
+
+    override fun valid() = remaining != 0
 
     override fun receive(): Int {
         val b = fgetc(file)
@@ -143,9 +151,11 @@ public actual fun Path.openReadableFile(): ReadableFile {
 @OptIn(ExperimentalUnsignedTypes::class)
 private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFile {
 
-    override val available: Int = Int.MAX_VALUE
-
     private val alloc = nativeHeap.allocArray<ByteVar>(8)
+
+    override val position: Int get() = ftell(file).toInt()
+
+    override fun requireCanWrite(needed: Int) {} // noop
 
     override fun putByte(value: Byte) {
         val w = fputc(value.toInt(), file)
@@ -181,7 +191,11 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
         if (w != length) throw IOException.fromErrno("write")
     }
 
-    override fun putBytes(src: Readable, length: Int) {
+    override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+        repeat(length) { putByte(src[srcOffset + it]) }
+    }
+
+    override fun putReadableBytes(src: Readable, length: Int) {
         repeat(length) { putByte(src.readByte()) }
     }
 

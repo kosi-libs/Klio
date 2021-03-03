@@ -4,7 +4,10 @@ import org.kodein.memory.text.Charset
 
 public interface Readable {
 
-    public val available: Int
+    public val position: Int
+
+    public fun requireCanRead(needed: Int)
+
     public fun valid(): Boolean
 
     public fun receive(): Int
@@ -24,7 +27,13 @@ public interface Readable {
     public fun internalBuffer(): Readable
 }
 
-public fun Readable.readBytes(length: Int = available): ByteArray {
+public interface ResettableReadable : Readable {
+    public fun reset()
+    public fun resetHere()
+    public fun flip()
+}
+
+public fun Readable.readBytes(length: Int): ByteArray {
     val array = ByteArray(length)
     readBytes(array)
     return array

@@ -52,10 +52,10 @@ class TransferTests {
         from.putDouble(123456789.987654321)
         from.flip()
 
-        to.putBytes(from)
+        to.putReadableBytes(from)
         to.flip()
 
-        assertEquals(29, to.available)
+        assertEquals(29, to.remaining)
 
         assertEquals(123, to.readByte())
         assertEquals('*', to.readChar())
@@ -65,7 +65,7 @@ class TransferTests {
         assertNear(1234.56f, to.readFloat())
         assertEquals(123456789.987654321, to.readDouble())
 
-        assertEquals(0, to.available)
+        assertEquals(0, to.remaining)
     }
 
     @Test

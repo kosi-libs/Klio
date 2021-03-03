@@ -1,9 +1,6 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.io.KBuffer
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.wrap
+import org.kodein.memory.io.*
 import kotlin.math.min
 
 
@@ -62,17 +59,19 @@ public object Base64 {
 
         public fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
 
-        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len))
+        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len), len)
 
-        public fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst)
+        public fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst, len)
 
-        public fun encode(src: Readable, length: Int = src.available): String {
+        public fun encode(src: ReadBuffer): String = encode(src, src.remaining)
+
+        public fun encode(src: Readable, length: Int): String {
             val dst = ByteArray(outLength(length))
-            val realLength = encode(src, KBuffer.wrap(dst))
+            val realLength = encode(src, KBuffer.wrap(dst), length)
             return CharArray(realLength) { dst[it].toChar() }.concatToString()
         }
 
-        public fun encode(src: Readable, dst: Writeable, len: Int = src.available): Int {
+        public fun encode(src: Readable, dst: Writeable, len: Int): Int {
             val base64 = if (isURL) toBase64URL else toBase64
             var sp = 0
             var slen = len / 3 * 3
@@ -142,7 +141,7 @@ public object Base64 {
 
     public class Decoder internal constructor(private val isURL: Boolean, private val isMIME: Boolean) {
 
-        public fun outLength(src: Readable, len: Int = src.available): Int {
+        public fun outLength(src: Readable, len: Int): Int {
             if (len == 0)
                 return 0
             val base64 = if (isURL) fromBase64URL else fromBase64
@@ -188,16 +187,16 @@ public object Base64 {
 
         public fun decode(src: String, dst: Writeable): Int {
             val buffer = KBuffer.wrap(ByteArray(src.length) { src[it].toByte() })
-            return decode(buffer, dst)
+            return decode(buffer, dst, src.length)
         }
 
-        public fun decode(src: Readable, length: Int = src.available): ByteArray {
-            val dst = ByteArray(src.available)
+        public fun decode(src: Readable, length: Int): ByteArray {
+            val dst = ByteArray(length)
             val realLength = decode(src, KBuffer.wrap(dst), length)
             return if (realLength != dst.size) dst.copyOf(realLength) else dst
         }
 
-        public fun decode(src: Readable, dst: Writeable, len: Int = src.available): Int {
+        public fun decode(src: Readable, dst: Writeable, len: Int): Int {
             var sp = 0
             val base64 = if (isURL) fromBase64URL else fromBase64
             var dp = 0

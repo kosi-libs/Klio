@@ -45,8 +45,8 @@ class CharsetTests {
     fun testUTF8() {
         val buffer = KBuffer.wrap(palindrome, Charset.UTF8)
 
-        assertTrue(palindrome.length < buffer.available)
-        assertTrue((palindrome.length * 2) > buffer.available)
+        assertTrue(palindrome.length < buffer.remaining)
+        assertTrue((palindrome.length * 2) > buffer.remaining)
 
         val read = buffer.readString(Charset.UTF8)
 

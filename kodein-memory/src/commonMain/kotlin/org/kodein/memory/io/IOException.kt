@@ -1,3 +1,3 @@
 package org.kodein.memory.io
 
-public expect class IOException(msg: String): Exception
+public expect open class IOException(msg: String): Exception

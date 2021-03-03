@@ -3,6 +3,7 @@ package org.kodein.memory.io
 import kotlin.math.min
 import kotlin.random.Random
 
+
 public interface KBuffer : WriteBuffer, ReadBuffer {
 
     public val offset: Int
@@ -13,12 +14,12 @@ public interface KBuffer : WriteBuffer, ReadBuffer {
 
     public fun offset(newOffset: Int)
 
-    public fun reset()
-    public fun flip()
-
     override fun duplicate(): KBuffer
-    override fun slice(): KBuffer
+    override fun slice(index: Int): KBuffer = slice(index, limit - index)
     override fun slice(index: Int, length: Int): KBuffer
+
+    override fun sliceHere(): KBuffer = sliceHere(remaining)
+    override fun sliceHere(length: Int): KBuffer
 
     override fun internalBuffer(): KBuffer
 
@@ -47,16 +48,16 @@ public inline fun KBuffer.Companion.array(capacity: Int, block: KBuffer.() -> Un
     return buf
 }
 
-public fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset): ByteArrayKBuffer = array(length).apply { setBytes(0, src, srcOffset, length) }
+public fun KBuffer.Companion.arrayCopy(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset): ByteArrayKBuffer = array(length).apply { setMemoryBytes(0, src, srcOffset, length) }
 
-public fun Random.nextBytes(dst: Writeable, len: Int = dst.available) {
+public fun Random.nextBytes(dst: Writeable, len: Int) {
     val buffer = ByteArray(min(len, 64))
-    var available = len
-    while (available > 0) {
-        val count = min(available, 64)
+    var remaining = len
+    while (remaining > 0) {
+        val count = min(remaining, 64)
         nextBytes(buffer, 0, count)
         dst.putBytes(buffer, 0, count)
-        available -= count
+        remaining -= count
     }
 }
 

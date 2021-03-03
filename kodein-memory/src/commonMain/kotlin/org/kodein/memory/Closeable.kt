@@ -43,7 +43,6 @@ public inline fun <C : Closeable, R> C.transfer(block: (C) -> R): R {
     }
 }
 
-
 public fun Iterable<Closeable>.closeAll() {
     var exception: Throwable? = null
     forEach {
@@ -64,3 +63,12 @@ public inline fun <R> Iterable<Closeable>.useAll(block: (Iterable<Closeable>) ->
     } finally {
         closeAll()
     }
+
+public inline fun <C : Closeable?, R> C.useOrNull(block: (C?) -> R): R =
+    if (this != null) use(block)
+    else block(null)
+
+
+//public class UseScope : Closeable {
+//    private
+//}

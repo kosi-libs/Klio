@@ -15,15 +15,13 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
     public var copies: Int = 0
         private set
 
-    private fun checkSize(size: Int) {
-        if (current.position + size <= current.limit) return
+    private fun requireSize(size: Int) {
+        if (size <= current.remaining) return
 
         val neededSize = current.position - startPosition + size
         val factor =
-                if (neededSize < (initialCapacity / 2))
-                    1
-                else
-                    ((neededSize / initialCapacity) + 2)
+            if (neededSize < (initialCapacity / 2)) 1
+            else ((neededSize / initialCapacity) + 2)
 
         val previousAllocation = current
         val previousBuffer = previousAllocation.duplicate()
@@ -36,7 +34,7 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
         current = alloc(factor * initialCapacity).also { allocs += it }
         startPosition = 0
         hasSubSlice = false
-        current.putBytes(previousBuffer)
+        current.putReadableBytes(previousBuffer)
         ++copies
         if (isOneSlice) {
             previousAllocation.close()
@@ -44,51 +42,61 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
     }
 
     public inner class BuilderWriteable internal constructor(): Writeable {
-        override val available: Int get() = Int.MAX_VALUE
+
+        override val position: Int get() = current.position - startPosition
+
+        override fun requireCanWrite(needed: Int) {
+            requireSize(needed)
+        }
 
         override fun putByte(value: Byte) {
-            checkSize(Byte.SIZE_BYTES)
+            requireSize(Byte.SIZE_BYTES)
             current.putByte(value)
         }
 
         override fun putChar(value: Char) {
-            checkSize(Char.SIZE_BYTES)
+            requireSize(Char.SIZE_BYTES)
             current.putChar(value)
         }
 
         override fun putShort(value: Short) {
-            checkSize(Short.SIZE_BYTES)
+            requireSize(Short.SIZE_BYTES)
             current.putShort(value)
         }
 
         override fun putInt(value: Int) {
-            checkSize(Int.SIZE_BYTES)
+            requireSize(Int.SIZE_BYTES)
             current.putInt(value)
         }
 
         override fun putLong(value: Long) {
-            checkSize(Long.SIZE_BYTES)
+            requireSize(Long.SIZE_BYTES)
             current.putLong(value)
         }
 
         override fun putFloat(value: Float) {
-            checkSize(Int.SIZE_BYTES)
+            requireSize(Int.SIZE_BYTES)
             current.putFloat(value)
         }
 
         override fun putDouble(value: Double) {
-            checkSize(Long.SIZE_BYTES)
+            requireSize(Long.SIZE_BYTES)
             current.putDouble(value)
         }
 
         override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
-            checkSize(length)
+            requireSize(length)
             current.putBytes(src, srcOffset, length)
         }
 
-        override fun putBytes(src: Readable, length: Int) {
-            checkSize(length)
-            current.putBytes(src, length)
+        override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+            requireSize(length)
+            current.putMemoryBytes(src, srcOffset, length)
+        }
+
+        override fun putReadableBytes(src: Readable, length: Int) {
+            requireSize(length)
+            current.putReadableBytes(src, length)
         }
 
         override fun flush() {

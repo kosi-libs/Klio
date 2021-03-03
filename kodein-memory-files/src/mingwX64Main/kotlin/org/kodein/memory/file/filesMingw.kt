@@ -1,10 +1,7 @@
 package org.kodein.memory.file
 
 import kotlinx.cinterop.*
-import org.kodein.memory.io.IOException
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.putBytesBuffered
-import org.kodein.memory.io.toBigEndian
+import org.kodein.memory.io.*
 import platform.windows.*
 
 
@@ -69,9 +66,15 @@ private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
     private val buffer = nativeHeap.allocArray<UByteVar>(8)
     private val nread = nativeHeap.alloc<DWORDVar>()
 
-    override val available: Int get() = size - SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+    private val remaining: Int get() = size - position
 
-    override fun valid() = available != 0
+    override val position: Int get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+
+    override fun requireCanRead(needed: Int) {
+        if (needed > remaining) throw OutOfMemoryException.NotEnoughRemaining(needed, remaining)
+    }
+
+    override fun valid() = remaining != 0
 
     override fun receive(): Int {
         val ret = ReadFile(
@@ -191,7 +194,9 @@ public actual fun Path.openReadableFile(): ReadableFile {
 @OptIn(ExperimentalUnsignedTypes::class)
 private class WinWriteableFile(private val handle: HANDLE?) : WriteableFile {
 
-    override val available: Int = Int.MAX_VALUE
+    override val position: Int get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+
+    override fun requireCanWrite(needed: Int) {} // noop
 
     private val buffer = nativeHeap.allocArray<UByteVar>(8)
     private val nwritten = nativeHeap.alloc<DWORDVar>()
@@ -250,7 +255,11 @@ private class WinWriteableFile(private val handle: HANDLE?) : WriteableFile {
         }
     }
 
-    override fun putBytes(src: Readable, length: Int) = putBytesBuffered(src, length)
+    override fun putReadableBytes(src: Readable, length: Int): Unit = putReadableBytesBuffered(src, length)
+
+    override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int): Unit = src.markBuffer(srcOffset) {
+        putReadableBytes(it, length)
+    }
 
     override fun flush() {
         val ret = FlushFileBuffers(handle)

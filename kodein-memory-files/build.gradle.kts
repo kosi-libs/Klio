@@ -5,13 +5,10 @@ plugins {
 kodein {
     kotlin {
 
-        val otherPosix = kodeinSourceSets.new("otherPosix")
-
-        val os = org.gradle.internal.os.OperatingSystem.current()
-        if (os.isLinux || os.isMacOsX || os.isUnix) {
-            cpFixes.update("nativeHost") {
-                it.copy(intermediateSourceSets = it.intermediateSourceSets + otherPosix)
-            }
+        val otherPosix = kodeinSourceSets.new("otherPosix", listOf(kodeinSourceSets.allPosix))
+        val otherPosixTargets = kodeinTargets.native.allPosix - kodeinTargets.native.allDarwin
+        otherPosixTargets.forEach {
+            it.dependencies.add(otherPosix)
         }
 
         common.main.dependencies {
@@ -34,13 +31,8 @@ kodein {
             }
         }
 
-        add(kodeinTargets.native.allEmbeddedLinux + kodeinTargets.native.linuxX64 + kodeinTargets.native.macosX64) {
-            dependsOn(otherPosix)
-        }
-
+        add(otherPosixTargets)
         add(kodeinTargets.native.allDarwin)
-
-        // Remove mingwX64 from allPosix
         add(kodeinTargets.native.mingwX64)
 
         sourceSets.all {

@@ -1,14 +1,19 @@
 package org.kodein.memory.io
 
-public interface ReadBuffer : Readable, ReadMemory {
+public interface ReadBuffer : ResettableReadable, ReadMemory {
 
-    public var position: Int
+    public val remaining: Int
+    override var position: Int
+
+    public fun sliceHere(): ReadBuffer = sliceHere(remaining)
+    public fun sliceHere(length: Int): ReadBuffer
 
     override fun internalBuffer(): ReadBuffer
 }
 
+public fun ReadBuffer.readAllBytes(): ByteArray = readBytes(remaining)
 
-public fun ReadBuffer.getHere(offset: Int = 0): Byte = getByte(position + offset)
+public fun ReadBuffer.getByteHere(offset: Int = 0): Byte = getByte(position + offset)
 public fun ReadBuffer.getCharHere(offset: Int = 0): Char = getChar(position + offset)
 public fun ReadBuffer.getShortHere(offset: Int = 0): Short = getShort(position + offset)
 public fun ReadBuffer.getIntHere(offset: Int = 0): Int = getInt(position + offset)
@@ -46,4 +51,4 @@ public inline fun <R> markAll(buffers: List<ReadBuffer>, block: () -> R): R {
     }
 }
 
-public inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, available, block)
+public inline fun <R> ReadBuffer.viewBuffer(block: (ReadBuffer) -> R): R = viewBuffer(position, remaining, block)

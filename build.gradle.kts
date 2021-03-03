@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "org.kodein.memory"
-    version = "0.6.0"
+    version = "0.7.0"
 
     repositories {
         maven(url = "https://kotlin.bintray.com/kotlinx")
@@ -13,6 +13,3 @@ allprojects {
 
 val kotlinxSerializationVer by extra { "1.0.1" }
 
-kodeinPublications {
-    repo = "Kodein-Memory"
-}
