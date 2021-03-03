@@ -41,13 +41,22 @@ abstract class AbstractExpandableBufferTests {
         assertEquals("Testing", buffer.readString())
     }
 
+    @Test
     fun noCopyAfterPos() {
         val allocator = Allocator()
 
         val buffer = ExpandableBuffer(4, allocator::alloc)
         buffer.putString("Test")
-        buffer.flip()
 
+        buffer.reset()
+        buffer.skip(3)
+        buffer.requireCanWrite(10)
+
+        assertEquals(listOf(4, 16), allocator.allocations)
+        assertEquals(3, buffer.bytesCopied)
+
+        buffer.reset()
+        assertEquals("Tes", buffer.readString(maxChars = 3))
     }
 
 }

@@ -1,5 +1,7 @@
 package org.kodein.memory.io
 
+import kotlin.math.ceil
+
 
 public interface ExpandableBuffer : ReadAllocation, ResettableWriteable {
     /**
@@ -9,6 +11,8 @@ public interface ExpandableBuffer : ReadAllocation, ResettableWriteable {
      * This means that using this just after reset is guaranteed without copy.
      */
     override fun requireCanWrite(needed: Int)
+
+    public val bytesCopied: Int
 
     public companion object {
         public operator fun invoke(initialCapacity: Int, alloc: (Int) -> Allocation): ExpandableBuffer = ExpandableBufferImpl(initialCapacity, alloc)
@@ -29,6 +33,9 @@ internal class ExpandableBufferImpl(private val initialCapacity: Int, private va
 
     private var writeMode = true
 
+    override var bytesCopied = 0
+    private set
+
     override fun closeOnce() {
         buffer.close()
     }
@@ -38,16 +45,18 @@ internal class ExpandableBufferImpl(private val initialCapacity: Int, private va
 
         if (needed <= buffer.remaining) return
 
-        val factor =
-            if (needed < (initialCapacity / 2)) 1
-            else ((needed / initialCapacity) + 2)
+        val totalNeeded = position + needed
+
+        val factor = ceil(totalNeeded.toDouble() / initialCapacity.toDouble()).toInt()
 
         val previousBuffer = buffer
-        buffer = alloc(previousBuffer.capacity + factor * initialCapacity)
+        buffer = alloc(factor * initialCapacity)
 
         try {
             if (previousBuffer.position > 0) {
-                buffer.putMemoryBytes(previousBuffer, length = previousBuffer.position)
+                val length = previousBuffer.position
+                buffer.putMemoryBytes(previousBuffer, length = length)
+                bytesCopied += length
             }
         } finally {
             previousBuffer.close()
@@ -124,9 +133,5 @@ internal class ExpandableBufferImpl(private val initialCapacity: Int, private va
     override fun flip() {
         writeMode = false
         buffer.flip()
-    }
-
-    override fun duplicate(): ReadBuffer {
-        error("Cannot duplicate an Expandable ReadBuffer")
     }
 }
