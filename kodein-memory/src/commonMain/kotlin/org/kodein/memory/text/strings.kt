@@ -5,10 +5,12 @@ import kotlin.math.min
 
 
 public fun Charset.sizeOf(str: CharSequence): Int =
-        str.fold(0) { count, char -> count + sizeOf(char) }
+    str.fold(0) { count, char -> count + sizeOf(char) }
 
-public fun Writeable.putString(str: CharSequence, charset: Charset = Charset.UTF8): Int =
-        str.fold(0) { count, char -> count + charset.encode(char, this) }
+public fun Writeable.putString(str: CharSequence, charset: Charset = Charset.UTF8): Int {
+    requireCanWrite(charset.sizeOf(str))
+    return str.fold(0) { count, char -> count + charset.encode(char, this) }
+}
 
 public fun Readable.readString(charset: Charset = Charset.UTF8, sizeBytes: Int, maxChars: Int = Int.MAX_VALUE): String {
     var readSize = 0
@@ -33,6 +35,7 @@ public fun Writeable.putSizeThenString(str: CharSequence, charset: Charset = Cha
 
 public fun Readable.readSizeThenString(charset: Charset = Charset.UTF8): String {
     val size = readInt()
+    requireCanRead(size)
     return readString(charset, sizeBytes = size)
 }
 
