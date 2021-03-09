@@ -68,6 +68,15 @@ public fun ReadMemory.firstIndexOf(search: Byte, startAt: Int = 0): Int {
     return -1
 }
 
+public fun ReadMemory.lastIndexOf(search: Byte, startFrom: Int = limit - 1): Int {
+    for (index in startFrom downTo 0) {
+        if (get(index) == search)
+            return index
+    }
+
+    return -1
+}
+
 public fun ReadMemory.startsWith(prefix: ReadMemory): Boolean {
     if (this.size < prefix.size)
         return false

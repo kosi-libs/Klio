@@ -40,6 +40,7 @@ public fun Readable.readSizeThenString(charset: Charset = Charset.UTF8): String 
 }
 
 public fun Writeable.putStringThenNull(str: CharSequence, charset: Charset = Charset.UTF8): Int {
+    require(str.none { it.toInt() == 0 }) { "Char sequence must not have a null char ('\\0')." }
     val size = putString(str, charset)
     putByte(0)
     return size + 1
@@ -49,7 +50,7 @@ public fun Readable.readStringThenNull(charset: Charset = Charset.UTF8): String 
     val sb = StringBuilder()
     while (true) {
         val char = charset.decode(this)
-        if (char != 0.toChar())
+        if (char == 0.toChar())
             break
         sb.append(char)
     }
