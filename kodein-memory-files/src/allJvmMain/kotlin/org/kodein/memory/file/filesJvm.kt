@@ -9,9 +9,12 @@ import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.attribute.BasicFileAttributes
 
-public class JVMReadableFile(inputStream: FileInputStream): ReadableFile,
+public class JVMReadableFile(private val inputStream: FileInputStream): ReadableFile,
         Readable by inputStream.asReadable(),
         Closeable by inputStream
+{
+    override val remaining: Int get() = inputStream.available()
+}
 
 public actual fun Path.openReadableFile(): ReadableFile =
         JVMReadableFile(FileInputStream(File(path)))

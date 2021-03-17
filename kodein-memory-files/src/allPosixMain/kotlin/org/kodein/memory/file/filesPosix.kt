@@ -73,11 +73,12 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
 
     override val position: Int get() = ftell(file).toInt()
 
+
     override fun requireCanRead(needed: Int) {
         if (remaining < needed) throw OutOfMemoryException.NotEnoughRemaining(needed, remaining)
     }
 
-    public val remaining: Int get() = size - ftell(file).toInt()
+    override val remaining: Int get() = size - ftell(file).toInt()
 
     override fun valid() = remaining != 0
 

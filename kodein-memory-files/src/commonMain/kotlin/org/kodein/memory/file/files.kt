@@ -6,7 +6,9 @@ import org.kodein.memory.io.Readable
 import org.kodein.memory.io.Writeable
 
 
-public interface ReadableFile : Readable, Closeable
+public interface ReadableFile : Readable, Closeable {
+    public val remaining: Int
+}
 
 public expect fun Path.openReadableFile(): ReadableFile
 

@@ -66,7 +66,7 @@ private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
     private val buffer = nativeHeap.allocArray<UByteVar>(8)
     private val nread = nativeHeap.alloc<DWORDVar>()
 
-    private val remaining: Int get() = size - position
+    override val remaining: Int get() = size - position
 
     override val position: Int get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
 
