@@ -12,10 +12,8 @@ public open class DeferScope {
     internal var topDeferred: Deferred? = null
 
     internal fun executeAllDeferred() {
-        topDeferred?.let {
-            it.invoke()
-            topDeferred = null
-        }
+        topDeferred?.invoke()
+        topDeferred = null
     }
 
     public inline fun defer(crossinline block: Deferred) {

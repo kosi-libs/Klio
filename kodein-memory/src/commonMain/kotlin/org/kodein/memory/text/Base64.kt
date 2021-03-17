@@ -59,22 +59,24 @@ public object Base64 {
 
         public fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
 
-        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(KBuffer.wrap(src, off, len), len)
-
-        public fun encode(src: ByteArray, dst: Writeable, off: Int = 0, len: Int = src.size - off): Int = encode(KBuffer.wrap(src, off, len), dst, len)
-
-        public fun encode(src: ReadBuffer): String = encode(src, src.remaining)
+        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(Memory.wrap(src, off, len).asReadable())
+        public fun encode(src: Memory, offset: Int = 0, length: Int = src.size - offset): String = encode(src.slice(offset, length).asReadable())
+        public fun encode(src: CursorReadable): String = encode(src, src.remaining)
 
         public fun encode(src: Readable, length: Int): String {
             val dst = ByteArray(outLength(length))
-            val realLength = encode(src, KBuffer.wrap(dst), length)
+            val realLength = encode(Memory.wrap(dst).asWriteable(), src, length)
             return CharArray(realLength) { dst[it].toChar() }.concatToString()
         }
 
-        public fun encode(src: Readable, dst: Writeable, len: Int): Int {
+        public fun encode(dst: Writeable, src: ByteArray, offset: Int = 0, length: Int = src.size - offset): Int = encode(dst, Memory.wrap(src, offset, length).asReadable())
+        public fun encode(dst: Writeable, src: Memory, offset: Int = 0, length: Int = src.size - offset): Int = encode(dst, src.slice(offset, length).asReadable())
+        public fun encode(dst: Writeable, src: CursorReadable): Int = encode(dst, src, src.remaining)
+
+        public fun encode(dst: Writeable, src: Readable, length: Int): Int {
             val base64 = if (isURL) toBase64URL else toBase64
             var sp = 0
-            var slen = len / 3 * 3
+            var slen = length / 3 * 3
             val sl = slen
             if (linemax > 0 && slen > linemax / 4 * 3)
                 slen = linemax / 4 * 3
@@ -88,40 +90,40 @@ public object Base64 {
                             (src.readByte().toInt() and 0xff shl 8) or
                             (src.readByte().toInt() and 0xff)
                     sp0 += 3
-                    dst.putByte(base64[bits ushr 18 and 0x3f].toByte())
-                    dst.putByte(base64[bits ushr 12 and 0x3f].toByte())
-                    dst.putByte(base64[bits ushr 6 and 0x3f].toByte())
-                    dst.putByte(base64[bits and 0x3f].toByte())
+                    dst.writeByte(base64[bits ushr 18 and 0x3f].toByte())
+                    dst.writeByte(base64[bits ushr 12 and 0x3f].toByte())
+                    dst.writeByte(base64[bits ushr 6 and 0x3f].toByte())
+                    dst.writeByte(base64[bits and 0x3f].toByte())
                 }
                 val dlen = (sl0 - sp) / 3 * 4
                 dp += dlen
                 sp = sl0
-                if (dlen == linemax && sp < len && newline != null) {
+                if (dlen == linemax && sp < length && newline != null) {
                     for (b in newline) {
-                        dst.putByte(b.toByte())
+                        dst.writeByte(b.toByte())
                         dp++
                     }
                 }
             }
-            if (sp < len) {
+            if (sp < length) {
                 val b0 = src.readByte().toInt() and 0xff
                 sp++
-                dst.putByte(base64[b0 shr 2].toByte())
+                dst.writeByte(base64[b0 shr 2].toByte())
                 dp++
-                if (sp == len) {
-                    dst.putByte(base64[b0 shl 4 and 0x3f].toByte())
+                if (sp == length) {
+                    dst.writeByte(base64[b0 shl 4 and 0x3f].toByte())
                     dp++
                     if (doPadding) {
-                        repeat(2) { dst.putByte('='.toByte()) }
+                        repeat(2) { dst.writeByte('='.toByte()) }
                         dp += 2
                     }
                 } else {
                     val b1 = src.readByte().toInt() and 0xff
-                    dst.putByte(base64[b0 shl 4 and 0x3f or (b1 shr 4)].toByte())
-                    dst.putByte(base64[b1 shl 2 and 0x3f].toByte())
+                    dst.writeByte(base64[b0 shl 4 and 0x3f or (b1 shr 4)].toByte())
+                    dst.writeByte(base64[b1 shl 2 and 0x3f].toByte())
                     dp += 2
                     if (doPadding) {
-                        dst.putByte('='.toByte())
+                        dst.writeByte('='.toByte())
                         dp++
                     }
                 }
@@ -181,34 +183,42 @@ public object Base64 {
 
         public fun decode(src: String): ByteArray {
             val dst = ByteArray(src.length)
-            val len = decode(src, KBuffer.wrap(dst))
+            val len = decode(Memory.wrap(dst).asWriteable(), src)
             return if (len != dst.size) dst.copyOf(len) else dst
         }
 
-        public fun decode(src: String, dst: Writeable): Int {
-            val buffer = KBuffer.wrap(ByteArray(src.length) { src[it].toByte() })
-            return decode(buffer, dst, src.length)
-        }
+        public fun decode(src: Memory, offset: Int = 0, length: Int = src.size - offset): ByteArray = decode(src.slice(offset, length).asReadable())
+
+        public fun decode(src: CursorReadable): ByteArray = decode(src, src.remaining)
 
         public fun decode(src: Readable, length: Int): ByteArray {
             val dst = ByteArray(length)
-            val realLength = decode(src, KBuffer.wrap(dst), length)
+            val realLength = decode(Memory.wrap(dst).asWriteable(), src, length)
             return if (realLength != dst.size) dst.copyOf(realLength) else dst
         }
 
-        public fun decode(src: Readable, dst: Writeable, len: Int): Int {
+        public fun decode(dst: Writeable, src: String): Int {
+            val input = Memory.wrap(ByteArray(src.length) { src[it].toByte() }).asReadable()
+            return decode(dst, input, src.length)
+        }
+
+        public fun decode(dst: Writeable, src: Memory, offset: Int = 0, length: Int = src.size - offset): Int = decode(dst, src.slice(offset, length).asReadable())
+
+        public fun decode(dst: Writeable, src: CursorReadable): Int = decode(dst, src, src.remaining)
+
+        public fun decode(dst: Writeable, src: Readable, length: Int): Int {
             var sp = 0
             val base64 = if (isURL) fromBase64URL else fromBase64
             var dp = 0
             var bits = 0
             var shiftto = 18
-            while (sp < len) {
+            while (sp < length) {
                 val c = src.readByte().toInt() and 0xff
                 sp++
                 val b = base64[c]
                 if (b < 0) {
                     if (b == -2) {
-                        if (shiftto == 6 && (sp == len || src.readByte() != '='.toByte()) || shiftto == 18) {
+                        if (shiftto == 6 && (sp == length || src.readByte() != '='.toByte()) || shiftto == 18) {
                             throw IllegalArgumentException("Input byte array has wrong 4-byte ending unit")
                         }
                         sp++
@@ -222,25 +232,25 @@ public object Base64 {
                 bits = bits or (b shl shiftto)
                 shiftto -= 6
                 if (shiftto < 0) {
-                    dst.putByte((bits shr 16).toByte())
-                    dst.putByte((bits shr 8).toByte())
-                    dst.putByte(bits.toByte())
+                    dst.writeByte((bits shr 16).toByte())
+                    dst.writeByte((bits shr 8).toByte())
+                    dst.writeByte(bits.toByte())
                     dp += 3
                     shiftto = 18
                     bits = 0
                 }
             }
             if (shiftto == 6) {
-                dst.putByte((bits shr 16).toByte())
+                dst.writeByte((bits shr 16).toByte())
                 dp++
             } else if (shiftto == 0) {
-                dst.putByte((bits shr 16).toByte())
-                dst.putByte((bits shr 8).toByte())
+                dst.writeByte((bits shr 16).toByte())
+                dst.writeByte((bits shr 8).toByte())
                 dp += 2
             } else if (shiftto == 12) {
                 throw IllegalArgumentException("Last unit does not have enough valid bits")
             }
-            while (sp < len) {
+            while (sp < length) {
                 if (isMIME && base64[src.readByte().toInt()] < 0) {
                     sp++
                     continue

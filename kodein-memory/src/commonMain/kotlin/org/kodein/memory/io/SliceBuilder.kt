@@ -7,6 +7,7 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
     private val allocs = ArrayList<Allocation>()
 
     private var current: Allocation = alloc(initialCapacity).also { allocs += it }
+    private var currentPosition: Int = 0
 
     private var startPosition: Int = 0
 
@@ -16,25 +17,24 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
         private set
 
     private fun requireSize(size: Int) {
-        if (size <= current.remaining) return
+        if (size <= current.size - currentPosition) return
 
-        val neededSize = current.position - startPosition + size
+        val neededSize = currentPosition - startPosition + size
         val factor =
             if (neededSize < (initialCapacity / 2)) 1
             else ((neededSize / initialCapacity) + 2)
 
         val previousAllocation = current
-        val previousBuffer = previousAllocation.duplicate()
-        previousBuffer.limitHere()
         val isOneSlice = startPosition == 0 && !hasSubSlice
         if (isOneSlice) {
             allocs.removeAt(allocs.lastIndex)
         }
-        previousBuffer.position = startPosition
         current = alloc(factor * initialCapacity).also { allocs += it }
+        val copyLength = currentPosition - startPosition
+        current.setBytes(0, previousAllocation, startPosition, copyLength)
         startPosition = 0
+        currentPosition = copyLength
         hasSubSlice = false
-        current.putReadableBytes(previousBuffer)
         ++copies
         if (isOneSlice) {
             previousAllocation.close()
@@ -43,86 +43,63 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
 
     public inner class BuilderWriteable internal constructor(): Writeable {
 
-        override val position: Int get() = current.position - startPosition
+        override val position: Int get() = currentPosition - startPosition
 
-        override fun requireCanWrite(needed: Int) {
+        override fun requestCanWrite(needed: Int) {
             requireSize(needed)
         }
 
-        override fun putByte(value: Byte) {
-            requireSize(Byte.SIZE_BYTES)
-            current.putByte(value)
+        private inline fun <T> writeValue(size: Int, value: T, setValue: Memory.(Int, T) -> Unit) {
+            requireSize(size)
+            current.setValue(currentPosition, value)
+            currentPosition += size
         }
 
-        override fun putChar(value: Char) {
-            requireSize(Char.SIZE_BYTES)
-            current.putChar(value)
-        }
+        override fun writeByte(value: Byte): Unit = writeValue(1, value, Memory::setByte)
+        override fun writeShort(value: Short): Unit = writeValue(2, value, Memory::setShort)
+        override fun writeInt(value: Int): Unit = writeValue(4, value, Memory::setInt)
+        override fun writeLong(value: Long): Unit = writeValue(8, value, Memory::setLong)
 
-        override fun putShort(value: Short) {
-            requireSize(Short.SIZE_BYTES)
-            current.putShort(value)
-        }
-
-        override fun putInt(value: Int) {
-            requireSize(Int.SIZE_BYTES)
-            current.putInt(value)
-        }
-
-        override fun putLong(value: Long) {
-            requireSize(Long.SIZE_BYTES)
-            current.putLong(value)
-        }
-
-        override fun putFloat(value: Float) {
-            requireSize(Int.SIZE_BYTES)
-            current.putFloat(value)
-        }
-
-        override fun putDouble(value: Double) {
-            requireSize(Long.SIZE_BYTES)
-            current.putDouble(value)
-        }
-
-        override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
+        override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
             requireSize(length)
-            current.putBytes(src, srcOffset, length)
+            current.setBytes(currentPosition, src, srcOffset, length)
+            currentPosition += length
         }
 
-        override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+        override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
             requireSize(length)
-            current.putMemoryBytes(src, srcOffset, length)
+            current.setBytes(currentPosition, src, srcOffset, length)
+            currentPosition += length
         }
 
-        override fun putReadableBytes(src: Readable, length: Int) {
+        override fun writeBytes(src: Readable, length: Int) {
             requireSize(length)
-            current.putReadableBytes(src, length)
+            current.setBytes(currentPosition, src, length)
+            currentPosition += length
         }
 
-        override fun flush() {
-            current.flush()
-        }
+        override fun flush() {}
 
-        public fun subSlice(block: () -> Unit) : ReadBuffer {
-            val startOffset = current.position - startPosition
+        public fun subSlice(block: () -> Unit) : ReadMemory {
+            val startOffset = position
             block()
             hasSubSlice = true
             val newStart = startPosition + startOffset
-            return current.slice(newStart, current.position - newStart)
+            return current.slice(newStart, currentPosition - newStart)
         }
     }
 
     private val writeable = BuilderWriteable()
 
-    public fun newSlice(block: BuilderWriteable.() -> Unit): KBuffer {
-        startPosition = current.position
+    public fun slice(block: BuilderWriteable.() -> Unit): ReadMemory {
+        startPosition = currentPosition
         writeable.block()
-        return current.slice(startPosition, current.position - startPosition)
+        return current.slice(startPosition, currentPosition - startPosition)
     }
 
     public val allocationCount: Int get() = allocs.size
 
-    public val allocationSize: Int get() = allocs.sumBy { it.capacity }
+    public val allocationSize: Int get() = allocs.sumBy { it.size }
 
     override fun close() {
         allocs.forEach { it.close() }
@@ -130,6 +107,6 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
 
     public companion object {
         public fun native(initialCapacity: Int): SliceBuilder = SliceBuilder(initialCapacity) { Allocation.native(it) }
-        public fun array(initialCapacity: Int): SliceBuilder = SliceBuilder(initialCapacity) { KBuffer.array(it).asManagedAllocation() }
+        public fun array(initialCapacity: Int): SliceBuilder = SliceBuilder(initialCapacity) { Memory.array(it).asManagedAllocation() }
     }
 }

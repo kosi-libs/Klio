@@ -1,15 +1,8 @@
 package org.kodein.memory.text
 
 @OptIn(ExperimentalUnsignedTypes::class)
-public fun ByteArray.toHexString(): String = joinToString("") {
-    val str = it.toUByte().toString(16)
-    if (str.length == 1) "0$str"
-    else str
-}
+public fun ByteArray.toHexString(): String = asUByteArray().toHexString()
 
 @OptIn(ExperimentalUnsignedTypes::class)
-public fun UByteArray.toHexString(): String = joinToString("") {
-    val str = it.toString(16)
-    if (str.length == 1) "0$str"
-    else str
-}
+public fun UByteArray.toHexString(): String =
+    joinToString("") { it.toString(16).padStart(2, '0') }

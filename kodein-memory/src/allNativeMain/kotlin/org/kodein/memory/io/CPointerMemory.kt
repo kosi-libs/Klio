@@ -5,18 +5,17 @@ import platform.posix.memcmp
 import platform.posix.memcpy
 
 @Suppress("ConstantConditionIf")
-public class CPointerKBuffer(public val pointer: CPointer<ByteVar>, capacity: Int) : AbstractKBuffer(capacity) {
+public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val size: Int) : AbstractMemory() {
 
-    override val implementation: String get() = "CPointerKBuffer"
-
-    override fun createDuplicate(): CPointerKBuffer = CPointerKBuffer(pointer, capacity)
+    override fun unsafeSlice(index: Int, length: Int): AbstractMemory =
+        CPointerMemory((pointer + index)!!, length)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         memcpy((pointer + index)!!, src.refTo(srcOffset), length.convert())
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean {
-        if (src !is CPointerKBuffer) return false
+    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractMemory, srcOffset: Int, length: Int): Boolean {
+        if (src !is CPointerMemory) return false
         memcpy((pointer + index)!!, (src.pointer + srcOffset)!!, length.convert())
         return true
     }
@@ -76,11 +75,10 @@ public class CPointerKBuffer(public val pointer: CPointer<ByteVar>, capacity: In
                 slowLoadLong { pointer[index + it] }
             }
 
-    override fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean? {
-        if (other !is CPointerKBuffer) return null
-
-        return memcmp(pointer + index, other.pointer + otherIndex, length.convert()) == 0
-    }
-
-    override fun backingArray(): ByteArray? = null
+    override fun unsafeTryEqualsOptimized(other: AbstractMemory): Boolean? =
+        when (other) {
+            is CPointerMemory -> memcmp(pointer, other.pointer, size.convert()) == 0
+            is ByteArrayMemory -> other.array.usePinned { pinned -> memcmp(pointer, pinned.addressOf(other.offset), size.convert()) == 0 }
+            else -> null
+        }
 }

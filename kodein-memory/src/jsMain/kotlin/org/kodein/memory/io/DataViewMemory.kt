@@ -1,33 +1,32 @@
 package org.kodein.memory.io
 
-import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.DataView
-import org.khronos.webgl.Int8Array
+import org.khronos.webgl.Uint8Array
 
-public class TypedArrayKBuffer(public val buffer: ArrayBuffer) : AbstractKBuffer(buffer.byteLength) {
+public class DataViewMemory(public val data: DataView) : AbstractMemory() {
 
-    private val array = Int8Array(buffer, 0, capacity)
-    private val data = DataView(buffer, 0, capacity)
+    private val uint8Array: Uint8Array get() = Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 
-    override val implementation: String get() = "TypedArrayKBuffer"
+    override val size: Int get() = data.byteLength
 
-    override fun createDuplicate(): TypedArrayKBuffer = TypedArrayKBuffer(buffer)
+    override fun unsafeSlice(index: Int, length: Int): AbstractMemory =
+        DataViewMemory(DataView(data.buffer, data.byteOffset + index, length))
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         if (srcOffset == 0 && length == src.size) {
-            array.set(src.unsafeCast<Array<Byte>>(), index)
+            uint8Array.set(src.unsafeCast<Array<Byte>>(), index)
         } else {
-            src.copyInto(array.unsafeCast<ByteArray>(), index, srcOffset, srcOffset + length)
+            src.copyInto(uint8Array.unsafeCast<ByteArray>(), index, srcOffset, srcOffset + length)
         }
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean {
-        if (src !is TypedArrayKBuffer) return false
+    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractMemory, srcOffset: Int, length: Int): Boolean {
+        if (src !is DataViewMemory) return false
 
-        if (srcOffset == 0 && length == src.array.length) {
-            array.set(src.array, index)
+        if (srcOffset == 0 && length == src.data.byteLength) {
+            uint8Array.set(src.uint8Array, index)
         } else {
-            array.set(src.array.subarray(srcOffset, srcOffset + length), index)
+            uint8Array.set(src.uint8Array.subarray(srcOffset, srcOffset + length), index)
         }
 
         return true
@@ -51,7 +50,7 @@ public class TypedArrayKBuffer(public val buffer: ArrayBuffer) : AbstractKBuffer
     }
 
     override fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int) {
-        array.unsafeCast<ByteArray>().copyInto(dst, dstOffset, index, index + length)
+        uint8Array.unsafeCast<ByteArray>().copyInto(dst, dstOffset, index, index + length)
     }
 
     override fun unsafeGetByte(index: Int): Byte = data.getInt8(index)
@@ -67,7 +66,7 @@ public class TypedArrayKBuffer(public val buffer: ArrayBuffer) : AbstractKBuffer
         )
     }
 
-    override fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean? = null
+    override fun unsafeTryEqualsOptimized(other: AbstractMemory): Boolean? = null
 
-    override fun backingArray(): ByteArray? = null
+
 }

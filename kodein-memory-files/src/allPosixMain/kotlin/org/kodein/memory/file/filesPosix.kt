@@ -1,12 +1,9 @@
 package org.kodein.memory.file
 
 import kotlinx.cinterop.*
-import org.kodein.memory.io.IOException
-import org.kodein.memory.io.OutOfMemoryException
-import org.kodein.memory.io.ReadMemory
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.toBigEndian
+import org.kodein.memory.io.*
 import platform.posix.*
+import kotlin.math.min
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun Path.getType(statFun: (String?, CValuesRef<stat>?) -> Int): EntityType {
@@ -71,26 +68,56 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
         fseek(file, 0.convert(), SEEK_SET)
     }
 
-    override val position: Int get() = ftell(file).toInt()
+    override var position: Int
+        get() = ftell(file).toInt()
+        set(value) {
+            require(value <= size) { "Position $value is out of file (size: $size)" }
+            fseek(file, value.convert(), SEEK_SET)
+        }
 
-    override fun requireCanRead(needed: Int) {
-        if (remaining < needed) throw OutOfMemoryException.NotEnoughRemaining(needed, remaining)
-    }
-
-    public val remaining: Int get() = size - ftell(file).toInt()
+    override val remaining: Int get() = size - ftell(file).toInt()
 
     override fun valid() = remaining != 0
 
-    override fun receive(): Int {
+    override fun requestCanRead(needed: Int) {
+        if (needed > remaining) throw IOException("End of channel file: needed $needed bytes, but has only $remaining remaining bytes.")
+    }
+
+    override fun tryReadByte(): Int {
         val b = fgetc(file)
         if (b == EOF) return -1
         return b
     }
 
-    override fun receive(dst: ByteArray, dstOffset: Int, length: Int): Int {
-        val r = fread(dst.refTo(0), 1.convert(), length.convert(), file).toInt()
+    override fun tryReadBytes(dst: ByteArray, dstOffset: Int, length: Int): Int {
+        require(dstOffset >= 0)
+        require(dstOffset + length <= dst.size)
+        val r = fread(dst.refTo(dstOffset), 1.convert(), length.convert(), file).toInt()
         if (r == 0 && feof(file) != 0) return -1
         return r
+    }
+
+    override fun tryReadBytes(dst: Memory, dstOffset: Int, length: Int): Int {
+        require(dstOffset >= 0)
+        require(dstOffset + length <= dst.size)
+        when (dst) {
+            is ByteArrayMemory -> {
+                val r = fread(dst.array.refTo(dst.offset + dstOffset), 1.convert(), length.convert(), file).toInt()
+                if (r == 0 && feof(file) != 0) return -1
+                return r
+            }
+            is CPointerMemory -> {
+                val r = fread(dst.pointer + dstOffset, 1.convert(), length.convert(), file).toInt()
+                if (r == 0 && feof(file) != 0) return -1
+                return r
+            }
+            else -> {
+                val buffer = ByteArray(length)
+                val r = tryReadBytes(buffer)
+                if (r == -1) dst.setBytes(dstOffset, buffer, r)
+                return r
+            }
+        }
     }
 
     override fun readByte(): Byte {
@@ -99,43 +126,33 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
         return b.toByte()
     }
 
-    override fun readChar(): Char = readShort().toChar()
-
-    override fun readShort(): Short {
-        val read = fread(alloc, Short.SIZE_BYTES.convert(), 1.convert(), file).toInt()
+    private inline fun <T> readValue(size: Int, getValue: CPointer<ByteVarOf<Byte>>.() -> T): T {
+        val read = fread(alloc, size.convert(), 1.convert(), file).toInt()
         if (read != 1) throw IOException.fromErrno("read")
-        return alloc.reinterpret<ShortVar>().pointed.value.toBigEndian()
+        return alloc.getValue()
     }
 
-    override fun readInt(): Int {
-        val read = fread(alloc, Int.SIZE_BYTES.convert(), 1.convert(), file).toInt()
-        if (read != 1) throw IOException.fromErrno("read")
-        return alloc.reinterpret<IntVar>().pointed.value.toBigEndian()
-    }
-
-    override fun readLong(): Long {
-        val read = fread(alloc, Long.SIZE_BYTES.convert(), 1.convert(), file).toInt()
-        if (read != 1) throw IOException.fromErrno("read")
-        return alloc.reinterpret<LongVar>().pointed.value.toBigEndian()
-    }
-
-    override fun readFloat(): Float = Float.fromBits(readInt())
-
-    override fun readDouble(): Double = Double.fromBits(readLong())
+    override fun readShort(): Short = readValue(2) { reinterpret<ShortVar>().pointed.value.toBigEndian() }
+    override fun readInt(): Int = readValue(4) { reinterpret<IntVar>().pointed.value.toBigEndian() }
+    override fun readLong(): Long = readValue(8) { reinterpret<LongVar>().pointed.value.toBigEndian() }
 
     override fun readBytes(dst: ByteArray, dstOffset: Int, length: Int) {
         val r = fread(dst.refTo(0), 1.convert(), length.convert(), file).toInt()
         if (r == 0 && feof(file) != 0) throw IOException.fromErrno("read")
     }
 
-    override fun skip(count: Int): Int {
+    override fun skip(count: Int) {
+        require(count >= 0)
+        val skipped = skipAtMost(count)
+        if (skipped != count) throw IOException("Could not skip $count bytes, only $skipped bytes.")
+    }
+
+    override fun skipAtMost(count: Int): Int {
         val old = ftell(file).toInt()
         fseek(file, count.convert(), SEEK_CUR)
         val new = ftell(file).toInt()
         return new - old
     }
-
-    override fun internalBuffer(): Readable = this
 
     override fun close() {
         nativeHeap.free(alloc)
@@ -155,48 +172,55 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
 
     override val position: Int get() = ftell(file).toInt()
 
-    override fun requireCanWrite(needed: Int) {} // noop
+    override fun requestCanWrite(needed: Int) {} // noop
 
-    override fun putByte(value: Byte) {
+    override fun writeByte(value: Byte) {
         val w = fputc(value.toInt(), file)
         if (w == EOF) throw IOException.fromErrno("write")
     }
 
-    override fun putChar(value: Char) = putShort(value.toShort())
-
-    override fun putShort(value: Short) {
-        alloc.reinterpret<ShortVar>().pointed.value = value.toBigEndian()
-        val w = fwrite(alloc, Short.SIZE_BYTES.convert(), 1.convert(), file).toInt()
+    private inline fun <T> writeValue(size: Int, value: T, setValue: CPointer<ByteVarOf<Byte>>.(T) -> Unit) {
+        alloc.setValue(value)
+        val w = fwrite(alloc, size.convert(), 1.convert(), file).toInt()
         if (w != 1) throw IOException.fromErrno("write")
     }
 
-    override fun putInt(value: Int) {
-        alloc.reinterpret<IntVar>().pointed.value = value.toBigEndian()
-        val w = fwrite(alloc, Int.SIZE_BYTES.convert(), 1.convert(), file).toInt()
-        if (w != 1) throw IOException.fromErrno("write")
-    }
+    override fun writeShort(value: Short) = writeValue(2, value) { reinterpret<ShortVar>().pointed.value = it.toBigEndian() }
+    override fun writeInt(value: Int) = writeValue(4, value) { reinterpret<IntVar>().pointed.value = it.toBigEndian() }
+    override fun writeLong(value: Long) = writeValue(8, value) { reinterpret<LongVar>().pointed.value = it.toBigEndian() }
 
-    override fun putLong(value: Long) {
-        alloc.reinterpret<LongVar>().pointed.value = value.toBigEndian()
-        val w = fwrite(alloc, Long.SIZE_BYTES.convert(), 1.convert(), file).toInt()
-        if (w != 1) throw IOException.fromErrno("write")
-    }
-
-    override fun putFloat(value: Float) = putInt(value.toBits())
-
-    override fun putDouble(value: Double) = putLong(value.toBits())
-
-    override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
         val w = fwrite(src.refTo(srcOffset), 1.convert(), length.convert(), file).toInt()
         if (w != length) throw IOException.fromErrno("write")
     }
 
-    override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int) {
-        repeat(length) { putByte(src[srcOffset + it]) }
+    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+        val w = when (src) {
+            is ByteArrayMemory -> fwrite(src.array.refTo(src.offset + srcOffset), 1.convert(), length.convert(), file).toInt()
+            is CPointerMemory -> fwrite(src.pointer + srcOffset, 1.convert(), length.convert(), file).toInt()
+            else -> {
+                val buffer = src.getBytesCopy(srcOffset, length)
+                fwrite(buffer.refTo(0), 1.convert(), length.convert(), file).toInt()
+            }
+        }
+        if (w != length) throw IOException.fromErrno("write")
     }
 
-    override fun putReadableBytes(src: Readable, length: Int) {
-        repeat(length) { putByte(src.readByte()) }
+    override fun writeBytes(src: Readable, length: Int) {
+        if (src is MemoryReadable) {
+            writeBytes(src.memory, src.position, length)
+            src.skip(length)
+        } else {
+            writeBytesBuffered(src, length)
+        }
+    }
+
+    override fun skip(count: Int) {
+        val old = ftell(file).toInt()
+        fseek(file, count.convert(), SEEK_CUR)
+        val new = ftell(file).toInt()
+        val skipped = new - old
+        if (skipped != count) throw IOException("Could not skip $count bytes, only $skipped bytes.")
     }
 
     override fun flush() {

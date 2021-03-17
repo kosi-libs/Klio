@@ -1,27 +1,34 @@
 package org.kodein.memory.file
 
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.asReadable
-import org.kodein.memory.io.asWriteable
+import org.kodein.memory.io.*
 import java.io.*
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.OpenOption
+import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.BasicFileAttributes
 
-public class JVMReadableFile(inputStream: FileInputStream): ReadableFile,
-        Readable by inputStream.asReadable(),
-        Closeable by inputStream
+
+public class JVMReadableFile(channel: FileChannel): ReadableFile,
+    CursorReadable by channel.asReadable(),
+    Closeable by channel
 
 public actual fun Path.openReadableFile(): ReadableFile =
-        JVMReadableFile(FileInputStream(File(path)))
+    JVMReadableFile(FileChannel.open(asNio(), StandardOpenOption.READ))
 
-public class JVMWriteableFile(outputStream: FileOutputStream): WriteableFile,
-        Writeable by outputStream.asWriteable(),
-        Closeable by outputStream
+public class JVMWriteableFile(channel: FileChannel): WriteableFile,
+        CursorWriteable by channel.asWriteable(),
+        Closeable by channel
 
 public actual fun Path.openWriteableFile(append: Boolean): WriteableFile =
-        JVMWriteableFile(FileOutputStream(File(path), append))
+        JVMWriteableFile(FileChannel.open(asNio(),
+            StandardOpenOption.WRITE,
+            StandardOpenOption.CREATE,
+            if (append) StandardOpenOption.APPEND else StandardOpenOption.TRUNCATE_EXISTING)
+        )
 
 
 
@@ -91,3 +98,5 @@ public actual fun Path.createDir() {
 public actual fun Path.delete() {
     if (!File(path).delete()) throw IOException("Error deleting $path")
 }
+
+

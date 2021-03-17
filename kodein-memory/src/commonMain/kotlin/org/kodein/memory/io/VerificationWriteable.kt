@@ -5,33 +5,27 @@ public class VerificationWriteable(private val from: Readable): Writeable {
 
     override val position: Int get() = from.position
 
-    override fun requireCanWrite(needed: Int): Unit = from.requireCanRead(needed)
+    override fun requestCanWrite(needed: Int): Unit = from.requestCanRead(needed)
 
     private inline fun check(assertion: () -> Boolean) {
         val currentPosition = from.position
         val success = try {
             assertion()
-        } catch (_: OutOfMemoryException) {
+        } catch (_: IOException) {
             false
         }
         if (!success) throw DiffException(currentPosition)
     }
 
-    override fun putByte(value: Byte): Unit = check { from.readByte() == value }
+    override fun writeByte(value: Byte): Unit = check { from.readByte() == value }
 
-    override fun putChar(value: Char): Unit = check { from.readChar() == value }
+    override fun writeShort(value: Short): Unit = check { from.readShort() == value }
 
-    override fun putShort(value: Short): Unit = check { from.readShort() == value }
+    override fun writeInt(value: Int): Unit = check { from.readInt() == value }
 
-    override fun putInt(value: Int): Unit = check { from.readInt() == value }
+    override fun writeLong(value: Long): Unit = check { from.readLong() == value }
 
-    override fun putLong(value: Long): Unit = check { from.readLong() == value }
-
-    override fun putFloat(value: Float): Unit = check { from.readFloat() == value }
-
-    override fun putDouble(value: Double): Unit = check { from.readDouble() == value }
-
-    override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
         require(src.size - srcOffset >= length) { "Failed: src.size - srcOffset >= length (${src.size} - $srcOffset >= $length)" }
         check {
             src.forEach {
@@ -41,7 +35,7 @@ public class VerificationWriteable(private val from: Readable): Writeable {
         }
     }
 
-    override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
         check {
             repeat(length) {
                 if (from.readByte() != src[srcOffset + it]) return@check false
@@ -50,7 +44,7 @@ public class VerificationWriteable(private val from: Readable): Writeable {
         }
     }
 
-    override fun putReadableBytes(src: Readable, length: Int) {
+    override fun writeBytes(src: Readable, length: Int) {
         check {
             repeat(length) {
                 if (from.readByte() != src.readByte()) return@check false

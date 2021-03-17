@@ -1,7 +1,6 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.io.KBuffer
-import org.kodein.memory.io.array
+import org.kodein.memory.io.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -37,15 +36,14 @@ class Base64Tests {
 
     @Test
     fun bigText() {
-        val src = KBuffer.wrap(palindrome)
-        val size = src.remaining
+        val src = Memory.array(palindrome)
+        val size = src.size
 
-        val base64 = Base64.mimeEncoder.encode(src)
+        val base64 = Base64.mimeEncoder.encode(src.asReadable())
 
-        val dst = KBuffer.array(size)
-        Base64.mimeDecoder.decode(base64, dst)
-        dst.flip()
-        val decodedString = dst.readString()
+        val dst = Memory.array(size)
+        val slice = dst.slice { Base64.mimeDecoder.decode(this, base64) }
+        val decodedString = slice.asReadable().readString()
 
         assertEquals(palindrome, decodedString)
     }

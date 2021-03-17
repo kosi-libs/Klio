@@ -6,53 +6,51 @@ public interface Writeable {
 
     public val position: Int
 
-    public fun requireCanWrite(needed: Int)
+    public fun requestCanWrite(needed: Int)
 
-    public fun putByte(value: Byte)
-    public fun putChar(value: Char)
-    public fun putShort(value: Short)
-    public fun putInt(value: Int)
-    public fun putLong(value: Long)
-    public fun putFloat(value: Float)
-    public fun putDouble(value: Double)
+    public fun writeByte(value: Byte)
+    public fun writeShort(value: Short)
+    public fun writeInt(value: Int)
+    public fun writeLong(value: Long)
 
-    public fun putBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    public fun putMemoryBytes(src: ReadMemory, srcOffset: Int = 0, length: Int = src.limit - srcOffset)
-    public fun putReadableBytes(src: Readable, length: Int)
+    public fun writeBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
+    public fun writeBytes(src: ReadMemory, srcOffset: Int = 0, length: Int = src.size - srcOffset)
+    public fun writeBytes(src: Readable, length: Int)
 
     public fun flush()
 }
 
-public fun Writeable.putReadableBytes(src: ReadBuffer): Int {
+public interface CursorWriteable : Writeable {
+    public fun skip(count: Int)
+}
+
+public fun Writeable.writeBytes(src: CursorReadable): Int {
     val count = src.remaining
-    putReadableBytes(src, count)
+    writeBytes(src, count)
     return count
 }
 
-public interface ResettableWriteable : Writeable {
-    public fun reset()
-    public fun resetHere()
-    public fun flip()
-}
+public fun Writeable.writeFloat(value: Float): Unit = writeInt(value.toBits())
+public fun Writeable.writeDouble(value: Double): Unit = writeLong(value.toBits())
 
 @ExperimentalUnsignedTypes
-public fun Writeable.putUByte(value: UByte): Unit = putByte(value.toByte())
+public fun Writeable.writeUByte(value: UByte): Unit = writeByte(value.toByte())
 @ExperimentalUnsignedTypes
-public fun Writeable.putUShort(value: UShort): Unit = putShort(value.toShort())
+public fun Writeable.writeUShort(value: UShort): Unit = writeShort(value.toShort())
 @ExperimentalUnsignedTypes
-public fun Writeable.putUInt(value: UInt): Unit = putInt(value.toInt())
+public fun Writeable.writeUInt(value: UInt): Unit = writeInt(value.toInt())
 @ExperimentalUnsignedTypes
-public fun Writeable.putULong(value: ULong): Unit = putLong(value.toLong())
+public fun Writeable.writeULong(value: ULong): Unit = writeLong(value.toLong())
 @ExperimentalUnsignedTypes
-public fun Writeable.putUBytes(src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset): Unit = putBytes(src.asByteArray(), srcOffset, length)
+public fun Writeable.writeUBytes(src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset): Unit = writeBytes(src.asByteArray(), srcOffset, length)
 
-public fun Writeable.putReadableBytesBuffered(src: Readable, length: Int, bufferSize: Int = 16384) {
+public fun Writeable.writeBytesBuffered(src: Readable, length: Int, bufferSize: Int = 8 * 1024) {
     val buffer = ByteArray(min(length, bufferSize))
     var left = length
     while (left > 0) {
         val read = min(left, buffer.size)
         src.readBytes(buffer, 0, read)
-        this.putBytes(buffer, 0, read)
+        this.writeBytes(buffer, 0, read)
         left -= read
     }
 }

@@ -14,6 +14,7 @@ import kotlinx.serialization.encoding.encodeStructure
 import org.kodein.memory.io.*
 import org.kodein.memory.text.Charset
 import org.kodein.memory.text.readString
+import kotlin.math.min
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.random.Random
 
@@ -52,7 +53,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         buf[18] = 45
         buf[13] = 45
         buf[8] = 45
-        return KBuffer.wrap(buf).readString(Charset.ASCII)
+        return Charset.ASCII.bytesToString(buf)
     }
 
     override fun compareTo(other: UUID): Int =
@@ -104,12 +105,13 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         }
 
         public fun randomUUID(random: Random = Random.Default): UUID {
-            val data = KBuffer.array(16) { random.nextBytes(this, 16) }
+            val data = Memory.array(16)// { random.nextBytes(this, 16) }
+            random.nextBytes(data)
             data[6] = (data[6].toInt() and 0x0F).toByte()
             data[6] = (data[6].toInt() or 0x40).toByte()
             data[8] = (data[8].toInt() and 0x3F).toByte()
             data[8] = (data[8].toInt() or 0x80).toByte()
-            return UUID(data.readLong(), data.readLong())
+            return UUID(data.getLong(0), data.getLong(8))
         }
 
         public fun fromString(name: String): UUID {
@@ -222,4 +224,26 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         }
 
     }
+}
+
+public fun Writeable.writeUUID(uuid: UUID) {
+    writeLong(uuid.mostSignificantBits)
+    writeLong(uuid.leastSignificantBits)
+}
+
+public fun Memory.setUUID(index: Int, uuid: UUID) {
+    setLong(index, uuid.mostSignificantBits)
+    setLong(index + 8, uuid.leastSignificantBits)
+}
+
+public fun Readable.readUUID(): UUID {
+    val msb = readLong()
+    val lsb = readLong()
+    return UUID(msb, lsb)
+}
+
+public fun ReadMemory.getUUID(index: Int): UUID {
+    val msb = getLong(index)
+    val lsb = getLong(index + 8)
+    return UUID(msb, lsb)
 }

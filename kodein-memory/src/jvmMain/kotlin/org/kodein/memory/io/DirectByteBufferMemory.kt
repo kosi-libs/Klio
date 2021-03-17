@@ -1,16 +1,21 @@
 package org.kodein.memory.io
 
-import java.nio.Buffer
 import java.nio.ByteBuffer
 
-public class JvmNioKBuffer(public val byteBuffer: ByteBuffer) : AbstractKBuffer(byteBuffer.capacity()) {
+public class DirectByteBufferMemory(public val byteBuffer: ByteBuffer) : AbstractMemory() {
 
-    public val hasArray: Boolean get() = byteBuffer.hasArray()
-    public val isDirect: Boolean get() = byteBuffer.isDirect
+    init {
+        require(byteBuffer.isDirect) { "ByteBuffer is not direct." }
+    }
 
-    override val implementation: String get() = "JvmNioKBuffer"
+    override val size: Int get() = byteBuffer.limit()
 
-    override fun createDuplicate(): JvmNioKBuffer = JvmNioKBuffer(byteBuffer)
+    override fun unsafeSlice(index: Int, length: Int): AbstractMemory =
+        byteBuffer.position(index) {
+            val slice = byteBuffer.slice()
+            slice.limit(length)
+            DirectByteBufferMemory(slice)
+        }
 
     private inline fun <R> ByteBuffer.tmp(g: ByteBuffer.() -> Int, s: ByteBuffer.(Int) -> Unit, new: Int, block: () -> R): R {
         val old = g()
@@ -24,10 +29,8 @@ public class JvmNioKBuffer(public val byteBuffer: ByteBuffer) : AbstractKBuffer(
         }
     }
 
-    private fun ByteBuffer.asJ8Buffer(): Buffer = this
-
-    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp<R>(ByteBuffer::limit, { asJ8Buffer().limit(it) }, newLimit, block)
-    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp<R>(ByteBuffer::position, { asJ8Buffer().position(it) }, newPosition, block)
+    private inline fun <R> ByteBuffer.limit(newLimit: Int, block: () -> R): R = tmp<R>(ByteBuffer::limit, { limit(it) }, newLimit, block)
+    private inline fun <R> ByteBuffer.position(newPosition: Int, block: () -> R): R = tmp<R>(ByteBuffer::position, { position(it) }, newPosition, block)
 
     override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         byteBuffer.position(index) {
@@ -35,8 +38,8 @@ public class JvmNioKBuffer(public val byteBuffer: ByteBuffer) : AbstractKBuffer(
         }
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractKBuffer, srcOffset: Int, length: Int): Boolean {
-        if (src !is JvmNioKBuffer || byteBuffer === src.byteBuffer) return false
+    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractMemory, srcOffset: Int, length: Int): Boolean {
+        if (src !is DirectByteBufferMemory || byteBuffer === src.byteBuffer) return false
 
         byteBuffer.position(index) {
             src.byteBuffer.position(srcOffset) {
@@ -79,19 +82,9 @@ public class JvmNioKBuffer(public val byteBuffer: ByteBuffer) : AbstractKBuffer(
         }
     }
 
-    override fun tryEqualsOptimized(index: Int, other: AbstractKBuffer, otherIndex: Int, length: Int): Boolean? {
-        if (other !is JvmNioKBuffer || byteBuffer === other.byteBuffer) return null
+    override fun unsafeTryEqualsOptimized(other: AbstractMemory): Boolean? {
+        if (other !is DirectByteBufferMemory || byteBuffer === other.byteBuffer) return null
 
-        byteBuffer.position(index) {
-            byteBuffer.limit(index + length) {
-                other.byteBuffer.position(otherIndex) {
-                    other.byteBuffer.limit(otherIndex + length) {
-                        return byteBuffer == other.byteBuffer
-                    }
-                }
-            }
-        }
+        return byteBuffer == other.byteBuffer
     }
-
-    override fun backingArray(): ByteArray? = if (byteBuffer.hasArray()) byteBuffer.array() else null
 }

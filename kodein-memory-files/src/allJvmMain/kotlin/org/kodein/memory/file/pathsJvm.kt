@@ -1,5 +1,6 @@
 package org.kodein.memory.file
 
-import java.io.File
 
-public actual fun Path.isAbsolute(): Boolean = File(path).isAbsolute
+public actual fun Path.isAbsolute(): Boolean = asNio().isAbsolute
+
+public fun Path.asNio(): java.nio.file.Path = java.nio.file.Paths.get(path)

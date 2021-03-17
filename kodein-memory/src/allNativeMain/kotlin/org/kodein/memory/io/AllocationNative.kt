@@ -5,7 +5,7 @@ import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.free
 import kotlinx.cinterop.nativeHeap
 
-public actual fun Allocation.Allocations.native(capacity: Int): Allocation {
-    val pointer = nativeHeap.allocArray<ByteVar>(capacity)
-    return NativeAllocation(CPointerKBuffer(pointer, capacity)) { nativeHeap.free(pointer) }
+public actual fun Allocation.Companion.native(size: Int): Allocation {
+    val pointer = nativeHeap.allocArray<ByteVar>(size)
+    return NativeAllocation(CPointerMemory(pointer, size)) { nativeHeap.free(pointer) }
 }

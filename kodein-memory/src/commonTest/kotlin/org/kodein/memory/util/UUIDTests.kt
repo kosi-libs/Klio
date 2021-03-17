@@ -4,11 +4,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.kodein.memory.io.KBuffer
+import org.kodein.memory.io.Memory
 import org.kodein.memory.io.array
+import org.kodein.memory.io.asReadable
 import org.kodein.memory.text.Charset
-import org.kodein.memory.text.putString
-import org.kodein.memory.text.readString
 import kotlin.test.*
 
 class UUIDTests {
@@ -44,7 +43,7 @@ class UUIDTests {
         val id = UUID.randomUUID()
         assertEquals(2, id.variant())
         assertEquals(4, id.version())
-        val other = KBuffer.array(16) { putUUID(id) } .readUUID()
+        val other = Memory.array(16).apply { setUUID(0, id) } .getUUID(0)
         assertEquals(id, other)
         assertNotSame(id, other)
         assertEquals(id.toString(), other.toString())
@@ -53,43 +52,10 @@ class UUIDTests {
     @Test
     fun writeRead() {
         val id = UUID.randomUUID()
-        val other = KBuffer.array(16) { putUUID(id) } .readUUID()
+        val other = Memory.array(16) { writeUUID(id) } .asReadable().readUUID()
         assertEquals(id, other)
         assertNotSame(id, other)
         assertEquals(id.toString(), other.toString())
-    }
-
-    @Test
-    fun from14Bytes() {
-        val id = UUID.from14Bytes(KBuffer.array(20) {
-            putLong(1234567890123456789L)
-            putInt(123456789)
-            putShort(2142)
-            putString("abcdef", Charset.ASCII)
-        })
-
-        assertEquals(2, id.variant())
-        assertEquals(12, id.version())
-
-        val buffer = KBuffer.array(20) { id.write14Bytes(this) }
-        assertEquals(1234567890123456789L, buffer.readLong())
-        assertEquals(buffer.readInt(), 123456789)
-        assertEquals(buffer.readShort(), 2142)
-        assertFalse(buffer.valid())
-    }
-
-    @Test
-    fun from8Bytes() {
-        val id = UUID.from14Bytes(KBuffer.array(8) {
-            putString("abcdefgh", Charset.ASCII)
-        })
-
-        assertEquals(2, id.variant())
-        assertEquals(12, id.version())
-
-        val buffer = KBuffer.array(8) { id.write14Bytes(this, 8) }
-        assertEquals("abcdefgh", buffer.readString(Charset.ASCII, 8))
-        assertFalse(buffer.valid())
     }
 
     @Serializable
