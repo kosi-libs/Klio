@@ -23,13 +23,13 @@ class BufferedReadableTests {
 
     @Test fun readAllBytes() {
         val result = ByteArray(12)
-        sequence().asBufferedReadable().readBytes(result)
+        BufferedMemoryPullReadable(sequence()).readBytes(result)
         assertTrue(byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C).contentEquals(result))
     }
 
     @Test fun readSomeBytes() {
         val counter = Counter()
-        val readable = sequence(counter).asBufferedReadable()
+        val readable = BufferedMemoryPullReadable(sequence(counter))
         val result = ByteArray(4)
 
         readable.readBytes(result)
@@ -49,15 +49,15 @@ class BufferedReadableTests {
 
     @Test
     fun bufferedInts() {
-        val ints = sequence().asBufferedReadable().asIntSequence()
+        val ints = BufferedMemoryPullReadable(sequence()).asIntSequence()
         assertEquals(listOf(0x01_02_03_04, 0x05_06_07_08, 0x09_0A_0B_0C), ints.toList())
     }
 
     @Test
     fun bufferedShorts() {
         val counter = Counter()
-        val readable = sequence(counter).asBufferedReadable()
-        assertEquals(1, counter.count)
+        val readable = BufferedMemoryPullReadable(sequence(counter))
+        assertEquals(0, counter.count)
         assertEquals(0x01_02, readable.readShort())
         assertEquals(1, counter.count)
         assertEquals(0x03_04, readable.readShort())
@@ -76,8 +76,8 @@ class BufferedReadableTests {
     @Test
     fun skip() {
         val counter = Counter()
-        val readable = sequence(counter).asBufferedReadable()
-        assertEquals(1, counter.count)
+        val readable = BufferedMemoryPullReadable(sequence(counter))
+        assertEquals(0, counter.count)
         readable.skip(2)
         assertEquals(1, counter.count)
         readable.skip(2)

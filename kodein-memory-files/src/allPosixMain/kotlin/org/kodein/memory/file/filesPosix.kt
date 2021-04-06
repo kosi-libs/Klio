@@ -97,24 +97,22 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
         return r
     }
 
-    override fun tryReadBytes(dst: Memory, dstOffset: Int, length: Int): Int {
-        require(dstOffset >= 0)
-        require(dstOffset + length <= dst.size)
+    override fun tryReadBytes(dst: Memory): Int {
         when (dst) {
             is ByteArrayMemory -> {
-                val r = fread(dst.array.refTo(dst.offset + dstOffset), 1.convert(), length.convert(), file).toInt()
+                val r = fread(dst.array.refTo(dst.offset), 1.convert(), dst.size.convert(), file).toInt()
                 if (r == 0 && feof(file) != 0) return -1
                 return r
             }
             is CPointerMemory -> {
-                val r = fread(dst.pointer + dstOffset, 1.convert(), length.convert(), file).toInt()
+                val r = fread(dst.pointer, 1.convert(), dst.size.convert(), file).toInt()
                 if (r == 0 && feof(file) != 0) return -1
                 return r
             }
             else -> {
-                val buffer = ByteArray(length)
+                val buffer = ByteArray(dst.size)
                 val r = tryReadBytes(buffer)
-                if (r == -1) dst.setBytes(dstOffset, buffer, r)
+                if (r == -1) dst.putBytes(0, buffer, 0, r)
                 return r
             }
         }
@@ -170,6 +168,8 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
 
     private val alloc = nativeHeap.allocArray<ByteVar>(8)
 
+    override val remaining: Int get() = Int.MAX_VALUE
+
     override val position: Int get() = ftell(file).toInt()
 
     override fun requestCanWrite(needed: Int) {} // noop
@@ -194,22 +194,21 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
         if (w != length) throw IOException.fromErrno("write")
     }
 
-    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ReadMemory) {
         val w = when (src) {
-            is ByteArrayMemory -> fwrite(src.array.refTo(src.offset + srcOffset), 1.convert(), length.convert(), file).toInt()
-            is CPointerMemory -> fwrite(src.pointer + srcOffset, 1.convert(), length.convert(), file).toInt()
+            is ByteArrayMemory -> fwrite(src.array.refTo(src.offset), 1.convert(), src.size.convert(), file).toInt()
+            is CPointerMemory -> fwrite(src.pointer, 1.convert(), src.size.convert(), file).toInt()
             else -> {
-                val buffer = src.getBytesCopy(srcOffset, length)
-                fwrite(buffer.refTo(0), 1.convert(), length.convert(), file).toInt()
+                val buffer = src.getBytes(0, src.size)
+                fwrite(buffer.refTo(0), 1.convert(), src.size.convert(), file).toInt()
             }
         }
-        if (w != length) throw IOException.fromErrno("write")
+        if (w != src.size) throw IOException.fromErrno("write")
     }
 
     override fun writeBytes(src: Readable, length: Int) {
         if (src is MemoryReadable) {
-            writeBytes(src.memory, src.position, length)
-            src.skip(length)
+            writeBytes(src.readMemory(length))
         } else {
             writeBytesBuffered(src, length)
         }

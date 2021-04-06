@@ -31,7 +31,7 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
         }
         current = alloc(factor * initialCapacity).also { allocs += it }
         val copyLength = currentPosition - startPosition
-        current.setBytes(0, previousAllocation, startPosition, copyLength)
+        current.putBytes(0, previousAllocation.slice(startPosition, copyLength))
         startPosition = 0
         currentPosition = copyLength
         hasSubSlice = false
@@ -49,32 +49,32 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
             requireSize(needed)
         }
 
-        private inline fun <T> writeValue(size: Int, value: T, setValue: Memory.(Int, T) -> Unit) {
+        private inline fun <T> writeValue(size: Int, value: T, putValue: Memory.(Int, T) -> Unit) {
             requireSize(size)
-            current.setValue(currentPosition, value)
+            current.putValue(currentPosition, value)
             currentPosition += size
         }
 
-        override fun writeByte(value: Byte): Unit = writeValue(1, value, Memory::setByte)
-        override fun writeShort(value: Short): Unit = writeValue(2, value, Memory::setShort)
-        override fun writeInt(value: Int): Unit = writeValue(4, value, Memory::setInt)
-        override fun writeLong(value: Long): Unit = writeValue(8, value, Memory::setLong)
+        override fun writeByte(value: Byte): Unit = writeValue(1, value, Memory::putByte)
+        override fun writeShort(value: Short): Unit = writeValue(2, value, Memory::putShort)
+        override fun writeInt(value: Int): Unit = writeValue(4, value, Memory::putInt)
+        override fun writeLong(value: Long): Unit = writeValue(8, value, Memory::putLong)
 
         override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
             requireSize(length)
-            current.setBytes(currentPosition, src, srcOffset, length)
+            current.putBytes(currentPosition, src, srcOffset, length)
             currentPosition += length
         }
 
-        override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
-            requireSize(length)
-            current.setBytes(currentPosition, src, srcOffset, length)
-            currentPosition += length
+        override fun writeBytes(src: ReadMemory) {
+            requireSize(src.size)
+            current.putBytes(currentPosition, src)
+            currentPosition += src.size
         }
 
         override fun writeBytes(src: Readable, length: Int) {
             requireSize(length)
-            current.setBytes(currentPosition, src, length)
+            current.putBytes(currentPosition, src, length)
             currentPosition += length
         }
 

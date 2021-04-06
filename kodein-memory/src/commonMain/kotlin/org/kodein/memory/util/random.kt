@@ -22,14 +22,14 @@ public fun Random.nextBytes(dst: Writeable, len: Int) {
     }
 }
 
-public fun Random.nextBytes(dst: Memory, index: Int = 0, len: Int = dst.size - index) {
-    val buffer = ByteArray(min(len, 64))
-    var remaining = len
-    var current = index
+public fun Random.nextBytes(dst: Memory) {
+    val buffer = ByteArray(min(dst.size, 64))
+    var remaining = dst.size
+    var current = 0
     while (remaining > 0) {
         val count = min(remaining, 64)
         nextBytes(buffer, 0, count)
-        dst.setBytes(current, buffer, 0, count)
+        dst.putBytes(current, buffer, 0, count)
         current += count
         remaining -= count
     }

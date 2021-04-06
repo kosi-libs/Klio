@@ -13,14 +13,17 @@ public interface Writeable {
     public fun writeInt(value: Int)
     public fun writeLong(value: Long)
 
-    public fun writeBytes(src: ByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset)
-    public fun writeBytes(src: ReadMemory, srcOffset: Int = 0, length: Int = src.size - srcOffset)
+    public fun writeBytes(src: ByteArray, srcOffset: Int, length: Int)
+    public fun writeBytes(src: ReadMemory)
     public fun writeBytes(src: Readable, length: Int)
 
     public fun flush()
 }
 
+public fun Writeable.writeBytes(src: ByteArray): Unit = writeBytes(src, 0, src.size)
+
 public interface CursorWriteable : Writeable {
+    public val remaining: Int
     public fun skip(count: Int)
 }
 
@@ -42,7 +45,9 @@ public fun Writeable.writeUInt(value: UInt): Unit = writeInt(value.toInt())
 @ExperimentalUnsignedTypes
 public fun Writeable.writeULong(value: ULong): Unit = writeLong(value.toLong())
 @ExperimentalUnsignedTypes
-public fun Writeable.writeUBytes(src: UByteArray, srcOffset: Int = 0, length: Int = src.size - srcOffset): Unit = writeBytes(src.asByteArray(), srcOffset, length)
+public fun Writeable.writeUBytes(src: UByteArray, srcOffset: Int, length: Int): Unit = writeBytes(src.asByteArray(), srcOffset, length)
+@ExperimentalUnsignedTypes
+public fun Writeable.writeUBytes(src: UByteArray): Unit = writeBytes(src.asByteArray())
 
 public fun Writeable.writeBytesBuffered(src: Readable, length: Int, bufferSize: Int = 8 * 1024) {
     val buffer = ByteArray(min(length, bufferSize))
@@ -54,3 +59,6 @@ public fun Writeable.writeBytesBuffered(src: Readable, length: Int, bufferSize: 
         left -= read
     }
 }
+
+public fun ByteArray.asWriteable(offset: Int, size: Int): Writeable = asMemory(offset, size).asWriteable()
+public fun ByteArray.asWriteable(): Writeable = asMemory().asWriteable()

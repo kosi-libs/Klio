@@ -35,10 +35,10 @@ public class VerificationWriteable(private val from: Readable): Writeable {
         }
     }
 
-    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ReadMemory) {
         check {
-            repeat(length) {
-                if (from.readByte() != src[srcOffset + it]) return@check false
+            repeat(src.size) {
+                if (from.readByte() != src[it]) return@check false
             }
             true
         }

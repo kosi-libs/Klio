@@ -5,7 +5,9 @@ import kotlin.math.min
 
 
 public object Base64 {
+    @Suppress("DuplicatedCode")
     private val toBase64    = charArrayOf('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/')
+    @Suppress("DuplicatedCode")
     private val toBase64URL = charArrayOf('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_')
 
     private val fromBase64 = IntArray(256) { -1 }
@@ -59,21 +61,17 @@ public object Base64 {
 
         public fun withoutPadding(): Encoder = if (!doPadding) this else Encoder(isURL, newline, linemax, false)
 
-        public fun encode(src: ByteArray, off: Int = 0, len: Int = src.size - off): String = encode(Memory.wrap(src, off, len).asReadable())
-        public fun encode(src: Memory, offset: Int = 0, length: Int = src.size - offset): String = encode(src.slice(offset, length).asReadable())
         public fun encode(src: CursorReadable): String = encode(src, src.remaining)
 
         public fun encode(src: Readable, length: Int): String {
             val dst = ByteArray(outLength(length))
-            val realLength = encode(Memory.wrap(dst).asWriteable(), src, length)
+            @Suppress("DuplicatedCode") val realLength = encodeInto(dst.asWriteable(), src, length)
             return CharArray(realLength) { dst[it].toChar() }.concatToString()
         }
 
-        public fun encode(dst: Writeable, src: ByteArray, offset: Int = 0, length: Int = src.size - offset): Int = encode(dst, Memory.wrap(src, offset, length).asReadable())
-        public fun encode(dst: Writeable, src: Memory, offset: Int = 0, length: Int = src.size - offset): Int = encode(dst, src.slice(offset, length).asReadable())
-        public fun encode(dst: Writeable, src: CursorReadable): Int = encode(dst, src, src.remaining)
+        public fun encodeInto(dst: Writeable, src: CursorReadable): Int = encodeInto(dst, src, src.remaining)
 
-        public fun encode(dst: Writeable, src: Readable, length: Int): Int {
+        public fun encodeInto(dst: Writeable, src: Readable, length: Int): Int {
             val base64 = if (isURL) toBase64URL else toBase64
             var sp = 0
             var slen = length / 3 * 3
@@ -183,30 +181,26 @@ public object Base64 {
 
         public fun decode(src: String): ByteArray {
             val dst = ByteArray(src.length)
-            val len = decode(Memory.wrap(dst).asWriteable(), src)
+            val len = decodeInto(dst.asWriteable(), src)
             return if (len != dst.size) dst.copyOf(len) else dst
         }
-
-        public fun decode(src: Memory, offset: Int = 0, length: Int = src.size - offset): ByteArray = decode(src.slice(offset, length).asReadable())
 
         public fun decode(src: CursorReadable): ByteArray = decode(src, src.remaining)
 
         public fun decode(src: Readable, length: Int): ByteArray {
             val dst = ByteArray(length)
-            val realLength = decode(Memory.wrap(dst).asWriteable(), src, length)
+            val realLength = decodeInto(Memory.wrap(dst).asWriteable(), src, length)
             return if (realLength != dst.size) dst.copyOf(realLength) else dst
         }
 
-        public fun decode(dst: Writeable, src: String): Int {
+        public fun decodeInto(dst: Writeable, src: String): Int {
             val input = Memory.wrap(ByteArray(src.length) { src[it].toByte() }).asReadable()
-            return decode(dst, input, src.length)
+            return decodeInto(dst, input, src.length)
         }
 
-        public fun decode(dst: Writeable, src: Memory, offset: Int = 0, length: Int = src.size - offset): Int = decode(dst, src.slice(offset, length).asReadable())
+        public fun decodeInto(dst: Writeable, src: CursorReadable): Int = decodeInto(dst, src, src.remaining)
 
-        public fun decode(dst: Writeable, src: CursorReadable): Int = decode(dst, src, src.remaining)
-
-        public fun decode(dst: Writeable, src: Readable, length: Int): Int {
+        public fun decodeInto(dst: Writeable, src: Readable, length: Int): Int {
             var sp = 0
             val base64 = if (isURL) fromBase64URL else fromBase64
             var dp = 0

@@ -32,8 +32,8 @@ class TransferTests : AbstractIOTests() {
         assertEquals(arraySlice, nativeSlice)
         assertEquals(arraySlice.hashCode(), nativeSlice.hashCode())
 
-        val arraySubSlice = arraySlice.slice(4)
-        val nativeSubSlice = nativeSlice.slice(4)
+        val arraySubSlice = arraySlice.sliceAt(4)
+        val nativeSubSlice = nativeSlice.sliceAt(4)
 
         assertEquals(arraySubSlice, nativeSubSlice)
         assertEquals(arraySubSlice.hashCode(), nativeSubSlice.hashCode())

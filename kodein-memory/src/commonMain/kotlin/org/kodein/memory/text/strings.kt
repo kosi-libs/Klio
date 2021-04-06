@@ -35,15 +35,24 @@ public fun Readable.readString(sizeBytes: Int, charset: Charset = Charset.UTF8, 
 public fun CursorReadable.readString(charset: Charset = Charset.UTF8, maxChars: Int = Int.MAX_VALUE): String =
     readString(remaining, charset, maxChars)
 
+public fun ReadMemory.readString(charset: Charset = Charset.UTF8): String =
+    asReadable().readString(charset)
 
-public fun Writeable.writeStringThenNull(str: CharSequence, charset: Charset = Charset.UTF8): Int {
+public fun ByteArray.readString(offset: Int, size: Int, charset: Charset = Charset.UTF8): String =
+    asReadable(offset, size).readString(charset)
+
+public fun ByteArray.readString(charset: Charset = Charset.UTF8): String =
+    asReadable().readString(charset)
+
+
+public fun Writeable.writeNullTerminatedString(str: CharSequence, charset: Charset = Charset.UTF8): Int {
     require(str.none { it.toInt() == 0 }) { "Char sequence must not have a null char ('\\0')." }
     val size = writeString(str, charset)
     writeByte(0)
     return size + 1
 }
 
-public fun Readable.readStringThenNull(charset: Charset = Charset.UTF8): String {
+public fun Readable.readNullTerminatedString(charset: Charset = Charset.UTF8): String {
     val sb = StringBuilder()
     while (true) {
         val char = charset.decode(this)
@@ -54,10 +63,10 @@ public fun Readable.readStringThenNull(charset: Charset = Charset.UTF8): String 
     return sb.toString()
 }
 
-public fun Memory.Companion.array(str: CharSequence, charset: Charset = Charset.UTF8): ReadMemory =
+public fun Memory.Companion.array(str: CharSequence, charset: Charset = Charset.UTF8): ByteArrayMemory =
     Memory.array(charset.sizeOf(str)) { writeString(str, charset) }
 
-public fun Allocation.Companion.native(str: CharSequence, charset: Charset = Charset.UTF8): ReadAllocation =
+public fun Allocation.Companion.native(str: CharSequence, charset: Charset = Charset.UTF8): PlatformNativeAllocation =
     Allocation.native(charset.sizeOf(str)) { writeString(str, charset) }
 
 public fun Readable.readLine(charset: Charset = Charset.UTF8): String? = buildString {

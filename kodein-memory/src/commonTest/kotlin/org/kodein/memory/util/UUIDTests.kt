@@ -7,7 +7,6 @@ import kotlinx.serialization.json.Json
 import org.kodein.memory.io.Memory
 import org.kodein.memory.io.array
 import org.kodein.memory.io.asReadable
-import org.kodein.memory.text.Charset
 import kotlin.test.*
 
 class UUIDTests {
@@ -43,7 +42,7 @@ class UUIDTests {
         val id = UUID.randomUUID()
         assertEquals(2, id.variant())
         assertEquals(4, id.version())
-        val other = Memory.array(16).apply { setUUID(0, id) } .getUUID(0)
+        val other = Memory.array(16).apply { putUUID(0, id) } .getUUID(0)
         assertEquals(id, other)
         assertNotSame(id, other)
         assertEquals(id.toString(), other.toString())

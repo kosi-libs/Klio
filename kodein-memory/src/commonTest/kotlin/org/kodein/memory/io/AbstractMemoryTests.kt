@@ -47,11 +47,11 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
     fun primitivesSet() {
         val alloc = alloc().useInScope()
         alloc[10] = 123
-        alloc.setShort(30, 12345)
-        alloc.setInt(40, 1234567890)
-        alloc.setLong(50, 1234567890123456L)
-        alloc.setFloat(60, 1234.56f)
-        alloc.setDouble(70, 123456789.987654321)
+        alloc.putShort(30, 12345)
+        alloc.putInt(40, 1234567890)
+        alloc.putLong(50, 1234567890123456L)
+        alloc.putFloat(60, 1234.56f)
+        alloc.putDouble(70, 123456789.987654321)
 
         assertEquals(123, alloc[10])
         assertEquals(12345, alloc.getShort(30))
@@ -67,10 +67,10 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
         val r = alloc.slice {
             writeBytes(byteArrayOf(1, 2, 3))
             writeBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 3, 3)
-            writeBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 6)
+            writeBytes(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 6, 3)
 
             alloc().use { src ->
-                src.setBytes(0, byteArrayOf(10, 11, 12))
+                src.putBytes(0, byteArrayOf(10, 11, 12))
                 writeBytes(src.slice(0, 3))
             }
 
@@ -89,7 +89,7 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
         assertTrue(byteArrayOf(0, 6, 7, 8, 9, 10, 0).contentEquals(dst2))
 
         val dst3 = ByteArray(6)
-        r.readBytes(dst3, 1)
+        r.readBytes(dst3, 1, 5)
         assertTrue(byteArrayOf(0, 11, 12, 13, 14, 15).contentEquals(dst3))
     }
 
@@ -97,18 +97,18 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
     fun bulkSet() {
         val alloc = alloc().useInScope()
 
-        alloc.setBytes(0, byteArrayOf(1, 2, 3))
-        alloc.setBytes(3, byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 3, 3)
-        alloc.setBytes(6, byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 6)
+        alloc.putBytes(0, byteArrayOf(1, 2, 3))
+        alloc.putBytes(3, byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 3, 3)
+        alloc.putBytes(6, byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9), 6, 3)
 
         alloc().use { src ->
-            src.setBytes(0, byteArrayOf(10, 11, 12))
-            alloc.setBytes(9, src, 0, 3)
+            src.putBytes(0, byteArrayOf(10, 11, 12))
+            alloc.putBytes(9, src.slice(0, 3))
         }
 
         alloc().use { src ->
             src.asWriteable().writeBytes(byteArrayOf(10, 11, 12, 13, 14, 15, 16, 17, 18))
-            alloc.setBytes(12, src, 3, 3)
+            alloc.putBytes(12, src.slice( 3, 3))
         }
 
         val dst1 = ByteArray(5)
@@ -120,7 +120,7 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
         assertTrue(byteArrayOf(0, 6, 7, 8, 9, 10, 0).contentEquals(dst2))
 
         val dst3 = ByteArray(6)
-        alloc.getBytes(10, dst3, 1)
+        alloc.getBytes(10, dst3, 1, 5)
         assertTrue(byteArrayOf(0, 11, 12, 13, 14, 15).contentEquals(dst3))
     }
 
@@ -192,7 +192,7 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
         }
 
         val dst = alloc().useInScope().slice {
-            writeBytes(src, 3, 3)
+            writeBytes(src.slice(3, 3))
         }.asReadable()
 
         assertEquals(3, dst.remaining)
@@ -237,12 +237,12 @@ abstract class AbstractMemoryTests : AbstractIOTests() {
         assertEquals(0, slice1.position)
         assertEquals(0, slice1.position)
         assertEquals(3, slice1.remaining)
-        assertTrue(byteArrayOf(4, 5, 6).contentEquals(slice1.readBytesCopy()))
+        assertTrue(byteArrayOf(4, 5, 6).contentEquals(slice1.readBytes()))
 
-        val slice2 = memory.slice(6).asReadable()
+        val slice2 = memory.sliceAt(6).asReadable()
         assertEquals(0, slice2.position)
         assertEquals(3, slice2.remaining)
-        assertTrue(byteArrayOf(7, 8, 9).contentEquals(slice2.readBytesCopy()))
+        assertTrue(byteArrayOf(7, 8, 9).contentEquals(slice2.readBytes()))
     }
 
 }

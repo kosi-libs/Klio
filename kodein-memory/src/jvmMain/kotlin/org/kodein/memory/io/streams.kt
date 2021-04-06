@@ -3,7 +3,6 @@ package org.kodein.memory.io
 import org.kodein.memory.Closeable
 import java.io.InputStream
 import java.io.OutputStream
-import kotlin.math.min
 
 
 internal class WriteableOutputStream(private val writeable: Writeable) : OutputStream() {
@@ -39,12 +38,12 @@ internal class ReadableInputStream(private val readable: Readable) : InputStream
     override fun markSupported() = readable is CursorReadable
 
     override fun mark(readlimit: Int) {
-        if (readable !is CursorReadable) throw IOException("Mark is not supported on ${readable::class.simpleName}.")
+        if (readable !is SeekableCursorReadable) throw IOException("Mark is not supported on ${readable::class.simpleName}.")
         mark = readable.position
     }
 
     override fun reset() {
-        if (readable !is CursorReadable) throw IOException("Mark is not supported on ${readable::class.simpleName}.")
+        if (readable !is SeekableCursorReadable) throw IOException("Mark is not supported on ${readable::class.simpleName}.")
         if (mark == -1) throw IOException("Mark has not been set")
         readable.position = mark
     }
@@ -87,18 +86,17 @@ internal class InputStreamReadable(private val stream: InputStream): Readable, C
         return r
     }
 
-    override fun tryReadBytes(dst: Memory, dstOffset: Int, length: Int): Int {
-        require(dstOffset >= 0)
-        require(dstOffset + length <= dst.size)
-        if (dst is ByteArrayMemory) {
-            val r = stream.read(dst.array, dst.offset + dstOffset, length)
+    override fun tryReadBytes(dst: Memory): Int {
+        val dstMemory = dst.internalMemory()
+        if (dstMemory is ByteArrayMemory) {
+            val r = stream.read(dstMemory.array, dstMemory.offset, dstMemory.size)
             if (r == -1) valid = false
             else position += r
             return r
         } else {
-            val buffer = ByteArray(length)
+            val buffer = ByteArray(dst.size)
             val r = tryReadBytes(buffer)
-            if (r == -1) dst.setBytes(dstOffset, buffer, r)
+            if (r == -1) dst.putBytes(0, buffer, 0, r)
             return r
         }
     }
@@ -156,8 +154,6 @@ public fun InputStream.asReadable(): Readable = InputStreamReadable(this)
 
 
 internal class OutputStreamWriteable(private val stream: OutputStream) : Writeable, Closeable {
-    private var buffer = ByteArray(8)
-
     override var position: Int = 0
         private set
 
@@ -169,8 +165,7 @@ internal class OutputStreamWriteable(private val stream: OutputStream) : Writeab
     }
 
     private fun <T> writeValue(size: Int, value: T, store: (T, (Int, Byte) -> Unit) -> Unit) {
-        store(value) { i, b -> buffer[i] = b }
-        stream.write(buffer, 0, size)
+        store(value) { _, b -> stream.write(b.toInt()) }
         position += size
     }
 
@@ -185,20 +180,20 @@ internal class OutputStreamWriteable(private val stream: OutputStream) : Writeab
         position += length
     }
 
-    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
-        if (src is ByteArrayMemory) {
-            stream.write(src.array, src.offset + srcOffset, length)
+    override fun writeBytes(src: ReadMemory) {
+        val srcMemory = src.internalMemory()
+        if (srcMemory is ByteArrayMemory) {
+            stream.write(srcMemory.array, srcMemory.offset, srcMemory.size)
         } else {
-            val buffer = src.getBytesCopy(srcOffset, length)
+            val buffer = src.getBytes()
             stream.write(buffer)
         }
-        position += length
+        position += src.size
     }
 
     override fun writeBytes(src: Readable, length: Int) {
         if (src is MemoryReadable) {
-            writeBytes(src.memory, src.position, length)
-            src.skip(length)
+            writeBytes(src.readMemory(length))
         } else {
             writeBytesBuffered(src, length)
         }

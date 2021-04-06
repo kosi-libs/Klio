@@ -1,7 +1,7 @@
 package org.kodein.memory.io
 
 @Suppress("DuplicatedCode")
-public abstract class AbstractMemory : Memory {
+public abstract class AbstractMemory<M : AbstractMemory<M>> : Memory {
 
     protected fun ReadMemory.requireSizeAt(index: Int, needed: Int) {
         require(index >= 0) { "index: $index < 0." }
@@ -13,82 +13,81 @@ public abstract class AbstractMemory : Memory {
         if (index + needed > this.size) throw IOException("Needed at least ${index + needed} bytes, but array size is $size bytes.")
     }
 
-    protected abstract fun unsafeSlice(index: Int, length: Int): AbstractMemory
+    protected abstract fun unsafeSlice(index: Int, length: Int): M
 
-    final override fun slice(index: Int, length: Int): Memory {
+    final override fun slice(index: Int, length: Int): M {
         require(index >= 0) { "index: $index < 0" }
         require(length >= 0) { "length: $length < 0" }
         requireSizeAt(index, length)
 
-        if (index == 0 && length == size) return this
+        @Suppress("UNCHECKED_CAST")
+        if (index == 0 && length == size) return this as M
 
         return unsafeSlice(index, length)
     }
 
-    final override fun setByte(index: Int, value: Byte) {
+    final override fun putByte(index: Int, value: Byte) {
         requireSizeAt(index, Byte.SIZE_BYTES)
-        unsafeSetByte(index, value)
+        unsafePutByte(index, value)
     }
 
-    protected abstract fun unsafeSetByte(index: Int, value: Byte)
+    protected abstract fun unsafePutByte(index: Int, value: Byte)
 
-    final override fun setShort(index: Int, value: Short) {
+    final override fun putShort(index: Int, value: Short) {
         requireSizeAt(index, Short.SIZE_BYTES)
-        unsafeSetShort(index, value)
+        unsafePutShort(index, value)
     }
 
-    protected abstract fun unsafeSetShort(index: Int, value: Short)
+    protected abstract fun unsafePutShort(index: Int, value: Short)
 
-    final override fun setInt(index: Int, value: Int) {
+    final override fun putInt(index: Int, value: Int) {
         requireSizeAt(index, Int.SIZE_BYTES)
-        unsafeSetInt(index, value)
+        unsafePutInt(index, value)
     }
 
-    protected abstract fun unsafeSetInt(index: Int, value: Int)
+    protected abstract fun unsafePutInt(index: Int, value: Int)
 
-    final override fun setLong(index: Int, value: Long) {
+    final override fun putLong(index: Int, value: Long) {
         requireSizeAt(index, Long.SIZE_BYTES)
-        unsafeSetLong(index, value)
+        unsafePutLong(index, value)
     }
 
-    protected abstract fun unsafeSetLong(index: Int, value: Long)
+    protected abstract fun unsafePutLong(index: Int, value: Long)
 
-    final override fun setBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
+    final override fun putBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         require(srcOffset >= 0) { "srcOffset: $srcOffset < 0" }
         require(length >= 0) { "length: $length < 0" }
         src.requireSizeAt(srcOffset, length)
         requireSizeAt(index, length)
         if (length == 0) return
-        unsafeSetBytes(index, src, srcOffset, length)
+        unsafePutBytes(index, src, srcOffset, length)
     }
 
-    protected abstract fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int)
+    protected abstract fun unsafePutBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int)
 
-    protected abstract fun unsafeTrySetBytesOptimized(index: Int, src: AbstractMemory, srcOffset: Int, length: Int): Boolean
+    protected abstract fun unsafeTryPutBytesOptimized(index: Int, src: AbstractMemory<*>): Boolean
 
-    final override fun setBytes(index: Int, src: ReadMemory, srcOffset: Int, length: Int) {
-        require(length >= 0) { "length: $length < 0" }
-        src.requireSizeAt(srcOffset, length)
-        requireSizeAt(index, length)
-        if (length == 0) return
+    final override fun putBytes(index: Int, src: ReadMemory) {
+        requireSizeAt(index, src.size)
+        if (src.size == 0) return
         val srcMemory = src.internalMemory()
         val hasOptimized =
             when (srcMemory) {
                 is ByteArrayMemory -> {
-                    unsafeSetBytes(index, srcMemory.array, srcMemory.offset + srcOffset, length)
+                    unsafePutBytes(index, srcMemory.array, srcMemory.offset, src.size)
                     true
                 }
-                is AbstractMemory -> unsafeTrySetBytesOptimized(index, srcMemory, srcOffset, length)
+                is AbstractMemory<*> -> unsafeTryPutBytesOptimized(index, srcMemory)
                 else -> false
             }
         if (!hasOptimized) {
-            repeat (length) {
-                unsafeSetByte(index + it, srcMemory.getByte(srcOffset + it))
+            repeat (src.size) {
+                unsafePutByte(index + it, srcMemory.getByte(it))
             }
         }
     }
 
-    final override fun setBytes(index: Int, src: Readable, length: Int) {
+    final override fun putBytes(index: Int, src: Readable, length: Int) {
         require(length >= 0) { "length: $length < 0" }
         requireSizeAt(index, length)
         if (length == 0) return
@@ -96,17 +95,17 @@ public abstract class AbstractMemory : Memory {
         val hasOptimized =
             when (val srcMemory = (src as? MemoryReadable)?.memory?.internalMemory()) {
                 is ByteArrayMemory -> {
-                    unsafeSetBytes(index, srcMemory.array, srcMemory.offset + src.position, length)
+                    unsafePutBytes(index, srcMemory.array, srcMemory.offset + src.position, length)
                     true
                 }
-                is AbstractMemory -> unsafeTrySetBytesOptimized(index, srcMemory, src.position, length)
+                is AbstractMemory<*> -> unsafeTryPutBytesOptimized(index, srcMemory.slice(src.position, length))
                 else -> false
             }
         if (hasOptimized) {
             src.skip(length)
         } else {
             repeat(length) {
-                unsafeSetByte(index + it, src.readByte())
+                unsafePutByte(index + it, src.readByte())
             }
         }
     }
@@ -151,7 +150,8 @@ public abstract class AbstractMemory : Memory {
 
     protected abstract fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int)
 
-    override fun internalMemory(): AbstractMemory = this
+    @Suppress("UNCHECKED_CAST")
+    final override fun internalMemory(): M = this as M
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
@@ -160,7 +160,7 @@ public abstract class AbstractMemory : Memory {
         if (other.size != size) return false
 
         val otherInternalMemory = other.internalMemory()
-        val optimized = (otherInternalMemory as? AbstractMemory)?.let {
+        val optimized = (otherInternalMemory as? AbstractMemory<*>)?.let {
             unsafeTryEqualsOptimized(otherInternalMemory)
         }
         if (optimized != null) return optimized
@@ -168,7 +168,7 @@ public abstract class AbstractMemory : Memory {
         return compareTo(otherInternalMemory) == 0
     }
 
-    protected abstract fun unsafeTryEqualsOptimized(other: AbstractMemory): Boolean?
+    protected abstract fun unsafeTryEqualsOptimized(other: AbstractMemory<*>): Boolean?
 
     final override fun hashCode(): Int {
         var h = 1

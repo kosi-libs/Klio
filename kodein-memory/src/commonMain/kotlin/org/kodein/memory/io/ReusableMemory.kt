@@ -48,6 +48,8 @@ private open class ReusableMemoryImpl<M : Memory>(private val initialCapacity: I
     inner class W : CursorWriteable {
         override var position: Int = 0
 
+        override val remaining: Int = Int.MAX_VALUE
+
         override fun requestCanWrite(needed: Int) {
             val totalNeeded = position + needed
 
@@ -60,7 +62,7 @@ private open class ReusableMemoryImpl<M : Memory>(private val initialCapacity: I
 
             try {
                 if (position > 0) {
-                    memory.setBytes(0, previousMemory, length = position)
+                    memory.putBytes(0, previousMemory.slice(0, position))
                     bytesCopied += position
                 }
             } finally {
@@ -68,31 +70,31 @@ private open class ReusableMemoryImpl<M : Memory>(private val initialCapacity: I
             }
         }
 
-        private inline fun <T> writeValue(size: Int, value: T, setValue: Memory.(Int, T) -> Unit) {
+        private inline fun <T> writeValue(size: Int, value: T, putValue: Memory.(Int, T) -> Unit) {
             requestCanWrite(size)
-            memory.setValue(position, value)
+            memory.putValue(position, value)
             position += size
         }
-        override fun writeByte(value: Byte) = writeValue(1, value, Memory::setByte)
-        override fun writeShort(value: Short) = writeValue(2, value, Memory::setShort)
-        override fun writeInt(value: Int) = writeValue(4, value, Memory::setInt)
-        override fun writeLong(value: Long) = writeValue(8, value, Memory::setLong)
+        override fun writeByte(value: Byte) = writeValue(1, value, Memory::putByte)
+        override fun writeShort(value: Short) = writeValue(2, value, Memory::putShort)
+        override fun writeInt(value: Int) = writeValue(4, value, Memory::putInt)
+        override fun writeLong(value: Long) = writeValue(8, value, Memory::putLong)
 
         override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
             requestCanWrite(length)
-            memory.setBytes(position, src, srcOffset, length)
+            memory.putBytes(position, src, srcOffset, length)
             position += length
         }
 
-        override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
-            requestCanWrite(length)
-            memory.setBytes(position, src, srcOffset, length)
-            position += length
+        override fun writeBytes(src: ReadMemory) {
+            requestCanWrite(src.size)
+            memory.putBytes(position, src)
+            position += src.size
         }
 
         override fun writeBytes(src: Readable, length: Int) {
             requestCanWrite(length)
-            memory.setBytes(position, src, length)
+            memory.putBytes(position, src, length)
             position += length
         }
 

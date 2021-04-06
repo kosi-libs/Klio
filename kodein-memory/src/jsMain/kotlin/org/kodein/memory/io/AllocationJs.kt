@@ -4,5 +4,7 @@ import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.DataView
 
 
-public actual fun Allocation.Companion.native(size: Int): Allocation =
-    DataViewMemory(DataView(ArrayBuffer(size))).asManagedAllocation()
+public actual typealias PlatformNativeMemory = ArrayBufferMemory
+
+public actual fun Allocation.Companion.native(size: Int): PlatformNativeAllocation =
+    MemoryAllocation(ArrayBufferMemory(DataView(ArrayBuffer(size)))) {}

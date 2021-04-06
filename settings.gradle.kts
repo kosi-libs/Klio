@@ -4,7 +4,7 @@ buildscript {
         maven(url = "https://raw.githubusercontent.com/Kodein-Framework/kodein-internal-gradle-plugin/mvn-repo")
     }
     dependencies {
-        classpath("org.kodein.internal.gradle:kodein-internal-gradle-settings:6.3.1")
+        classpath("org.kodein.internal.gradle:kodein-internal-gradle-settings:6.4.1")
     }
 }
 
@@ -15,5 +15,6 @@ rootProject.name = "Kodein-Memory"
 include(
     "kodein-memory",
     "kodein-memory-files",
+    "kodein-memory-crypto",
     ""
 )

@@ -12,9 +12,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 import org.kodein.memory.io.*
-import org.kodein.memory.text.Charset
-import org.kodein.memory.text.readString
-import kotlin.math.min
 import kotlin.native.concurrent.ThreadLocal
 import kotlin.random.Random
 
@@ -43,17 +40,17 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
             else leastSignificantBits and 0xFFFFFFFFFFFFL
 
     override fun toString(): String {
-        val buf = ByteArray(36)
+        val buf = CharArray(36)
         formatUnsignedLong(leastSignificantBits, 4, buf, 24, 12)
         formatUnsignedLong(leastSignificantBits.ushr(48), 4, buf, 19, 4)
         formatUnsignedLong(mostSignificantBits, 4, buf, 14, 4)
         formatUnsignedLong(mostSignificantBits.ushr(16), 4, buf, 9, 4)
         formatUnsignedLong(mostSignificantBits.ushr(32), 4, buf, 0, 8)
-        buf[23] = 45
-        buf[18] = 45
-        buf[13] = 45
-        buf[8] = 45
-        return Charset.ASCII.bytesToString(buf)
+        buf[23] = 45.toChar()
+        buf[18] = 45.toChar()
+        buf[13] = 45.toChar()
+        buf[8] = 45.toChar()
+        return buf.concatToString()
     }
 
     override fun compareTo(other: UUID): Int =
@@ -91,7 +88,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         private val MIN_UNIX_TIMESTAMP = timestampGregorianToUnix(0)
         private val MAX_UNIX_TIMESTAMP = timestampGregorianToUnix(0xFFFFFFFFFFFFFFFL)
 
-        private fun formatUnsignedLong(value: Long, shift: Int, buf: ByteArray, offset: Int, len: Int) {
+        private fun formatUnsignedLong(value: Long, shift: Int, buf: CharArray, offset: Int, len: Int) {
             var work = value
             var charPos = offset + len
             val radix = 1 shl shift
@@ -99,7 +96,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
 
             do {
                 --charPos
-                buf[charPos] = digits[work.toInt() and mask].toByte()
+                buf[charPos] = digits[work.toInt() and mask].toByte().toChar()
                 work = work ushr shift
             } while (charPos > offset)
         }
@@ -231,9 +228,9 @@ public fun Writeable.writeUUID(uuid: UUID) {
     writeLong(uuid.leastSignificantBits)
 }
 
-public fun Memory.setUUID(index: Int, uuid: UUID) {
-    setLong(index, uuid.mostSignificantBits)
-    setLong(index + 8, uuid.leastSignificantBits)
+public fun Memory.putUUID(index: Int, uuid: UUID) {
+    putLong(index, uuid.mostSignificantBits)
+    putLong(index + 8, uuid.leastSignificantBits)
 }
 
 public fun Readable.readUUID(): UUID {

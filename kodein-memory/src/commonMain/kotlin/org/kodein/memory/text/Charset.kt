@@ -1,72 +1,138 @@
 package org.kodein.memory.text
 
-import org.kodein.memory.io.Readable
-import org.kodein.memory.io.Writeable
-import org.kodein.memory.io.slowLoadShort
+import org.kodein.memory.io.*
 import org.kodein.memory.io.swapEndian
 
 
 public abstract class Charset(public val name: String) {
 
-    public abstract fun sizeOf(char: Char): Int
+    public abstract fun codePointOf(char: Char): Int
+    public abstract fun charOf(codePoint: Int): Char
+
+    public abstract fun isCodePointValid(codePoint: Int): Boolean
+    public fun isValid(char: Char): Boolean = isCodePointValid(codePointOf(char))
+
+    internal fun checkCodePoint(codePoint: Int) {
+        if (!isCodePointValid(codePoint)) error("Code point 0x${codePoint.toString(radix = 16)} is not valid in $name")
+    }
+
+    public abstract fun sizeOfCodePoint(codePoint: Int): Int
+    public fun sizeOf(char: Char): Int = sizeOfCodePoint(codePointOf(char))
+
     public abstract fun headerSize(): Int
-    public abstract fun encode(char: Char, dst: Writeable): Int
-    public abstract fun decode(src: Readable): Char
-    public abstract fun tryDecode(src: Readable): Int
+
+    public abstract fun encodeCodePoint(codePoint: Int, dst: Writeable): Int
+    public fun encode(char: Char, dst: Writeable): Int = encodeCodePoint(codePointOf(char), dst)
+
+    public abstract fun decodeCodePoint(src: Readable): Int
+    public fun decode(src: Readable): Char = charOf(decodeCodePoint(src))
+
+    public abstract fun tryDecodeCodePoint(src: Readable): Int
+    public fun tryDecode(src: Readable): Int {
+        val codePoint = tryDecodeCodePoint(src)
+        if (codePoint == -1) return -1
+        return charOf(codePoint).toInt()
+    }
 
     public object Type {
-        public abstract class FixedSizeCharset(name: String, public val bytesPerChar: Int) : Charset(name) {
-            final override fun sizeOf(char: Char): Int = bytesPerChar
-        }
+        public abstract class ByteCharset(name: String, private val max: Int) : Charset(name) {
+            override fun codePointOf(char: Char): Int = char.toInt()
+            override fun charOf(codePoint: Int): Char = codePoint.toChar()
 
-        public abstract class ByteCharset(name: String, private val max: Int) : FixedSizeCharset(name, bytesPerChar = 1) {
-            private fun check(char: Char) {
-                val int = charToInt(char)
-                if (int !in 0..max) error("Character '$char' (0x${int.toString(radix = 16)}) is not an $name character")
+            override fun isCodePointValid(codePoint: Int): Boolean = codePoint in 0..max
+
+            override fun sizeOfCodePoint(codePoint: Int): Int {
+                checkCodePoint(codePoint)
+                return 1
             }
-
-            protected open fun charToInt(c: Char): Int = c.toInt()
-            protected open fun byteToChar(b: Byte): Char = b.toChar()
 
             override fun headerSize(): Int = 0
 
-            override fun encode(char: Char, dst: Writeable): Int {
-                check(char)
-                dst.writeByte(charToInt(char).toByte())
+            override fun encodeCodePoint(codePoint: Int, dst: Writeable): Int {
+                checkCodePoint(codePoint)
+                dst.writeByte(codePoint.toByte())
                 return 1
             }
-            override fun decode(src: Readable): Char = byteToChar(src.readByte())
-            override fun tryDecode(src: Readable): Int {
-                val b = src.tryReadByte()
-                if (b == -1) return -1
-                return byteToChar(b.toByte()).toInt()
-            }
 
-            public fun stringToBytes(src: String): ByteArray =
-                ByteArray(src.length) {
-                    val char = src[it]
-                    check(char)
-                    charToInt(char).toByte()
-                }
-            public fun bytesToString(src: ByteArray): String =
-                CharArray(src.size) { byteToChar(src[it]) }.concatToString()
+            override fun decodeCodePoint(src: Readable): Int = src.readByte().toInt()
+
+            override fun tryDecodeCodePoint(src: Readable): Int {
+                return src.tryReadByte()
+            }
         }
 
-        public abstract class UTF16Charset(name: String) : FixedSizeCharset(name, 2) {
+        public abstract class AbstractUTF16Charset(name: String) : Charset(name) {
+            override fun codePointOf(char: Char): Int = char.toInt()
+            override fun charOf(codePoint: Int): Char = codePoint.toChar()
+
+            override fun isCodePointValid(codePoint: Int): Boolean = codePoint in 0..0x10FFFF
+
+            override fun sizeOfCodePoint(codePoint: Int): Int = when {
+                codePoint <= 0xFFFF -> 2
+                codePoint <= 0x10FFFF -> 4
+                else -> error("Code point 0x${codePoint.toString(radix = 16)} is not valid in Unicode.")
+            }
+        }
+
+        public abstract class UTF16Charset(name: String) : AbstractUTF16Charset(name) {
             public abstract val byteOrderMark: Short
 
-            internal abstract fun charToShort(c: Char): Short
-            internal abstract fun shortToChar(s: Short): Char
+            override fun headerSize(): Int = 0
 
-            override fun encode(char: Char, dst: Writeable): Int {
-                dst.writeShort(charToShort(char))
-                return 2
+            internal abstract fun codeUnitToShort(codeUnit: Int): Short
+            internal abstract fun shortToCodeUnit(short: Short): Int
+
+            override fun encodeCodePoint(codePoint: Int, dst: Writeable): Int {
+                checkCodePoint(codePoint)
+
+                if (codePoint <= 0xFFFF) {
+                    dst.writeShort(codeUnitToShort(codePoint))
+                    return 2
+                }
+
+                // 110110xx xxxxxxxx 110111yy yyyyyyyy
+                val code = codePoint - 0x10000
+                dst.writeShort(codeUnitToShort(code shr 10 and 0x3FF or 0xD800))
+                dst.writeShort(codeUnitToShort(code and 0x3FF or 0xDC00))
+
+                return 4
             }
-            override fun decode(src: Readable): Char = shortToChar(src.readShort())
-            override fun tryDecode(src: Readable): Int =
-                shortToChar(slowLoadShort {
-                    src.tryReadByte().also { if (it < 0) return it }.toByte()
-                }).toInt()
+
+            private inline fun decodeCodePoint(firstShort: Short, nextShort: () -> Short): Int {
+                val c1 = shortToCodeUnit(firstShort)
+
+                return when (c1 shr 10 and 0x3F) {
+                    0x36 -> { // [110110]xx xxxxxxxx 110111yy yyyyyyyy
+                        val c2 = shortToCodeUnit(nextShort())
+                        val code = (c1 and 0x3FF shl 10) or (c2 and 0x3FF)
+                        code + 0x10000
+                    }
+                    0x37 -> error("Invalid UTF-16 code unit (expecting a first unit but got a second unit)")
+                    else -> c1
+                }
+            }
+
+            private inline fun decodeCodePoint(readShort: () -> Short): Int = decodeCodePoint(readShort(), readShort)
+
+            override fun decodeCodePoint(src: Readable): Int = decodeCodePoint(src::readShort)
+
+            internal fun decodeCodePoint(firstShort: Short, src: Readable): Int = decodeCodePoint(firstShort, src::readShort)
+
+            override fun tryDecodeCodePoint(src: Readable): Int {
+                val buffer = Memory.array(2)
+                val read = src.tryReadBytes(buffer)
+                if (read == -1) return -1
+                if (read != 2) error("Invalid end of stream.")
+                return tryDecodeCodePoint(buffer, buffer.getShort(0), src)
+            }
+
+            internal fun tryDecodeCodePoint(buffer: Memory, firstShort: Short, src: Readable): Int {
+                return decodeCodePoint(firstShort) {
+                    val read = src.tryReadBytes(buffer)
+                    if (read != 2) error("Invalid end of stream.")
+                    buffer.getShort(0)
+                }
+            }
         }
     }
 
@@ -77,7 +143,7 @@ public abstract class Charset(public val name: String) {
 
     @Suppress("ClassName")
     public object ISO8859_15 : Type.ByteCharset("ISO-8859-15", 0xFF) {
-        override fun charToInt(c: Char): Int = when (c) {
+        override fun codePointOf(char: Char): Int = when (char) {
             '€' -> 0xA4
             'Š' -> 0xA6
             'š' -> 0xA8
@@ -86,149 +152,178 @@ public abstract class Charset(public val name: String) {
             'Œ' -> 0xBC
             'œ' -> 0xBD
             'Ÿ' -> 0xBE
-            else -> c.toInt()
+            else -> char.toInt()
         }
 
-        override fun byteToChar(b: Byte): Char = when (b) {
-            0xA4.toByte() -> '€'
-            0xA6.toByte() -> 'Š'
-            0xA8.toByte() -> 'š'
-            0xB4.toByte() -> 'Ž'
-            0xB8.toByte() -> 'ž'
-            0xBC.toByte() -> 'Œ'
-            0xBD.toByte() -> 'œ'
-            0xBE.toByte() -> 'Ÿ'
-            else -> b.toChar()
+        override fun charOf(codePoint: Int): Char = when (codePoint) {
+            0xA4 -> '€'
+            0xA6 -> 'Š'
+            0xA8 -> 'š'
+            0xB4 -> 'Ž'
+            0xB8 -> 'ž'
+            0xBC -> 'Œ'
+            0xBD -> 'œ'
+            0xBE -> 'Ÿ'
+            else -> codePoint.toChar()
         }
     }
 
     public object UTF16BE : Type.UTF16Charset("UTF-16BE") {
-        override fun headerSize(): Int = 0
         override val byteOrderMark: Short get() = 0xFEFF.toShort()
-        override fun charToShort(c: Char): Short = c.toShort()
-        override fun shortToChar(s: Short): Char = s.toChar()
+        override fun codeUnitToShort(codeUnit: Int): Short = codeUnit.toShort()
+        override fun shortToCodeUnit(short: Short): Int = short.toInt()
     }
 
     public object UTF16LE : Type.UTF16Charset("UTF-16LE") {
-        override fun headerSize(): Int = 0
         override val byteOrderMark: Short get() = 0xFFFE.toShort()
-        override fun charToShort(c: Char): Short = swapEndian(c.toShort())
-        override fun shortToChar(s: Short): Char = swapEndian(s).toChar()
+        override fun codeUnitToShort(codeUnit: Int): Short = swapEndian(codeUnit.toShort())
+        override fun shortToCodeUnit(short: Short): Int = swapEndian(short).toInt()
     }
 
-    public class UTF16(public val encoder: Type.UTF16Charset = UTF16BE) : Type.FixedSizeCharset(name, 2) {
-        override fun headerSize(): Int = 2
+    public class UTF16(public val encoder: Type.UTF16Charset = UTF16BE) : Type.AbstractUTF16Charset(name) {
         private var hasWrittenMark = false
-        override fun encode(char: Char, dst: Writeable): Int {
+        private val buffer = Memory.array(2)
+
+        override fun headerSize(): Int = 2
+
+        override fun encodeCodePoint(codePoint: Int, dst: Writeable): Int {
+            var count = 0
             if (!hasWrittenMark) {
                 dst.writeShort(encoder.byteOrderMark)
                 hasWrittenMark = true
+                count += 2
             }
-            encoder.encode(char, dst)
-            return 2
+            count += encoder.encodeCodePoint(codePoint, dst)
+            return count
         }
+
         private var decoder: Type.UTF16Charset? = null
-        override fun decode(src: Readable): Char {
+        override fun decodeCodePoint(src: Readable): Int {
             if (decoder == null) {
                 when (val mark = src.readShort()) {
                     UTF16BE.byteOrderMark -> decoder = UTF16BE
                     UTF16LE.byteOrderMark -> decoder = UTF16LE
                     else -> {
                         decoder = UTF16BE
-                        return decoder!!.shortToChar(mark)
+                        return decoder!!.decodeCodePoint(mark, src)
                     }
                 }
             }
-            return decoder!!.decode(src)
+            return decoder!!.decodeCodePoint(src)
         }
 
-        override fun tryDecode(src: Readable): Int {
+        override fun tryDecodeCodePoint(src: Readable): Int {
             if (decoder == null) {
-                val mark = slowLoadShort { src.tryReadByte().also { if (it < 0) return it }.toByte() }
-                when (mark) {
+                val read = src.tryReadBytes(buffer)
+                if (read == -1) return -1
+                if (read != 2) error("Invalid end of stream.")
+                when (val mark = buffer.getShort(0)) {
                     UTF16BE.byteOrderMark -> decoder = UTF16BE
                     UTF16LE.byteOrderMark -> decoder = UTF16LE
                     else -> {
                         decoder = UTF16BE
-                        return decoder!!.shortToChar(mark).toInt()
+                        return decoder!!.tryDecodeCodePoint(buffer, mark, src)
                     }
                 }
             }
-            return decoder!!.tryDecode(src)
+            return decoder!!.tryDecodeCodePoint(src)
         }
+
         public companion object {
             public val name: String = "UTF-16"
         }
     }
 
     public object UTF8 : Charset("UTF-8") {
-        override fun headerSize(): Int = 0
+        override fun codePointOf(char: Char): Int = char.toInt()
+        override fun charOf(codePoint: Int): Char {
+            if (codePoint > 0xFFFF) error("Code point 0x${codePoint.toString(radix = 16)} cannot be represented as a 2 bytes Char.")
+            return codePoint.toChar()
+        }
 
-        override fun sizeOf(char: Char): Int {
-            val code = char.toInt()
+        override fun isCodePointValid(codePoint: Int): Boolean = codePoint <= 0x10FFFF
+
+        override fun sizeOfCodePoint(codePoint: Int): Int {
             return when {
-                code and 0x7F.inv() == 0 -> 1
-                code and 0x7FF.inv() == 0 -> 2
-                code and 0xFFFF.inv() == 0 -> 3
-                else -> throw IllegalStateException("Unsupported character '$char' (0x${char.toInt().toString(radix = 16)})")
+                codePoint <= 0x7F -> 1
+                codePoint <= 0x7FF -> 2
+                codePoint <= 0xFFFF -> 3
+                codePoint <= 0x10FFFF -> 4
+                else -> error("Code point 0x${codePoint.toString(radix = 16)} is not valid in Unicode.")
             }
         }
 
-        override fun encode(char: Char, dst: Writeable): Int {
-            fun createByte(code: Int, shift: Int): Int = code shr shift and 0x3F or 0x80
+        override fun headerSize(): Int = 0
 
-            val code = char.toInt()
-            if (code and 0x7F.inv() == 0) { // 1-byte sequence
-                dst.writeByte(code.toByte())
+        override fun encodeCodePoint(codePoint: Int, dst: Writeable): Int {
+            checkCodePoint(codePoint)
+
+            if (codePoint <= 0x7F) { // 0xxxxxxx
+                dst.writeByte(codePoint.toByte())
                 return 1
             }
 
             val count = when {
-                code and 0x7FF.inv() == 0 -> { // 2-byte sequence
-                    dst.writeByte((code shr 6 and 0x1F or 0xC0).toByte())
+                codePoint <= 0x7FF -> { // 110xxxxx 10xxxxxx
+                    dst.writeByte((codePoint shr 6 and 0x1F or 0xC0).toByte())
                     2
                 }
-                code and 0xFFFF.inv() == 0 -> { // 3-byte sequence
-                    dst.writeByte((code shr 12 and 0x0F or 0xE0).toByte())
-                    dst.writeByte((createByte(code, 6)).toByte())
+                codePoint <= 0xFFFF -> { // 1110xxxx 10xxxxxx 10xxxxxx
+                    dst.writeByte((codePoint shr 12 and 0x0F or 0xE0).toByte())
+                    dst.writeByte((codePoint shr 6 and 0x3F or 0x80).toByte())
                     3
                 }
-                // It is impossible to handle 4 bytes character as they
-                // do not exist in UTF-16 (which the Char type represents).
-                else -> throw IllegalStateException("Unsupported character")
+                codePoint <= 0x10FFFF -> { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    dst.writeByte((codePoint shr 18 and 0x07 or 0xF0).toByte())
+                    dst.writeByte((codePoint shr 12 and 0x3F or 0x80).toByte())
+                    dst.writeByte((codePoint shr 6 and 0x3F or 0x80).toByte())
+                    4
+                }
+                else -> throw IllegalStateException("Illegal code point")
             }
-            dst.writeByte((code and 0x3F or 0x80).toByte())
+            dst.writeByte((codePoint and 0x3F or 0x80).toByte())
             return count
         }
 
-        private inline fun decode(readByte: () -> Byte): Char {
-            val c0 = readByte().toInt() and 0xFF
-            when (c0 shr 4) {
-                in 0..7 -> { // 0xxxxxxx
-                    return c0.toChar()
+        private inline fun decodeCodePoint(firstByte: Byte, readByte: () -> Byte): Int {
+            val c0 = firstByte.toInt() and 0xFF
+            when (c0) {
+                in 0x00..0x7F -> { // 0xxxxxxx
+                    return c0
                 }
-                in 12..13 -> { // 110x xxxx   10xx xxxx
+                in 0x80..0xBF -> error("Invalid UTF-8 code unit (expecting a first unit but got a continuation unit)")
+                in 0xC0..0xDF -> { // 110xxxxx 10xxxxxx
                     val c1 = readByte().toInt()
-                    return (c0 and 0x1F shl 6 or (c1 and 0x3F)).toChar()
+                    return (c0 and 0x1F shl 6) or (c1 and 0x3F)
                 }
-                14 -> { // 1110 xxxx  10xx xxxx  10xx xxxx
+                in 0xE0..0xEF -> { // 1110xxxx  10xxxxxx  10xxxxxx
                     val c1 = readByte().toInt()
                     val c2 = readByte().toInt()
-                    return (c0 and 0x0F shl 12 or (c1 and 0x3F shl 6) or (c2 and 0x3F)).toChar()
+                    return (c0 and 0x0F shl 12) or (c1 and 0x3F shl 6) or (c2 and 0x3F)
                 }
-                else -> throw IllegalStateException("Unsupported character")
+                in 0xF0..0xF7 -> { // 1110xxxx  10xxxxxx  10xxxxxx
+                    val c1 = readByte().toInt()
+                    val c2 = readByte().toInt()
+                    val c3 = readByte().toInt()
+                    return (c0 and 0x07 shl 18) or (c1 and 0x3F shl 12) or (c2 and 0x3F shl 6) or (c3 and 0x3F)
+                }
+                else -> throw IllegalStateException("Illegal UTF-8 code unit.")
             }
         }
 
-        override fun decode(src: Readable): Char =
-                decode { src.readByte() }
+        override fun decodeCodePoint(src: Readable): Int =
+            decodeCodePoint(src.readByte()) { src.readByte() }
 
-        override fun tryDecode(src: Readable): Int =
-                decode {
-                    val b = src.tryReadByte()
-                    if (b == -1) return -1
-                    b.toByte()
-                }.toInt()
+        override fun tryDecodeCodePoint(src: Readable): Int {
+            val firstByte = src.tryReadByte()
+            if (firstByte == -1) return -1
+
+            return decodeCodePoint(firstByte.toByte()) {
+                val b = src.tryReadByte()
+                if (b == -1) error("Invalid end of stream.")
+                b.toByte()
+            }
+        }
     }
 
     public companion object {

@@ -3,7 +3,7 @@ package org.kodein.memory.io
 import kotlin.math.min
 
 
-public class MemoryReadable(public val memory: ReadMemory) : CursorReadable {
+public class MemoryReadable(public val memory: ReadMemory) : SeekableCursorReadable {
 
     override var position: Int = 0
         set(value) {
@@ -11,6 +11,12 @@ public class MemoryReadable(public val memory: ReadMemory) : CursorReadable {
             require(value <= memory.size) { "position: $value > memory.size: ${memory.size}." }
             field = value
         }
+
+    public fun readMemory(length: Int): ReadMemory {
+        val slice = memory.slice(position, length)
+        position += length
+        return slice
+    }
 
     override val remaining: Int get() = memory.size - position
 
@@ -36,10 +42,10 @@ public class MemoryReadable(public val memory: ReadMemory) : CursorReadable {
         return readLength
     }
 
-    override fun tryReadBytes(dst: Memory, dstOffset: Int, length: Int): Int {
+    override fun tryReadBytes(dst: Memory): Int {
         if (!valid()) return -1
-        val readLength = min(length, remaining)
-        memory.getBytes(position, dst, dstOffset, readLength)
+        val readLength = min(dst.size, remaining)
+        dst.putBytes(0, memory.slice(position, readLength))
         position += readLength
         return readLength
     }
@@ -75,4 +81,4 @@ public class MemoryReadable(public val memory: ReadMemory) : CursorReadable {
     }
 }
 
-public fun ReadMemory.asReadable(index: Int = 0): MemoryReadable = MemoryReadable(slice(index))
+public fun ReadMemory.asReadable(index: Int = 0): MemoryReadable = MemoryReadable(sliceAt(index))

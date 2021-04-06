@@ -9,29 +9,32 @@ public interface Readable {
     public fun valid(): Boolean
 
     public fun tryReadByte(): Int
-    public fun tryReadBytes(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset): Int
-    public fun tryReadBytes(dst: Memory, dstOffset: Int = 0, length: Int = dst.size - dstOffset): Int
+    public fun tryReadBytes(dst: ByteArray, dstOffset: Int, length: Int): Int
+    public fun tryReadBytes(dst: Memory): Int
 
     public fun readByte(): Byte
     public fun readShort(): Short
     public fun readInt(): Int
     public fun readLong(): Long
-    public fun readBytes(dst: ByteArray, dstOffset: Int = 0, length: Int = dst.size - dstOffset)
+    public fun readBytes(dst: ByteArray, dstOffset: Int, length: Int)
 
     public fun skip(count: Int)
     public fun skipAtMost(count: Int): Int
 }
 
+public fun Readable.tryReadBytes(dst: ByteArray): Int = tryReadBytes(dst, 0, dst.size)
+public fun Readable.readBytes(dst: ByteArray): Unit = readBytes(dst, 0, dst.size)
+
 public fun Readable.readFloat(): Float = Float.fromBits(readInt())
 public fun Readable.readDouble(): Double = Double.fromBits(readLong())
 
-public fun Readable.readBytesCopy(length: Int): ByteArray {
+public fun Readable.readBytes(length: Int): ByteArray {
     val array = ByteArray(length)
     readBytes(array)
     return array
 }
 
-public fun Readable.readBytes(dst: Memory, dstOffset: Int = 0, length: Int = dst.size - dstOffset): Unit = dst.setBytes(dstOffset, this, length)
+public fun Readable.readBytes(dst: Memory): Unit = dst.putBytes(0, this, dst.size)
 public fun Readable.readBytes(dst: Writeable, length: Int): Unit = dst.writeBytes(this, length)
 
 @ExperimentalUnsignedTypes
@@ -45,12 +48,18 @@ public fun Readable.readULong(): ULong = readLong().toULong()
 @ExperimentalUnsignedTypes
 public fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = dst.size - offset): Unit = readBytes(dst.asByteArray(), offset, length)
 @ExperimentalUnsignedTypes
-public fun Readable.readUBytesCopy(length: Int): UByteArray = readBytesCopy(length).asUByteArray()
+public fun Readable.readUBytes(length: Int): UByteArray = readBytes(length).asUByteArray()
 
 public interface CursorReadable : Readable {
     public val remaining: Int
+}
+
+public interface SeekableCursorReadable : CursorReadable {
     override var position: Int
 }
 
-public fun CursorReadable.readBytesCopy(): ByteArray = readBytesCopy(remaining)
+public fun CursorReadable.readBytes(): ByteArray = readBytes(remaining)
 public fun CursorReadable.readBytes(dst: Writeable): Unit = readBytes(dst, remaining)
+
+public fun ByteArray.asReadable(offset: Int, size: Int): CursorReadable = asMemory(offset, size).asReadable()
+public fun ByteArray.asReadable(): CursorReadable = asMemory().asReadable()

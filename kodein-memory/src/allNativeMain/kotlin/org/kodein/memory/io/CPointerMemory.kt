@@ -3,28 +3,29 @@ package org.kodein.memory.io
 import kotlinx.cinterop.*
 import platform.posix.memcmp
 import platform.posix.memcpy
+import platform.posix.memset
 
 @Suppress("ConstantConditionIf")
-public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val size: Int) : AbstractMemory() {
+public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val size: Int) : AbstractMemory<CPointerMemory>() {
 
-    override fun unsafeSlice(index: Int, length: Int): AbstractMemory =
+    override fun unsafeSlice(index: Int, length: Int): CPointerMemory =
         CPointerMemory((pointer + index)!!, length)
 
-    override fun unsafeSetBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
+    override fun unsafePutBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
         memcpy((pointer + index)!!, src.refTo(srcOffset), length.convert())
     }
 
-    override fun unsafeTrySetBytesOptimized(index: Int, src: AbstractMemory, srcOffset: Int, length: Int): Boolean {
+    override fun unsafeTryPutBytesOptimized(index: Int, src: AbstractMemory<*>): Boolean {
         if (src !is CPointerMemory) return false
-        memcpy((pointer + index)!!, (src.pointer + srcOffset)!!, length.convert())
+        memcpy((pointer + index)!!, src.pointer, src.size.convert())
         return true
     }
 
-    override fun unsafeSetByte(index: Int, value: Byte) {
+    override fun unsafePutByte(index: Int, value: Byte) {
         pointer[index] = value
     }
 
-    override fun unsafeSetShort(index: Int, value: Short) {
+    override fun unsafePutShort(index: Int, value: Short) {
         if (unalignedAccessAllowed) {
             (pointer + index)!!.reinterpret<ShortVar>().pointed.value = value.toBigEndian()
         } else {
@@ -32,7 +33,7 @@ public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val 
         }
     }
 
-    override fun unsafeSetInt(index: Int, value: Int) {
+    override fun unsafePutInt(index: Int, value: Int) {
         if (unalignedAccessAllowed) {
             (pointer + index)!!.reinterpret<IntVar>().pointed.value = value.toBigEndian()
         } else {
@@ -40,7 +41,7 @@ public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val 
         }
     }
 
-    override fun unsafeSetLong(index: Int, value: Long) {
+    override fun unsafePutLong(index: Int, value: Long) {
         if (unalignedAccessAllowed) {
             (pointer + index)!!.reinterpret<LongVar>().pointed.value = value.toBigEndian()
         } else {
@@ -75,10 +76,14 @@ public class CPointerMemory(public val pointer: CPointer<ByteVar>, override val 
                 slowLoadLong { pointer[index + it] }
             }
 
-    override fun unsafeTryEqualsOptimized(other: AbstractMemory): Boolean? =
+    override fun unsafeTryEqualsOptimized(other: AbstractMemory<*>): Boolean? =
         when (other) {
             is CPointerMemory -> memcmp(pointer, other.pointer, size.convert()) == 0
             is ByteArrayMemory -> other.array.usePinned { pinned -> memcmp(pointer, pinned.addressOf(other.offset), size.convert()) == 0 }
             else -> null
         }
+
+    override fun fill(byte: Byte) {
+        memset(pointer, byte.toInt(), size.convert())
+    }
 }

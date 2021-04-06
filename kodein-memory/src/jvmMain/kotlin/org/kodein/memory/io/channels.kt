@@ -41,7 +41,7 @@ internal class ReadableNioByteChannel(private val readable: Readable, private va
     override fun isOpen(): Boolean = isOpen
 
     override fun read(dst: ByteBuffer): Int {
-        val read = readable.tryReadBytes(ByteBufferMemory(dst), dst.position(), dst.remaining())
+        val read = readable.tryReadBytes(ByteBufferMemory(dst.slice()))
         dst.position(dst.position() + read)
         return read
     }
@@ -95,24 +95,24 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
         return r
     }
 
-    override fun tryReadBytes(dst: Memory, dstOffset: Int, length: Int): Int {
-        require(dstOffset >= 0)
-        require(dstOffset + length <= dst.size)
-        val byteBuffer = when (dst) {
-            is ByteArrayMemory -> ByteBuffer.wrap(dst.array, dst.offset + dstOffset, length)
-            is DirectByteBufferMemory -> dst.byteBuffer.also { it.position(dstOffset) }
+    override fun tryReadBytes(dst: Memory): Int {
+        val byteBuffer = when (val dstMemory = dst.internalMemory()) {
+            is ByteArrayMemory -> ByteBuffer.wrap(dstMemory.array, dstMemory.offset, dstMemory.size)
+            is DirectByteBufferMemory -> dstMemory.byteBuffer
             else -> null
         }
 
         if (byteBuffer != null) {
-            val r = channel.read(byteBuffer)
-            if (r == -1) valid = false
-            else bytesRead += r
-            return r
+            byteBuffer.position(0) {
+                val r = channel.read(byteBuffer)
+                if (r == -1) valid = false
+                else bytesRead += r
+                return r
+            }
         } else {
-            val buffer = ByteArray(length)
+            val buffer = ByteArray(dst.size)
             val r = tryReadBytes(buffer)
-            if (r == -1) dst.setBytes(dstOffset, buffer, r)
+            if (r == -1) dst.putBytes(0, buffer, 0, r)
             return r
         }
     }
@@ -181,7 +181,7 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
 
 public fun ReadableByteChannel.asReadable(): Readable = NioByteChannelReadable(this)
 
-internal class NioSeekableByteChannelReadable(private val channel: SeekableByteChannel): NioByteChannelReadable(channel), CursorReadable {
+internal class NioSeekableByteChannelReadable(private val channel: SeekableByteChannel): NioByteChannelReadable(channel), SeekableCursorReadable {
     override var position: Int
         get() = channel.position().toInt()
         set(value) {
@@ -196,7 +196,7 @@ internal class NioSeekableByteChannelReadable(private val channel: SeekableByteC
     }
 }
 
-public fun SeekableByteChannel.asReadable(): CursorReadable = NioSeekableByteChannelReadable(this)
+public fun SeekableByteChannel.asReadable(): SeekableCursorReadable = NioSeekableByteChannelReadable(this)
 
 
 internal open class NioByteChannelWriteable(private val channel: WritableByteChannel): Writeable, Closeable {
@@ -226,20 +226,21 @@ internal open class NioByteChannelWriteable(private val channel: WritableByteCha
         bytesWritten += src.size
     }
 
-    override fun writeBytes(src: ReadMemory, srcOffset: Int, length: Int) {
-        if (src is ByteArrayMemory) {
-            channel.write(ByteBuffer.wrap(src.array, src.offset + srcOffset, length))
-        } else {
-            val buffer = src.getBytesCopy(srcOffset, length)
-            channel.write(ByteBuffer.wrap(buffer))
+    override fun writeBytes(src: ReadMemory) {
+        val byteBuffer = when (val srcMemory = src.internalMemory()) {
+            is ByteArrayMemory -> ByteBuffer.wrap(srcMemory.array, srcMemory.offset, srcMemory.size)
+            is DirectByteBufferMemory -> srcMemory.byteBuffer
+            else -> ByteBuffer.wrap(src.getBytes())
         }
-        bytesWritten += length
+
+        byteBuffer.position(0) {
+            channel.write(byteBuffer)
+        }
     }
 
     override fun writeBytes(src: Readable, length: Int) {
         if (src is MemoryReadable) {
-            writeBytes(src.memory, src.position, length)
-            src.skip(length)
+            writeBytes(src.readMemory(length))
         } else {
             writeBytesBuffered(src, length)
         }
@@ -257,6 +258,7 @@ internal open class NioByteChannelWriteable(private val channel: WritableByteCha
 public fun WritableByteChannel.asWriteable(): Writeable = NioByteChannelWriteable(this)
 
 internal class NioSeekableByteChannelWriteable(private val channel: SeekableByteChannel): NioByteChannelWriteable(channel), CursorWriteable {
+    override val remaining: Int get() = (channel.size() - channel.position()).toInt()
     override fun skip(count: Int) {
         channel.position(channel.position() + count)
     }

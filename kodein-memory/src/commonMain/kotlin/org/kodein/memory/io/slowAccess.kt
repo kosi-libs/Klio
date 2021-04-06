@@ -1,19 +1,19 @@
 package org.kodein.memory.io
 
-internal inline fun slowStoreShort(value: Short, set: (Int, Byte) -> Unit) {
+public inline fun slowStoreShort(value: Short, set: (Int, Byte) -> Unit) {
     val intValue = value.toInt()
     set(0, (intValue ushr 0x08 and 0xFF).toByte())
     set(1, (intValue ushr 0x00 and 0xFF).toByte())
 }
 
-internal inline fun slowStoreInt(value: Int, set: (Int, Byte) -> Unit) {
+public inline fun slowStoreInt(value: Int, set: (Int, Byte) -> Unit) {
     set(0, (value ushr 0x18 and 0xFF).toByte())
     set(1, (value ushr 0x10 and 0xFF).toByte())
     set(2, (value ushr 0x08 and 0xFF).toByte())
     set(3, (value ushr 0x00 and 0xFF).toByte())
 }
 
-internal inline fun slowStoreLong(value: Long, set: (Int, Byte) -> Unit) {
+public inline fun slowStoreLong(value: Long, set: (Int, Byte) -> Unit) {
     set(0, ((value ushr 0x38) and 0xFF).toByte())
     set(1, ((value ushr 0x30) and 0xFF).toByte())
     set(2, ((value ushr 0x28) and 0xFF).toByte())
@@ -24,7 +24,7 @@ internal inline fun slowStoreLong(value: Long, set: (Int, Byte) -> Unit) {
     set(7, ((value ushr 0x00) and 0xFF).toByte())
 }
 
-internal inline fun slowLoadShort(get: (Int) -> Byte): Short {
+public inline fun slowLoadShort(get: (Int) -> Byte): Short {
     val b0 = get(0)
     val b1 = get(1)
     return (
@@ -33,7 +33,7 @@ internal inline fun slowLoadShort(get: (Int) -> Byte): Short {
     ).toShort()
 }
 
-internal inline fun slowLoadInt(get: (Int) -> Byte): Int {
+public inline fun slowLoadInt(get: (Int) -> Byte): Int {
     val b0 = get(0)
     val b1 = get(1)
     val b2 = get(2)
@@ -46,7 +46,7 @@ internal inline fun slowLoadInt(get: (Int) -> Byte): Int {
     )
 }
 
-internal inline fun slowLoadLong(get: (Int) -> Byte): Long {
+public inline fun slowLoadLong(get: (Int) -> Byte): Long {
     val b0 = get(0)
     val b1 = get(1)
     val b2 = get(2)
