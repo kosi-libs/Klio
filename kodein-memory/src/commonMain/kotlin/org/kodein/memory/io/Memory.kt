@@ -20,6 +20,8 @@ public interface Memory : ReadMemory {
 
     public fun fill(byte: Byte)
 
+    override fun internalMemory(): Memory
+
     public companion object
 }
 

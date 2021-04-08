@@ -62,6 +62,8 @@ public class MemoryAllocation<M : Memory>(memory: M, closeFun: () -> Unit): Read
     override fun putBytes(index: Int, src: ReadMemory): Unit = delegate { putBytes(index, src) }
     override fun putBytes(index: Int, src: Readable, length: Int): Unit = delegate { putBytes(index, src, length) }
     override fun fill(byte: Byte): Unit = delegate { fill(byte) }
+
+    override fun internalMemory(): Memory = delegate { internalMemory() }
 }
 
 public fun Memory.asManagedAllocation(): Allocation = MemoryAllocation(this) {}

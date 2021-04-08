@@ -1,6 +1,0 @@
-package = org.kodein.memory.crypto.cinterop
-
-headers = openssl/sha.h
-headerFilter = openssl/**
-
-staticLibraries = libcrypto.a

@@ -37,9 +37,7 @@ public actual fun DigestWriteable.Companion.newHmacInstance(algorithm: DigestAlg
     val keyCopy = Allocation.nativeCopy(key)
 
     val update: DigestUpdate<CCHmacContext> = { ctx, ptr, size -> CCHmacUpdate(ctx, ptr, size.convert()) }
-    val init: DigestInit<CCHmacContext> = {
-        CCHmacInit(it, kAlgorithm, keyCopy.memory.pointer, keyCopy.size.convert())
-    }
+    val init: DigestInit<CCHmacContext> = { CCHmacInit(it, kAlgorithm, keyCopy.memory.pointer, keyCopy.size.convert()) }
 
     val ctx = nativeHeap.alloc<CCHmacContext>()
     return NativeDigestWriteable(digestSize, ctx, init, update, ::CCHmacFinal, onClose = { keyCopy.fill(0) ; keyCopy.close() })

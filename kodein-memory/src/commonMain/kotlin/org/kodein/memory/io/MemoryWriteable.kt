@@ -53,6 +53,8 @@ public class MemoryWriteable(public val memory: Memory) : CursorWriteable {
         requestCanWrite(count)
         position += count
     }
+
+    override fun toString(): String = "MemoryWriteable(memory=${memory}, position=$position)"
 }
 
 public fun Memory.asWriteable(): MemoryWriteable = MemoryWriteable(this)

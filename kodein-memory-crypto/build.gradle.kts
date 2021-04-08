@@ -5,16 +5,16 @@ plugins {
 kodein {
     kotlin {
 
-        val appleNative = kodeinSourceSets.new("appleNative", listOf(kodeinSourceSets.allNative))
+        val appleNative = kodeinSourceSets.new("appleNative", listOf(kodeinSourceSets.allPosix))
         val appleNativeTargets = kodeinTargets.native.allDarwin + kodeinTargets.native.macosX64
         appleNativeTargets.forEach {
             it.dependencies.add(appleNative)
         }
 
-        val otherNative = kodeinSourceSets.new("appleNative", listOf(kodeinSourceSets.allNative))
-        val otherNativeTargets = kodeinTargets.native.all - appleNativeTargets
-        otherNativeTargets.forEach {
-            it.dependencies.add(otherNative)
+        val linuxNative = kodeinSourceSets.new("linuxNative", listOf(kodeinSourceSets.allPosix))
+        val linuxNativeTargets = kodeinTargets.native.allEmbeddedLinux + kodeinTargets.native.linuxX64
+        linuxNativeTargets.forEach {
+            it.dependencies.add(linuxNative)
         }
 
         common.main.dependencies {
@@ -29,15 +29,8 @@ kodein {
             mainCompilation.cinterops.create("appleCoreCrypto")
         }
 
-        add(otherNativeTargets) {
-//            val targetName = target.name
-//            mainCompilation.cinterops.create("libcrypto") {
-//                tasks[interopProcessingTaskName].dependsOn(":kodein-memory-crypto:nativeLib:buildOpenSSL")
-//                includeDirs {
-//                    headerFilterOnly("$projectDir/nativeLib/build/$targetName/include")
-//                }
-//                extraOpts("-libraryPath", "$projectDir/nativeLib/build/$targetName/lib")
-//            }
+        add(linuxNativeTargets) {
+            mainCompilation.cinterops.create("linuxCrypto")
         }
 
         add(kodeinTargets.js.js) {

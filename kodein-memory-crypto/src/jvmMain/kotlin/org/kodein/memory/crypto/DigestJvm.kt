@@ -49,18 +49,20 @@ internal abstract class AbstractJvmDigestWriteable : DigestWriteable {
 
     override fun flush() {}
 
-    override fun digestInto(dst: Memory, dstOffset: Int) {
-        require(dstOffset >= 0)
-        require(dst.size >= digestSize + dstOffset) { "Memory is too small" }
+    override fun digestInto(dst: Memory) {
+        require(dst.size >= digestSize) { "Memory is too small" }
         when (dst) {
-            is ByteArrayMemory -> digestInto(dst.array, dst.offset + dstOffset)
-            else -> dst.putBytes(dstOffset, getDigest(), 0, digestSize)
+            is ByteArrayMemory -> digestInto(dst.array, dst.offset)
+            else -> dst.putBytes(0, getDigest(), 0, digestSize)
         }
     }
 
     override fun digestInto(dst: Writeable) {
         when (dst) {
-            is MemoryWriteable -> digestInto(dst.memory, dst.position)
+            is MemoryWriteable -> dst.writeMemory {
+                digestInto(it)
+                digestSize
+            }
             else -> dst.writeBytes(getDigest(), 0, digestSize)
         }
     }

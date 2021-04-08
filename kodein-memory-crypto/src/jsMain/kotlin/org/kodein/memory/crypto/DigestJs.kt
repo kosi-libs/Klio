@@ -92,7 +92,7 @@ internal class JsDigestWriteable(override val digestSize: Int, private val onClo
         }
     }
 
-    override fun digestInto(dst: Memory, dstOffset: Int) {
+    override fun digestInto(dst: Memory) {
         val array = jsSha.digest()
         dst.putBytes(0, ArrayBufferMemory(array))
     }

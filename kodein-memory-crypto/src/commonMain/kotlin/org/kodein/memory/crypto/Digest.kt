@@ -8,7 +8,7 @@ import org.kodein.memory.use
 public interface DigestWriteable : Writeable, Closeable {
     public val digestSize: Int
     public fun digestInto(dst: ByteArray, dstOffset: Int = 0)
-    public fun digestInto(dst: Memory, dstOffset: Int = 0)
+    public fun digestInto(dst: Memory)
     public fun digestInto(dst: Writeable)
     public fun reset()
 
@@ -31,7 +31,7 @@ public inline fun ByteArray.putHashOf(algorithm: DigestAlgorithm, offset: Int, b
 public inline fun Memory.putHashOf(index: Int, algorithm: DigestAlgorithm, block: Writeable.() -> Unit) {
     DigestWriteable.newInstance(algorithm).use {
         it.block()
-        it.digestInto(this, index)
+        it.digestInto(this.sliceAt(index))
     }
 }
 
@@ -67,7 +67,7 @@ public inline fun ByteArray.putHmacOf(offset: Int, algorithm: DigestAlgorithm, k
 public inline fun Memory.putHmacOf(index: Int, algorithm: DigestAlgorithm, key: ReadMemory, block: Writeable.() -> Unit) {
     DigestWriteable.newHmacInstance(algorithm, key).use {
         it.block()
-        it.digestInto(this, index)
+        it.digestInto(this.sliceAt(index))
     }
 }
 
