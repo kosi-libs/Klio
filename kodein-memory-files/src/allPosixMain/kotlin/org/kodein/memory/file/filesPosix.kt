@@ -112,7 +112,7 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
             else -> {
                 val buffer = ByteArray(dst.size)
                 val r = tryReadBytes(buffer)
-                if (r == -1) dst.putBytes(0, buffer, 0, r)
+                if (r > 0) dst.putBytes(0, buffer, 0, r)
                 return r
             }
         }

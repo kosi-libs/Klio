@@ -17,7 +17,7 @@ public interface DigestWriteable : Writeable, Closeable {
 
 public fun DigestWriteable.digestBytes(): ByteArray = ByteArray(digestSize).also { digestInto(Memory.wrap(it)) }
 
-public enum class DigestAlgorithm { SHA1, SHA224, SHA256, SHA384, SHA512 }
+public enum class DigestAlgorithm { SHA1, SHA256, SHA384, SHA512 }
 
 public expect fun DigestWriteable.Companion.newInstance(algorithm: DigestAlgorithm): DigestWriteable
 

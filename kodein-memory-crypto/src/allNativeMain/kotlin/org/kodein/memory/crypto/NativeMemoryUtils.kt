@@ -19,7 +19,9 @@ internal fun MemScope.toReadOnlyCPointerMemory(memory: ReadMemory): CPointerMemo
 
 internal fun MemScope.toReadWriteCPointerMemory(memory: Memory): CPointerMemory = when (val m = memory.internalMemory()) {
     is CPointerMemory -> m
-    is ByteArrayMemory -> CPointerMemory(m.array.refTo(m.offset).getPointer(this), m.size)
+    is ByteArrayMemory -> {
+        CPointerMemory(m.array.refTo(m.offset).getPointer(this), m.size)
+    }
     else -> {
         val copy = Allocation.nativeCopy(memory)
         defer {

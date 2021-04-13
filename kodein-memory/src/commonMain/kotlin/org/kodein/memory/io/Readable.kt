@@ -51,6 +51,7 @@ public fun Readable.readUBytes(dst: UByteArray, offset: Int = 0, length: Int = d
 public fun Readable.readUBytes(length: Int): UByteArray = readBytes(length).asUByteArray()
 
 public interface CursorReadable : Readable {
+    public val size: Int
     public val remaining: Int
 }
 

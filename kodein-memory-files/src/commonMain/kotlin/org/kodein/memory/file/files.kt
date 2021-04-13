@@ -1,13 +1,10 @@
 package org.kodein.memory.file
 
 import org.kodein.memory.Closeable
-import org.kodein.memory.io.CursorReadable
-import org.kodein.memory.io.CursorWriteable
-import org.kodein.memory.io.IOException
-import org.kodein.memory.io.Writeable
+import org.kodein.memory.io.*
 
 
-public interface ReadableFile : CursorReadable, Closeable
+public interface ReadableFile : SeekableCursorReadable, Closeable
 
 public expect fun Path.openReadableFile(): ReadableFile
 

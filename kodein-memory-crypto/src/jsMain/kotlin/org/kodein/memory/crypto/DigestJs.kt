@@ -110,7 +110,6 @@ internal class JsDigestWriteable(override val digestSize: Int, private val onClo
 
 private val DigestAlgorithm.jsAlgorithmDigestSize get() = when (this) {
     DigestAlgorithm.SHA1 -> 20
-    DigestAlgorithm.SHA224 -> 28
     DigestAlgorithm.SHA256 -> 32
     DigestAlgorithm.SHA384 -> 48
     DigestAlgorithm.SHA512 -> 64
@@ -118,7 +117,6 @@ private val DigestAlgorithm.jsAlgorithmDigestSize get() = when (this) {
 
 internal val DigestAlgorithm.jsAlgorithmName get() = when (this) {
     DigestAlgorithm.SHA1 -> "sha1"
-    DigestAlgorithm.SHA224 -> "sha224"
     DigestAlgorithm.SHA256 -> "sha256"
     DigestAlgorithm.SHA384 -> "sha384"
     DigestAlgorithm.SHA512 -> "sha512"

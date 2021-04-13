@@ -87,7 +87,6 @@ internal class MessageDigestJvmDigestWriteable(algorithmName: String) : Abstract
 public actual fun DigestWriteable.Companion.newInstance(algorithm: DigestAlgorithm): DigestWriteable =
         MessageDigestJvmDigestWriteable(when (algorithm) {
             DigestAlgorithm.SHA1 -> "SHA-1"
-            DigestAlgorithm.SHA224 -> "SHA-224"
             DigestAlgorithm.SHA256 -> "SHA-256"
             DigestAlgorithm.SHA384 -> "SHA-384"
             DigestAlgorithm.SHA512 -> "SHA-512"
@@ -112,7 +111,6 @@ internal class HmacJvmDigestWriteable(specs: SecretKeySpec) : AbstractJvmDigestW
 public actual fun DigestWriteable.Companion.newHmacInstance(algorithm: DigestAlgorithm, key: ReadMemory): DigestWriteable {
     val algorithmName = when (algorithm) {
         DigestAlgorithm.SHA1   -> "HmacSHA1"
-        DigestAlgorithm.SHA224 -> "HmacSHA224"
         DigestAlgorithm.SHA256 -> "HmacSHA256"
         DigestAlgorithm.SHA384 -> "HmacSHA384"
         DigestAlgorithm.SHA512 -> "HmacSHA512"

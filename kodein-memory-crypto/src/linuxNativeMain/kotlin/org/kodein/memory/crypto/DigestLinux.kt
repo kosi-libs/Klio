@@ -19,7 +19,6 @@ private inline fun <C : CVariable> asFinal(noinline final: (CValuesRef<UByteVar>
 public actual fun DigestWriteable.Companion.newInstance(algorithm: DigestAlgorithm): DigestWriteable =
     when (algorithm) {
         DigestAlgorithm.SHA1   -> NativeFunctionsDigestWriteable(20,          nativeHeap.alloc(), ::SHA1_Init,   asUpdate(::SHA1_Update),   asFinal(::SHA1_Final)  ) { nativeHeap.free(it.pointed) }
-        DigestAlgorithm.SHA224 -> NativeFunctionsDigestWriteable(SHA224_DIGEST_LENGTH, nativeHeap.alloc(), ::SHA224_Init, asUpdate(::SHA224_Update), asFinal(::SHA224_Final)) { nativeHeap.free(it.pointed) }
         DigestAlgorithm.SHA256 -> NativeFunctionsDigestWriteable(SHA256_DIGEST_LENGTH, nativeHeap.alloc(), ::SHA256_Init, asUpdate(::SHA256_Update), asFinal(::SHA256_Final)) { nativeHeap.free(it.pointed) }
         DigestAlgorithm.SHA384 -> NativeFunctionsDigestWriteable(SHA384_DIGEST_LENGTH, nativeHeap.alloc(), ::SHA384_Init, asUpdate(::SHA384_Update), asFinal(::SHA384_Final)) { nativeHeap.free(it.pointed) }
         DigestAlgorithm.SHA512 -> NativeFunctionsDigestWriteable(SHA512_DIGEST_LENGTH, nativeHeap.alloc(), ::SHA512_Init, asUpdate(::SHA512_Update), asFinal(::SHA512_Final)) { nativeHeap.free(it.pointed) }
@@ -28,7 +27,6 @@ public actual fun DigestWriteable.Companion.newInstance(algorithm: DigestAlgorit
 
 internal fun DigestAlgorithm.linuxDigest(): Pair<Int, CPointer<EVP_MD>> =  when (this) {
     DigestAlgorithm.SHA1 ->   20                   to EVP_sha1()!!
-    DigestAlgorithm.SHA224 -> SHA224_DIGEST_LENGTH to EVP_sha224()!!
     DigestAlgorithm.SHA256 -> SHA256_DIGEST_LENGTH to EVP_sha256()!!
     DigestAlgorithm.SHA384 -> SHA384_DIGEST_LENGTH to EVP_sha384()!!
     DigestAlgorithm.SHA512 -> SHA512_DIGEST_LENGTH to EVP_sha512()!!

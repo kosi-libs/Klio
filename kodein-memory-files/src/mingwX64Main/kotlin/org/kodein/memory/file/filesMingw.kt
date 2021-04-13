@@ -2,6 +2,7 @@ package org.kodein.memory.file
 
 import kotlinx.cinterop.*
 import org.kodein.memory.io.*
+import org.kodein.memory.*
 import platform.windows.*
 
 
@@ -59,24 +60,26 @@ public actual fun Path.delete() {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
+private class MingwReadableFile(private val handle: HANDLE?) : ReadableFile {
 
-    private val size: Int = GetFileSize(handle, null).toInt()
+    override val size: Int = GetFileSize(handle, null).toInt()
 
-    private val buffer = nativeHeap.allocArray<UByteVar>(8)
+    private val buffer = nativeHeap.allocArray<ByteVar>(8)
     private val nread = nativeHeap.alloc<DWORDVar>()
 
-    private val remaining: Int get() = size - position
+    override val remaining: Int get() = size - position
 
-    override val position: Int get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+    override var position: Int
+            get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+            set(value) { SetFilePointer(handle, value, null, FILE_BEGIN) }
 
-    override fun requireCanRead(needed: Int) {
-        if (needed > remaining) throw OutOfMemoryException.NotEnoughRemaining(needed, remaining)
+    override fun requestCanRead(needed: Int) {
+        if (needed > remaining) throw IOException("End of file: needed $needed bytes, but has only $remaining remaining bytes.")
     }
 
     override fun valid() = remaining != 0
 
-    override fun receive(): Int {
+    override fun tryReadByte(): Int {
         val ret = ReadFile(
                 handle,
                 buffer,
@@ -89,60 +92,57 @@ private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
         return buffer[0].toInt()
     }
 
-    override fun receive(dst: ByteArray, dstOffset: Int, length: Int): Int {
+    override fun tryReadBytes(dst: ByteArray, dstOffset: Int, length: Int): Int {
         require(dstOffset >= 0)
         require(dstOffset + length <= dst.size)
         memScoped {
-            val ret = ReadFile(
-                    handle,
-                    dst.refTo(dstOffset).getPointer(this),
-                    length.toUInt(),
-                    nread.ptr,
-                    null
-            )
+            val ret = ReadFile(handle, dst.refTo(dstOffset).getPointer(this), length.toUInt(), nread.ptr, null)
             if (ret == 0) throw IOException.fromLastError("read")
             if (nread.value == 0u) return -1
             return nread.value.toInt()
         }
     }
 
-    private fun readX(size: UInt, name: String) {
+    override fun tryReadBytes(dst: Memory): Int {
+        when (dst) {
+            is ByteArrayMemory -> memScoped {
+                val ret = ReadFile(handle, dst.array.refTo(dst.offset).getPointer(this), dst.size.toUInt(), nread.ptr, null)
+                if (ret == 0) throw IOException.fromLastError("read")
+                if (nread.value == 0u) return -1
+                return nread.value.toInt()
+            }
+            is CPointerMemory -> {
+                val ret = ReadFile(handle, dst.pointer, dst.size.toUInt(), nread.ptr, null)
+                if (ret == 0) throw IOException.fromLastError("read")
+                if (nread.value == 0u) return -1
+                return nread.value.toInt()
+            }
+            else -> {
+                val buffer = ByteArray(dst.size)
+                val r = tryReadBytes(buffer)
+                if (r > 0) dst.putBytes(0, buffer, 0, r)
+                return r
+            }
+        }
+    }
+
+    private inline fun <T> readValue(size: Int, getValue: CPointer<ByteVarOf<Byte>>.() -> T): T {
         val ret = ReadFile(
-                handle,
-                buffer,
-                size,
-                nread.ptr,
-                null
+            handle,
+            buffer,
+            size.toUInt(),
+            nread.ptr,
+            null
         )
         if (ret == 0) throw IOException.fromLastError("read")
-        if (nread.value != size) throw IOException("Could not read $size bytes for a $name (only ${nread.value} bytes)")
+        if (nread.value.toInt() != size) throw IOException("Could not read $size bytes (only ${nread.value} bytes)")
+        return buffer.getValue()
     }
 
-    override fun readByte(): Byte {
-        readX(Byte.SIZE_BYTES.toUInt(), "Byte")
-        return buffer[0].toByte()
-    }
-
-    override fun readChar(): Char = readShort().toChar()
-
-    override fun readShort(): Short {
-        readX(Short.SIZE_BYTES.toUInt(), "Short")
-        return buffer.reinterpret<ShortVar>().pointed.value.toBigEndian()
-    }
-
-    override fun readInt(): Int {
-        readX(Int.SIZE_BYTES.toUInt(), "Int")
-        return buffer.reinterpret<IntVar>().pointed.value.toBigEndian()
-    }
-
-    override fun readLong(): Long {
-        readX(Long.SIZE_BYTES.toUInt(), "Long")
-        return buffer.reinterpret<LongVar>().pointed.value.toBigEndian()
-    }
-
-    override fun readFloat(): Float = Float.fromBits(readInt())
-
-    override fun readDouble(): Double = Double.fromBits(readLong())
+    override fun readByte(): Byte = readValue(1) { pointed.value }
+    override fun readShort(): Short = readValue(2) { reinterpret<ShortVar>().pointed.value.toBigEndian() }
+    override fun readInt(): Int = readValue(4) { reinterpret<IntVar>().pointed.value.toBigEndian() }
+    override fun readLong(): Long = readValue(8) { reinterpret<LongVar>().pointed.value.toBigEndian() }
 
     override fun readBytes(dst: ByteArray, dstOffset: Int, length: Int) {
         require(dstOffset >= 0)
@@ -160,14 +160,18 @@ private class WinReadableFile(private val handle: HANDLE?) : ReadableFile {
         }
     }
 
-    override fun skip(count: Int): Int {
+    override fun skip(count: Int) {
+        require(count >= 0)
+        val skipped = skipAtMost(count)
+        if (skipped != count) throw IOException("Could not skip $count bytes, only $skipped bytes.")
+    }
+
+    override fun skipAtMost(count: Int): Int {
         val old = SetFilePointer(handle, 0, null, FILE_CURRENT)
         val new = SetFilePointer(handle, count, null, FILE_CURRENT)
         if (new == INVALID_SET_FILE_POINTER) throw IOException.fromLastError("skip")
         return (new - old).toInt()
     }
-
-    override fun internalBuffer(): Readable = this
 
     override fun close() {
         nativeHeap.free(buffer)
@@ -188,7 +192,7 @@ public actual fun Path.openReadableFile(): ReadableFile {
             null
     )
     if (handle == INVALID_HANDLE_VALUE) throw IOException.fromLastError("read")
-    return WinReadableFile(handle)
+    return MingwReadableFile(handle)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -196,69 +200,61 @@ private class WinWriteableFile(private val handle: HANDLE?) : WriteableFile {
 
     override val position: Int get() = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
 
-    override fun requireCanWrite(needed: Int) {} // noop
+    override val remaining: Int get() = Int.MAX_VALUE
 
-    private val buffer = nativeHeap.allocArray<UByteVar>(8)
+    override fun requestCanWrite(needed: Int) {} // noop
+
+    private val buffer = nativeHeap.allocArray<ByteVar>(8)
     private val nwritten = nativeHeap.alloc<DWORDVar>()
 
-    private fun writeX(size: UInt, name: String) {
-        val ret = WriteFile(
-                handle,
-                buffer,
-                size,
-                nwritten.ptr,
-                null
-        )
+    private inline fun <T> writeValue(size: Int, value: T, setValue: CPointer<ByteVarOf<Byte>>.(T) -> Unit) {
+        buffer.setValue(value)
+        val ret = WriteFile(handle, buffer, size.toUInt(), nwritten.ptr, null)
         if (ret == 0) throw IOException.fromLastError("write")
-        if (nwritten.value != size) throw IOException("Could not write $size bytes for a $name (only ${nwritten.value} bytes)")
+        if (nwritten.value.toInt() != size) throw IOException("Could not write $size bytes (only ${nwritten.value} bytes)")
     }
 
-    override fun putByte(value: Byte) {
-        buffer[0] = value.toUByte()
-        writeX(Byte.SIZE_BYTES.toUInt(), "Byte")
-    }
+    override fun writeByte(value: Byte) = writeValue(1, value) { pointed.value = it }
+    override fun writeShort(value: Short) = writeValue(2, value) { reinterpret<ShortVar>().pointed.value = it.toBigEndian() }
+    override fun writeInt(value: Int) = writeValue(4, value) { reinterpret<IntVar>().pointed.value = it.toBigEndian() }
+    override fun writeLong(value: Long) = writeValue(8, value) { reinterpret<LongVar>().pointed.value = it.toBigEndian() }
 
-    override fun putChar(value: Char) = putShort(value.toShort())
-
-    override fun putShort(value: Short) {
-        buffer.reinterpret<ShortVar>().pointed.value = value.toBigEndian()
-        writeX(Short.SIZE_BYTES.toUInt(), "Short")
-    }
-
-    override fun putInt(value: Int) {
-        buffer.reinterpret<IntVar>().pointed.value = value.toBigEndian()
-        writeX(Int.SIZE_BYTES.toUInt(), "Int")
-    }
-
-    override fun putLong(value: Long) {
-        buffer.reinterpret<LongVar>().pointed.value = value.toBigEndian()
-        writeX(Long.SIZE_BYTES.toUInt(), "Long")
-    }
-
-    override fun putFloat(value: Float) = putInt(value.toBits())
-
-    override fun putDouble(value: Double) = putLong(value.toBits())
-
-    override fun putBytes(src: ByteArray, srcOffset: Int, length: Int) {
+    override fun writeBytes(src: ByteArray, srcOffset: Int, length: Int) {
         require(srcOffset >= 0)
         require(srcOffset + length <= src.size)
         memScoped {
-            val ret = WriteFile(
-                    handle,
-                    src.refTo(srcOffset).getPointer(this),
-                    length.toUInt(),
-                    nwritten.ptr,
-                    null
-            )
+            val ret = WriteFile(handle, src.refTo(srcOffset).getPointer(this), length.toUInt(), nwritten.ptr, null)
             if (ret == 0) throw IOException.fromLastError("write")
             if (nwritten.value != length.toUInt()) throw IOException("Could not write $length bytes (only ${nwritten.value})")
         }
     }
 
-    override fun putReadableBytes(src: Readable, length: Int): Unit = putReadableBytesBuffered(src, length)
+    override fun writeBytes(src: Readable, length: Int): Unit = writeBytesBuffered(src, length)
 
-    override fun putMemoryBytes(src: ReadMemory, srcOffset: Int, length: Int): Unit = src.markBuffer(srcOffset) {
-        putReadableBytes(it, length)
+    override fun writeBytes(src: ReadMemory) {
+        val ret = when (src) {
+            is ByteArrayMemory -> memScoped {
+                WriteFile(handle, src.array.refTo(src.offset).getPointer(this), src.size.toUInt(), nwritten.ptr, null)
+            }
+            is CPointerMemory -> {
+                WriteFile(handle, src.pointer, src.size.toUInt(), nwritten.ptr, null)
+            }
+            else -> {
+                Allocation.nativeCopy(src).use {
+                    WriteFile(handle, it.memory.pointer, it.size.toUInt(), nwritten.ptr, null)
+                }
+            }
+        }
+        if (ret == 0) throw IOException.fromLastError("write")
+        if (nwritten.value != src.size.toUInt()) throw IOException("Could not write ${src.size} bytes (only ${nwritten.value})")
+    }
+
+    override fun skip(count: Int) {
+        val old = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+        SetFilePointer(handle, count, null, FILE_CURRENT).toInt()
+        val new = SetFilePointer(handle, 0, null, FILE_CURRENT).toInt()
+        val skipped = new - old
+        if (skipped != count) throw IOException("Could not skip $count bytes, only $skipped bytes.")
     }
 
     override fun flush() {

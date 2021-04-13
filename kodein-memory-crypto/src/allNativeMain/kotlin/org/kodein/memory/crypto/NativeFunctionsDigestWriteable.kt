@@ -11,13 +11,13 @@ internal typealias NativeDigestFinalFunction<C> = (context: CPointer<C>, output:
 internal typealias NativeDigestCloseFunction<C> = (context: CPointer<C>) -> Unit
 
 internal class NativeFunctionsDigestWriteable<C : CPointed>(
-        digestSize: Int,
+        override val digestSize: Int,
         private val ctx: C,
         private val init: NativeDigestInitFunction<C>,
         private val update: NativeDigestUpdateFunction<C>,
         private val final: NativeDigestFinalFunction<C>,
         private val close: NativeDigestCloseFunction<C>
-) : NativeDigestWriteable(digestSize) {
+) : NativeDigestWriteable() {
 
     init {
         init(ctx.ptr)

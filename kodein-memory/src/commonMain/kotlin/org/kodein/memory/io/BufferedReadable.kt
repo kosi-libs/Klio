@@ -148,6 +148,7 @@ public class BufferedMemoryPullReadable(sequence: Sequence<ReadMemory>) : Abstra
 public class BufferedMemoryPushReadable : AbstractBufferedMemoryReadable(), CursorReadable {
 
     override val remaining: Int get() = buffersRemaining
+    override val size: Int get() = position + remaining
 
     override fun nextBuffer(): ReadMemory? = null
 

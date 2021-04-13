@@ -14,7 +14,6 @@ import kotlin.test.assertEquals
 class HmacTests {
     private val results = listOf(
         DigestAlgorithm.SHA1   to "c02cd76be815fc56e3a395bea9dcee33e94ee9b9",
-        DigestAlgorithm.SHA224 to "64edd51203ef58d91bee9396b994b4dc5cf3f8f0abdfeb081c6ac3ee",
         DigestAlgorithm.SHA256 to "3f1b482abd5da9037a02559488a098eaef6250e93763ae690dd263a126429332",
         DigestAlgorithm.SHA384 to "e1c0fdf536192e032e37b883be38d028554e824b31fb5d3eb5a83086d3f9711aace49c4e408b81555c68f9e16a4200b7",
         DigestAlgorithm.SHA512 to "b347b6bef1ea04b499f45c9aa2269ec821cff61c5854b733297b2b49602251beec8fc90b9bb6e1ab63988909fdfeb806222527785a4a53f47496819b4ccabbe2"

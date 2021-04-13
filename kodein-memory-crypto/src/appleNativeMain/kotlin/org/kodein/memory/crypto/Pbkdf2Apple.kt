@@ -13,7 +13,6 @@ public actual object Pbkdf2 {
     public actual fun withHmac(digestAlgorithm: DigestAlgorithm, password: ReadMemory, salt: ReadMemory, rounds: Int, dst: Memory) {
         val prfHmacAlgorithm = when (digestAlgorithm) {
             DigestAlgorithm.SHA1 -> kCCPRFHmacAlgSHA1
-            DigestAlgorithm.SHA224 -> kCCPRFHmacAlgSHA224
             DigestAlgorithm.SHA256 -> kCCPRFHmacAlgSHA256
             DigestAlgorithm.SHA384 -> kCCPRFHmacAlgSHA384
             DigestAlgorithm.SHA512 -> kCCPRFHmacAlgSHA512

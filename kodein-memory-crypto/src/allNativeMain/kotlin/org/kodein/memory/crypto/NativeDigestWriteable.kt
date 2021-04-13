@@ -6,7 +6,7 @@ import org.kodein.memory.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal abstract class NativeDigestWriteable(override val digestSize: Int) : DigestWriteable {
+internal abstract class NativeDigestWriteable : DigestWriteable {
 
     private var isClosed = false
     private var isFinalized = false

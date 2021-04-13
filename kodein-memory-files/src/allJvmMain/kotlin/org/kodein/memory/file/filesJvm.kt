@@ -13,7 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 public class JVMReadableFile(channel: FileChannel): ReadableFile,
-    CursorReadable by channel.asReadable(),
+    SeekableCursorReadable by channel.asReadable(),
     Closeable by channel
 
 public actual fun Path.openReadableFile(): ReadableFile =

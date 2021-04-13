@@ -189,6 +189,7 @@ internal class NioSeekableByteChannelReadable(private val channel: SeekableByteC
             channel.position(value.toLong())
         }
 
+    override val size: Int get() = channel.size().toInt()
     override val remaining: Int = channel.size().toInt() - position
 
     override fun requestCanRead(needed: Int) {

@@ -33,6 +33,8 @@ kodein {
             mainCompilation.cinterops.create("linuxCrypto")
         }
 
+        add(kodeinTargets.native.mingwX64)
+
         add(kodeinTargets.js.js) {
             main.dependencies {
                 implementation(npm("sha.js", "2.4.11"))

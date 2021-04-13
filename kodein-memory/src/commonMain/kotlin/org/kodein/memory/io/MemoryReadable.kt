@@ -19,6 +19,7 @@ public class MemoryReadable(public val memory: ReadMemory) : SeekableCursorReada
     }
 
     override val remaining: Int get() = memory.size - position
+    override val size: Int get() = memory.size
 
     override fun valid(): Boolean = remaining != 0
 
