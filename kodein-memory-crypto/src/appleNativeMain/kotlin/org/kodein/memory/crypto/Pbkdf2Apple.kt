@@ -29,7 +29,7 @@ public actual object Pbkdf2 {
                 nSalt.pointer.reinterpret(), nSalt.size.convert(),
                 prfHmacAlgorithm, rounds.toUInt(),
                 nDst.pointer.reinterpret(), nDst.size.convert()
-            )
+            ).requireCoreCryptoSuccess("KCCKeyDerivationPBKDF")
         }
 
     }

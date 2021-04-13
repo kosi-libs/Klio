@@ -7,31 +7,18 @@ import platform.CoreCrypto.*
 import platform.posix.size_tVar
 
 
-private fun CCCryptorStatus.checkCoreCryptoSuccess() {
-    when (this) {
-        kCCSuccess -> return
-        kCCParamError -> throw IOException("Illegal parameter value.")
-        kCCBufferTooSmall -> throw IOException("Insufficent buffer provided for specified operation.")
-        kCCMemoryFailure -> throw IOException("Memory allocation failure.")
-        kCCAlignmentError -> throw IOException("Input size was not aligned properly.")
-        kCCDecodeError -> throw IOException("Input data did not decode or decrypt properly.")
-        kCCUnimplemented -> throw IOException("Function not implemented for the current algorithm.")
-        else -> throw IOException("Unknown error code: $this")
-    }
-}
-
 private class AppleCipherWriteable(private val cryptorRef: CCCryptorRefVar, key: Allocation, output: Writeable) : NativeCipherWriteable(key, output) {
     val outLen = nativeHeap.alloc<size_tVar>()
 
     override fun doUpdate(inputPtr: CPointer<*>, inputLength: Int, outputPtr: CPointer<*>, outputSize: Int): Int {
         outLen.value = 0.convert()
-        CCCryptorUpdate(cryptorRef.value, inputPtr, inputLength.convert(), outputPtr, outputSize.convert(), outLen.ptr).checkCoreCryptoSuccess()
+        CCCryptorUpdate(cryptorRef.value, inputPtr, inputLength.convert(), outputPtr, outputSize.convert(), outLen.ptr).requireCoreCryptoSuccess("CCCryptorUpdate")
         return outLen.value.convert()
     }
 
     override fun doFinal(outputPtr: CPointer<*>, outputSize: Int): Int {
         outLen.value = 0.convert()
-        CCCryptorFinal(cryptorRef.value, outputPtr, outputSize.convert(), outLen.ptr).checkCoreCryptoSuccess()
+        CCCryptorFinal(cryptorRef.value, outputPtr, outputSize.convert(), outLen.ptr).requireCoreCryptoSuccess("CCCryptorFinal")
         return outLen.value.convert()
     }
 
@@ -74,7 +61,7 @@ public actual object AES128 {
                 keyCopy.size.convert(),
                 iv?.memory?.pointer,
                 cryptorRef.ptr
-            ).checkCoreCryptoSuccess()
+            ).requireCoreCryptoSuccess("CCCryptorCreate")
 
             return AppleCipherWriteable(cryptorRef, keyCopy, output)
         }

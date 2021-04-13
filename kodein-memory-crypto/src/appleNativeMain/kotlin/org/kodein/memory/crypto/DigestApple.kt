@@ -5,12 +5,12 @@ import org.kodein.memory.io.*
 import platform.CoreCrypto.*
 
 
-private inline fun <C : CVariable> asUpdate(noinline update: (CValuesRef<C>?, CValuesRef<*>?, CC_LONG) -> Unit): NativeDigestUpdateFunction<C> =
+private inline fun <C : CVariable> asUpdate(noinline update: (CPointer<C>?, CPointer<*>?, CC_LONG) -> Unit): NativeDigestUpdateFunction<C> =
     ({ ctx, ptr, size ->
         update(ctx, ptr, size.convert())
     })
 
-private inline fun <C : CVariable> asFinal(noinline final: (CValuesRef<UByteVar>?, CValuesRef<C>?) -> Unit): NativeDigestFinalFunction<C> =
+private inline fun <C : CVariable> asFinal(noinline final: (CPointer<UByteVar>?, CPointer<C>?) -> Unit): NativeDigestFinalFunction<C> =
     ({ ctx, output ->
         final(output.reinterpret(), ctx)
     })
