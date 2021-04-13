@@ -3,7 +3,6 @@ package org.kodein.memory.file
 import kotlinx.cinterop.*
 import org.kodein.memory.io.*
 import platform.posix.*
-import kotlin.math.min
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun Path.getType(statFun: (String?, CValuesRef<stat>?) -> Int): EntityType {
@@ -58,9 +57,9 @@ public actual fun Path.delete() {
 @OptIn(ExperimentalUnsignedTypes::class)
 private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile {
 
-    private val size: Int
+    override val size: Int
 
-    private val alloc = nativeHeap.allocArray<ByteVar>(8)
+    private val buffer = nativeHeap.allocArray<ByteVar>(8)
 
     init {
         fseek(file, 0.convert(), SEEK_END)
@@ -125,9 +124,9 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
     }
 
     private inline fun <T> readValue(size: Int, getValue: CPointer<ByteVarOf<Byte>>.() -> T): T {
-        val read = fread(alloc, size.convert(), 1.convert(), file).toInt()
+        val read = fread(buffer, size.convert(), 1.convert(), file).toInt()
         if (read != 1) throw IOException.fromErrno("read")
-        return alloc.getValue()
+        return buffer.getValue()
     }
 
     override fun readShort(): Short = readValue(2) { reinterpret<ShortVar>().pointed.value.toBigEndian() }
@@ -153,7 +152,7 @@ private class PosixReadableFile(private val file: CPointer<FILE>) : ReadableFile
     }
 
     override fun close() {
-        nativeHeap.free(alloc)
+        nativeHeap.free(buffer)
         fclose(file)
     }
 }
@@ -166,7 +165,7 @@ public actual fun Path.openReadableFile(): ReadableFile {
 @OptIn(ExperimentalUnsignedTypes::class)
 private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFile {
 
-    private val alloc = nativeHeap.allocArray<ByteVar>(8)
+    private val buffer = nativeHeap.allocArray<ByteVar>(8)
 
     override val remaining: Int get() = Int.MAX_VALUE
 
@@ -180,8 +179,8 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
     }
 
     private inline fun <T> writeValue(size: Int, value: T, setValue: CPointer<ByteVarOf<Byte>>.(T) -> Unit) {
-        alloc.setValue(value)
-        val w = fwrite(alloc, size.convert(), 1.convert(), file).toInt()
+        buffer.setValue(value)
+        val w = fwrite(buffer, size.convert(), 1.convert(), file).toInt()
         if (w != 1) throw IOException.fromErrno("write")
     }
 
@@ -227,7 +226,7 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
     }
 
     override fun close() {
-        nativeHeap.free(alloc)
+        nativeHeap.free(buffer)
         fclose(file)
     }
 }

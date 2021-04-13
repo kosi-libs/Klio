@@ -20,7 +20,7 @@ public actual object Pbkdf2 {
                     nSalt.pointer.reinterpret(), nSalt.size,
                     rounds, evp,
                     nDst.size, nDst.pointer.reinterpret()
-            )
+            ).requireOpenSSLSuccess("PKCS5_PBKDF2_HMAC")
         }
     }
 }

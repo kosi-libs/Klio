@@ -5,32 +5,7 @@ import org.kodein.memory.crypto.libssl.*
 import org.kodein.memory.io.*
 import org.kodein.memory.useOrNull
 import platform.posix.memcpy
-import platform.posix.size_t
 
-
-private fun error_cb(lineStr: CPointer<ByteVar>?, lineLength: size_t, userData: COpaquePointer?): Int {
-    val array = ByteArray(lineLength.convert()) { lineStr!![it] }
-    val sb = userData!!.asStableRef<StringBuilder>().get()
-    sb.appendLine(array.decodeToString())
-    return 1
-}
-
-private fun Int.checkOpenSSLSuccess() {
-    if (this == 1) return
-
-    ERR_load_EVP_strings()
-    ERR_load_CRYPTO_strings()
-
-    val sb = StableRef.create(StringBuilder())
-    val error = try {
-        ERR_print_errors_cb(staticCFunction(::error_cb), sb.asCPointer())
-        sb.get().toString()
-    } finally {
-        sb.dispose()
-    }
-
-    throw IOException("OpenSSL error:\n$error")
-}
 
 private inline fun output(maxSize: Int, outputPtr: CPointer<*>, outputSize: Int, block: (outputPtr: CPointer<*>) -> Int): Int {
     if (outputSize >= maxSize) return block(outputPtr)
@@ -50,14 +25,14 @@ private class LinuxCipherEncryptWriteable(private val ctx: CValuesRef<EVP_CIPHER
     override fun doUpdate(inputPtr: CPointer<*>, inputLength: Int, outputPtr: CPointer<*>, outputSize: Int): Int =
         output(inputLength + 16 - 1, outputPtr, outputSize) {
             outLen.value = 0
-            EVP_EncryptUpdate(ctx, it.reinterpret(), outLen.ptr, inputPtr.reinterpret(), inputLength).checkOpenSSLSuccess()
+            EVP_EncryptUpdate(ctx, it.reinterpret(), outLen.ptr, inputPtr.reinterpret(), inputLength).requireOpenSSLSuccess("EVP_EncryptUpdate")
             outLen.value
         }
 
     override fun doFinal(outputPtr: CPointer<*>, outputSize: Int): Int =
         output(16, outputPtr, outputSize) {
             outLen.value = 0
-            EVP_EncryptFinal_ex(ctx, it.reinterpret(), outLen.ptr)
+            EVP_EncryptFinal_ex(ctx, it.reinterpret(), outLen.ptr).requireOpenSSLSuccess("EVP_EncryptFinal_ex")
             return outLen.value
         }
 
@@ -73,14 +48,14 @@ private class LinuxCipherDecryptWriteable(private val ctx: CValuesRef<EVP_CIPHER
     override fun doUpdate(inputPtr: CPointer<*>, inputLength: Int, outputPtr: CPointer<*>, outputSize: Int): Int =
         output(inputLength + 16, outputPtr, outputSize) {
             outLen.value = 0
-            EVP_DecryptUpdate(ctx, it.reinterpret(), outLen.ptr, inputPtr.reinterpret(), inputLength)
+            EVP_DecryptUpdate(ctx, it.reinterpret(), outLen.ptr, inputPtr.reinterpret(), inputLength).requireOpenSSLSuccess("EVP_DecryptUpdate")
             outLen.value
     }
 
     override fun doFinal(outputPtr: CPointer<*>, outputSize: Int): Int =
         output(16, outputPtr, outputSize) {
             outLen.value = 0
-            EVP_DecryptFinal_ex(ctx, it.reinterpret(), outLen.ptr)
+            EVP_DecryptFinal_ex(ctx, it.reinterpret(), outLen.ptr).requireOpenSSLSuccess("EVP_DecryptFinal_ex")
             return outLen.value
         }
 
@@ -90,13 +65,16 @@ private class LinuxCipherDecryptWriteable(private val ctx: CValuesRef<EVP_CIPHER
     }
 }
 
+private typealias cipherInit = (CValuesRef<EVP_CIPHER_CTX>?, CValuesRef<EVP_CIPHER>?, CValuesRef<ENGINE>?, CValuesRef<UByteVar>?, CValuesRef<UByteVar>?) -> Int
+
 @OptIn(ExperimentalUnsignedTypes::class)
 public actual object AES128 {
     private fun getCipher(
         cipherMode: CipherMode,
         key: ReadMemory,
         output: Writeable,
-        init: (CValuesRef<EVP_CIPHER_CTX>?, CValuesRef<EVP_CIPHER>?, CValuesRef<ENGINE>?, CValuesRef<UByteVar>?, CValuesRef<UByteVar>?) -> Int,
+        initFunction: cipherInit,
+        initFunctionName: String,
         factory: (CValuesRef<EVP_CIPHER_CTX>, Allocation, Writeable) -> NativeCipherWriteable
     ): NativeCipherWriteable {
         require(key.size in arrayOf(16, 24, 32)) { "Key must be 16, 24 or 32 bytes (not ${key.size})." }
@@ -130,15 +108,15 @@ public actual object AES128 {
 
         iv.useOrNull {
             val ctx = EVP_CIPHER_CTX_new()!!
-            init(ctx, cipher, null, keyCopy.memory.pointer.reinterpret(), iv?.memory?.pointer?.reinterpret())
+            initFunction(ctx, cipher, null, keyCopy.memory.pointer.reinterpret(), iv?.memory?.pointer?.reinterpret()).requireOpenSSLSuccess(initFunctionName)
 
             return factory(ctx, keyCopy, output)
         }
     }
 
     public actual fun encrypt(mode: CipherMode, key: ReadMemory, output: Writeable): CipherWriteable =
-            getCipher(mode, key, output, ::EVP_EncryptInit_ex, ::LinuxCipherEncryptWriteable)
+            getCipher(mode, key, output, ::EVP_EncryptInit_ex, "EVP_EncryptInit_ex", ::LinuxCipherEncryptWriteable)
 
     public actual fun decrypt(mode: CipherMode, key: ReadMemory, output: Writeable): CipherWriteable =
-            getCipher(mode, key, output, ::EVP_DecryptInit_ex, ::LinuxCipherDecryptWriteable)
+            getCipher(mode, key, output, ::EVP_DecryptInit_ex, "EVP_DecryptInit_ex", ::LinuxCipherDecryptWriteable)
 }
