@@ -80,13 +80,7 @@ private class MingwReadableFile(private val handle: HANDLE?) : ReadableFile {
     override fun valid() = remaining != 0
 
     override fun tryReadByte(): Int {
-        val ret = ReadFile(
-                handle,
-                buffer,
-                1u,
-                nread.ptr,
-                null
-        )
+        val ret = ReadFile(handle, buffer, 1u, nread.ptr, null)
         if (ret == 0) throw IOException.fromLastError("read")
         if (nread.value == 0u) return -1
         return buffer[0].toInt()
@@ -127,13 +121,7 @@ private class MingwReadableFile(private val handle: HANDLE?) : ReadableFile {
     }
 
     private inline fun <T> readValue(size: Int, getValue: CPointer<ByteVarOf<Byte>>.() -> T): T {
-        val ret = ReadFile(
-            handle,
-            buffer,
-            size.toUInt(),
-            nread.ptr,
-            null
-        )
+        val ret = ReadFile(handle, buffer, size.toUInt(), nread.ptr, null)
         if (ret == 0) throw IOException.fromLastError("read")
         if (nread.value.toInt() != size) throw IOException("Could not read $size bytes (only ${nread.value} bytes)")
         return buffer.getValue()
@@ -148,13 +136,7 @@ private class MingwReadableFile(private val handle: HANDLE?) : ReadableFile {
         require(dstOffset >= 0)
         require(dstOffset + length <= dst.size)
         memScoped {
-            val ret = ReadFile(
-                    handle,
-                    dst.refTo(dstOffset).getPointer(this),
-                    length.toUInt(),
-                    nread.ptr,
-                    null
-            )
+            val ret = ReadFile(handle, dst.refTo(dstOffset).getPointer(this), length.toUInt(), nread.ptr, null)
             if (ret == 0) throw IOException.fromLastError("read")
             if (nread.value != length.toUInt()) throw IOException("Could not read $length bytes (only ${nread.value})")
         }

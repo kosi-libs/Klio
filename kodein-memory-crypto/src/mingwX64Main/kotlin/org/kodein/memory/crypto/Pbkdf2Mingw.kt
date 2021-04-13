@@ -24,7 +24,7 @@ public actual object Pbkdf2 {
                     rounds.toULong(),
                     nDst.pointer.reinterpret(), nDst.size.toUInt(),
                     0u
-            )
+            ).requireNTSuccess("BCryptDeriveKeyPBKDF2")
 
             BCryptCloseAlgorithmProvider(hAlg.value, 0u)
         }

@@ -22,10 +22,10 @@ internal class MingwDigestWriteable(algName: String, val key: PlatformNativeAllo
         val hashObjectSize = alloc<DWORDVar>()
         val digestSize = alloc<DWORDVar>()
 
-        BCryptOpenAlgorithmProvider(hAlg.ptr, algName, null, if (key != null) BCRYPT_ALG_HANDLE_HMAC_FLAG.toUInt() else 0u)
-        BCryptGetProperty(hAlg.value, "ObjectLength", hashObjectSize.ptr.reinterpret(), DWORD.SIZE_BYTES.toUInt(), propertySize.ptr, 0u)
+        BCryptOpenAlgorithmProvider(hAlg.ptr, algName, null, if (key != null) BCRYPT_ALG_HANDLE_HMAC_FLAG.toUInt() else 0u).requireNTSuccess("BCryptOpenAlgorithmProvider")
+        BCryptGetProperty(hAlg.value, "ObjectLength", hashObjectSize.ptr.reinterpret(), DWORD.SIZE_BYTES.toUInt(), propertySize.ptr, 0u).requireNTSuccess("BCryptGetProperty(ObjectLength)")
         val hashObject = nativeHeap.allocArray<ByteVar>(hashObjectSize.value.toInt())
-        BCryptGetProperty(hAlg.value, "HashDigestLength", digestSize.ptr.reinterpret(), DWORD.SIZE_BYTES.toUInt(), propertySize.ptr, 0u)
+        BCryptGetProperty(hAlg.value, "HashDigestLength", digestSize.ptr.reinterpret(), DWORD.SIZE_BYTES.toUInt(), propertySize.ptr, 0u).requireNTSuccess("BCryptGetProperty(HashDigestLength)")
 
         HashData(hashObjectSize.value.convert(), hashObject, digestSize.value.convert())
     }
@@ -42,20 +42,20 @@ internal class MingwDigestWriteable(algName: String, val key: PlatformNativeAllo
                 data.hashObject.reinterpret(), data.hashObjectSize.toUInt(),
                 key?.memory?.pointer?.reinterpret(), key?.size?.convert() ?: 0u,
                 0u
-        )
+        ).requireNTSuccess("BCryptCreateHash")
     }
 
     override fun doReset() {
-        BCryptDestroyHash(hHash.value)
+        BCryptDestroyHash(hHash.value).requireNTSuccess("BCryptDestroyHash")
         doInit()
     }
 
     override fun doUpdate(dataPtr: CPointer<*>, dataLength: Int) {
-        BCryptHashData(hHash.value, dataPtr.reinterpret(), dataLength.toUInt(), 0u)
+        BCryptHashData(hHash.value, dataPtr.reinterpret(), dataLength.toUInt(), 0u).requireNTSuccess("BCryptHashData")
     }
 
     override fun doFinal(outputPtr: CPointer<*>) {
-        BCryptFinishHash(hHash.value, outputPtr.reinterpret(), digestSize.toUInt(), 0u)
+        BCryptFinishHash(hHash.value, outputPtr.reinterpret(), digestSize.toUInt(), 0u).requireNTSuccess("BCryptFinishHash")
     }
 
     override fun doClose() {
