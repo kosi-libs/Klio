@@ -88,6 +88,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
         private val MIN_UNIX_TIMESTAMP = timestampGregorianToUnix(0)
         private val MAX_UNIX_TIMESTAMP = timestampGregorianToUnix(0xFFFFFFFFFFFFFFFL)
 
+        @OptIn(ExperimentalStdlibApi::class)
         private fun formatUnsignedLong(value: Long, shift: Int, buf: CharArray, offset: Int, len: Int) {
             var work = value
             var charPos = offset + len
@@ -96,7 +97,7 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
 
             do {
                 --charPos
-                buf[charPos] = digits[work.toInt() and mask].toByte().toChar()
+                buf[charPos] = digits[work.toInt() and mask].code.toChar()
                 work = work ushr shift
             } while (charPos > offset)
         }

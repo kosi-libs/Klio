@@ -99,7 +99,7 @@ public class SliceBuilder(private val initialCapacity: Int, private val alloc: (
 
     public val allocationCount: Int get() = allocs.size
 
-    public val allocationSize: Int get() = allocs.sumBy { it.size }
+    public val allocationSize: Int get() = allocs.sumOf { it.size }
 
     override fun close() {
         allocs.forEach { it.close() }

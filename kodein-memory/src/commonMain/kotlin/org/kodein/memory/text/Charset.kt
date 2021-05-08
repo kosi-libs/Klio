@@ -3,7 +3,7 @@ package org.kodein.memory.text
 import org.kodein.memory.io.*
 import org.kodein.memory.io.swapEndian
 
-
+@OptIn(ExperimentalStdlibApi::class)
 public abstract class Charset(public val name: String) {
 
     public abstract fun codePointOf(char: Char): Int
@@ -31,12 +31,12 @@ public abstract class Charset(public val name: String) {
     public fun tryDecode(src: Readable): Int {
         val codePoint = tryDecodeCodePoint(src)
         if (codePoint == -1) return -1
-        return charOf(codePoint).toInt()
+        return charOf(codePoint).code
     }
 
     public object Type {
         public abstract class ByteCharset(name: String, private val max: Int) : Charset(name) {
-            override fun codePointOf(char: Char): Int = char.toInt()
+            override fun codePointOf(char: Char): Int = char.code
             override fun charOf(codePoint: Int): Char = codePoint.toChar()
 
             override fun isCodePointValid(codePoint: Int): Boolean = codePoint in 0..max
@@ -62,7 +62,7 @@ public abstract class Charset(public val name: String) {
         }
 
         public abstract class AbstractUTF16Charset(name: String) : Charset(name) {
-            override fun codePointOf(char: Char): Int = char.toInt()
+            override fun codePointOf(char: Char): Int = char.code
             override fun charOf(codePoint: Int): Char = codePoint.toChar()
 
             override fun isCodePointValid(codePoint: Int): Boolean = codePoint in 0..0x10FFFF
@@ -152,7 +152,7 @@ public abstract class Charset(public val name: String) {
             'Œ' -> 0xBC
             'œ' -> 0xBD
             'Ÿ' -> 0xBE
-            else -> char.toInt()
+            else -> char.code
         }
 
         override fun charOf(codePoint: Int): Char = when (codePoint) {
@@ -235,7 +235,7 @@ public abstract class Charset(public val name: String) {
     }
 
     public object UTF8 : Charset("UTF-8") {
-        override fun codePointOf(char: Char): Int = char.toInt()
+        override fun codePointOf(char: Char): Int = char.code
         override fun charOf(codePoint: Int): Char {
             if (codePoint > 0xFFFF) error("Code point 0x${codePoint.toString(radix = 16)} cannot be represented as a 2 bytes Char.")
             return codePoint.toChar()

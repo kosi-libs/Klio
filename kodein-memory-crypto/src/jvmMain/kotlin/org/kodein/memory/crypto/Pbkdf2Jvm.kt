@@ -21,7 +21,7 @@ public actual object Pbkdf2 {
         val derivedKey = SecretKeyFactory.getInstance(algorithmName)
             .generateSecret(
                 PBEKeySpec(
-                    CharArray(password.size) { password[it].toChar() },
+                    CharArray(password.size) { password[it].toInt().toChar() },
                     salt.getBytes(),
                     rounds,
                     dst.size * 8
