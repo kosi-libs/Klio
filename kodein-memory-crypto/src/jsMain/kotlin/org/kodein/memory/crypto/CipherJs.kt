@@ -56,7 +56,7 @@ private class JsCipherWriteable(private val cipher: JsCipher, private val key: A
 
     override fun writeBytes(src: Readable, length: Int) {
         when (src) {
-            is MemoryReadable -> writeBytes(src.readMemory(length))
+            is MemoryReadable -> writeBytes(src.readSlice(length))
             else -> {
                 val buffer = ArrayBufferMemory(length)
                 buffer.putBytes(0, src, length)

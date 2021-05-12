@@ -207,7 +207,7 @@ private class PosixWriteableFile(private val file: CPointer<FILE>) : WriteableFi
 
     override fun writeBytes(src: Readable, length: Int) {
         if (src is MemoryReadable) {
-            writeBytes(src.readMemory(length))
+            writeBytes(src.readSlice(length))
         } else {
             writeBytesBuffered(src, length)
         }

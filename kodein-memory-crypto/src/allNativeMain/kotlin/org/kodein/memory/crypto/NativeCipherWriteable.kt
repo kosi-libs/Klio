@@ -55,7 +55,7 @@ internal abstract class NativeCipherWriteable(private val key: Allocation, priva
     }
 
     override fun writeBytes(src: Readable, length: Int) {
-        if (src is MemoryReadable) writeBytes(src.readMemory(length))
+        if (src is MemoryReadable) writeBytes(src.readSlice(length))
         else writeBytes(src.readBytes(length))
     }
 

@@ -1,9 +1,8 @@
 package org.kodein.memory.crypto
 
 import org.kodein.memory.io.Memory
-import org.kodein.memory.io.asMemory
 import org.kodein.memory.text.array
-import org.kodein.memory.text.fromHex
+import org.kodein.memory.text.arrayFromHex
 import org.kodein.memory.text.toHex
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +18,7 @@ class Pbkdf2Tests {
 
     private val key = Memory.array("secret-key")
 
-    private val salt = "0123456789abcdef0123456789abcdef".fromHex().asMemory()
+    private val salt = Memory.arrayFromHex("0123456789abcdef0123456789abcdef")
 
     @Test
     fun pbkdf2() {

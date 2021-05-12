@@ -1,5 +1,7 @@
 package org.kodein.memory.io
 
+import org.kodein.memory.text.toHex
+
 @Suppress("DuplicatedCode")
 public abstract class AbstractMemory<M : AbstractMemory<M>> : Memory {
 
@@ -178,5 +180,10 @@ public abstract class AbstractMemory<M : AbstractMemory<M>> : Memory {
         return h
     }
 
-    override fun toString(): String = "${this::class.simpleName}($size)"
+    override fun toString(): String =
+        if (size <= 64) {
+            "${this::class.simpleName}:${toHex()}"
+        } else {
+            "${this::class.simpleName}($size)"
+        }
 }

@@ -34,7 +34,7 @@ internal abstract class AbstractJvmDigestWriteable : DigestWriteable {
     }
 
     override fun writeBytes(src: Readable, length: Int) {
-        if (src is MemoryReadable) writeBytes(src.readMemory(length))
+        if (src is MemoryReadable) writeBytes(src.readSlice(length))
         else writeBytesBuffered(src, length)
     }
 

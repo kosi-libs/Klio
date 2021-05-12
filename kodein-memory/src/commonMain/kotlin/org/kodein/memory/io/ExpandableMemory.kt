@@ -4,34 +4,40 @@ import org.kodein.memory.Closeable
 import kotlin.math.ceil
 
 
-public interface ReusableMemory {
+public interface ExpandableMemory {
     /**
      * On requireCanWrite: checks that the needed bytes are available after position.
      * If not, expands the buffer.
      * Attention: When expanding the buffer, only the content BEFORE position is copied.
-     * This means that calling `requireCanWrite` as first call in `write` is guaranteed without copy.
+     * This means that calling `requireCanWrite` as first call in `slice` is guaranteed without copy.
      *
-     * @return A ReadMemory that is only valid until the next call to `write`,
+     * @return A ReadMemory that is only valid until the next call to `slice`,
      */
     public fun slice(write: CursorWriteable.() -> Unit): ReadMemory
 
     public val bytesCopied: Int
 
     public companion object {
-        public operator fun invoke(initialCapacity: Int, alloc: (Int) -> Memory): ReusableMemory = ReusableMemoryImpl(initialCapacity, alloc)
-        public fun array(initialCapacity: Int): ReusableMemory = ReusableMemory(initialCapacity, Memory::array)
+        public operator fun invoke(initialCapacity: Int, alloc: (Int) -> Memory): ExpandableMemory = ExpandableMemoryImpl(initialCapacity, alloc)
+        public fun array(initialCapacity: Int): ExpandableMemory = ExpandableMemory(initialCapacity, Memory::array)
+        public fun array(initialCapacity: Int, write: Writeable.() -> Unit): ReadMemory = ExpandableMemory(initialCapacity, Memory::array).slice(write)
     }
 }
 
-public interface ReusableAllocation : ReusableMemory, Closeable {
+public interface ExpandableAllocation : ExpandableMemory, Closeable {
     public companion object {
-        public operator fun invoke(initialCapacity: Int, alloc: (Int) -> Allocation): ReusableAllocation = ReusableAllocationImpl(initialCapacity, alloc)
-        public fun native(initialCapacity: Int): ReusableAllocation = ReusableAllocationImpl(initialCapacity, Allocation::native)
+        public operator fun invoke(initialCapacity: Int, alloc: (Int) -> Allocation): ExpandableAllocation = ExpandableAllocationImpl(initialCapacity, alloc)
+        public fun native(initialCapacity: Int): ExpandableAllocation = ExpandableAllocationImpl(initialCapacity, Allocation::native)
+        public fun native(initialCapacity: Int, write: Writeable.() -> Unit): ReadAllocation {
+            val alloc = ExpandableAllocationImpl(initialCapacity, Allocation::native)
+            val memory = alloc.slice(write)
+            return ReadMemoryAllocation(memory) { alloc.close() }
+        }
     }
 }
 
 
-private open class ReusableMemoryImpl<M : Memory>(private val initialCapacity: Int, private val alloc: (Int) -> M): ReusableMemory {
+private open class ExpandableMemoryImpl<M : Memory>(private val initialCapacity: Int, private val alloc: (Int) -> M): ExpandableMemory {
 
     var memory = alloc(initialCapacity)
 
@@ -108,7 +114,7 @@ private open class ReusableMemoryImpl<M : Memory>(private val initialCapacity: I
     }
 }
 
-private class ReusableAllocationImpl(initialCapacity: Int, alloc: (Int) -> Allocation) : ReusableMemoryImpl<Allocation>(initialCapacity, alloc), ReusableAllocation {
+private class ExpandableAllocationImpl(initialCapacity: Int, alloc: (Int) -> Allocation) : ExpandableMemoryImpl<Allocation>(initialCapacity, alloc), ExpandableAllocation {
     override fun close(memory: Allocation) { memory.close() }
     override fun close() { memory.close() }
 }

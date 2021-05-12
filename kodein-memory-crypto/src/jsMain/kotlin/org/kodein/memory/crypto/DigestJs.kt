@@ -66,7 +66,7 @@ internal class JsDigestWriteable(override val digestSize: Int, private val onClo
 
     override fun writeBytes(src: Readable, length: Int) {
         when (src) {
-            is MemoryReadable -> writeBytes(src.readMemory(length))
+            is MemoryReadable -> writeBytes(src.readSlice(length))
             else -> {
                 val array = Uint8Array(length)
                 for (i in 0 until length) {

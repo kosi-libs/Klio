@@ -1,11 +1,10 @@
 package org.kodein.memory.crypto
 
 import org.kodein.memory.io.*
-import org.kodein.memory.util.secure
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.random.Random
+import javax.security.auth.DestroyFailedException
 
 
 internal class JvmCipherWriteable(private val cipher: javax.crypto.Cipher, private val secretKeySpec: SecretKeySpec, private val output: Writeable) : CipherWriteable {
@@ -60,7 +59,7 @@ internal class JvmCipherWriteable(private val cipher: javax.crypto.Cipher, priva
     }
 
     override fun writeBytes(src: Readable, length: Int) {
-        if (src is MemoryReadable) writeBytes(src.readMemory(length))
+        if (src is MemoryReadable) writeBytes(src.readSlice(length))
         else writeBytes(src.readBytes(length))
     }
 
@@ -76,7 +75,7 @@ internal class JvmCipherWriteable(private val cipher: javax.crypto.Cipher, priva
             }
         }
         output.writeBytes(cipher.doFinal())
-        secretKeySpec.destroy()
+        secretKeySpec.safeDestroy()
     }
 }
 

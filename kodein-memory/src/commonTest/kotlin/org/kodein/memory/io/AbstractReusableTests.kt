@@ -22,7 +22,7 @@ abstract class AbstractReusableTests : AbstractIOTests() {
     fun hasRoom() {
         val allocator = Allocator()
 
-        val alloc = ReusableAllocation(4, allocator::alloc).useInScope()
+        val alloc = ExpandableAllocation(4, allocator::alloc).useInScope()
         alloc.slice {
             writeString("Te")
         }
@@ -47,7 +47,7 @@ abstract class AbstractReusableTests : AbstractIOTests() {
     fun noCopyAfterPos() {
         val allocator = Allocator()
 
-        val alloc = ReusableAllocation(4, allocator::alloc).useInScope()
+        val alloc = ExpandableAllocation(4, allocator::alloc).useInScope()
         alloc.slice {
             writeString("Test")
         }

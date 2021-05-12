@@ -73,21 +73,26 @@ public typealias PlatformNativeAllocation = MemoryAllocation<PlatformNativeMemor
 
 public expect fun Allocation.Companion.native(size: Int): PlatformNativeAllocation
 
-public fun Allocation.Companion.nativeCopy(src: ReadMemory): PlatformNativeAllocation =
-    native(src.size).apply { putBytes(0, src) }
-
-public fun Allocation.Companion.nativeCopy(src: Readable, length: Int): PlatformNativeAllocation =
-    native(length).apply { putBytes(0, src, length) }
-
-public fun Allocation.Companion.nativeCopy(src: CursorReadable): PlatformNativeAllocation =
-    native(src.remaining).apply { putBytes(0, src) }
-
 @PublishedApi
 internal fun PlatformNativeAllocation.reduced(reducedSize: Int): PlatformNativeAllocation =
     PlatformNativeAllocation(memory.slice(0, reducedSize), closeFun)
 
 public inline fun Allocation.Companion.native(size: Int, write: Writeable.() -> Unit): PlatformNativeAllocation {
     val alloc = Allocation.native(size)
-    val length = alloc.write { write() }
-    return if (size == length) alloc else alloc.reduced(length)
+    try {
+        val length = alloc.write { write() }
+        return if (size == length) alloc else alloc.reduced(length)
+    } catch (t: Throwable) {
+        alloc.close()
+        throw t
+    }
 }
+
+public fun Allocation.Companion.nativeCopy(src: ReadMemory): PlatformNativeAllocation =
+    native(src.size) { writeBytes(src) }
+
+public fun Allocation.Companion.nativeCopy(src: Readable, length: Int): PlatformNativeAllocation =
+    native(length) { writeBytes(src, length) }
+
+public fun Allocation.Companion.nativeCopy(src: CursorReadable): PlatformNativeAllocation =
+    native(src.remaining) { writeBytes(src) }

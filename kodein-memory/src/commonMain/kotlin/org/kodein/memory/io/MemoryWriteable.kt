@@ -59,8 +59,8 @@ public class MemoryWriteable(public val memory: Memory) : CursorWriteable {
 
 public fun Memory.asWriteable(): MemoryWriteable = MemoryWriteable(this)
 
-public inline fun Memory.write(index: Int = 0, block: CursorWriteable.() -> Unit): Int {
-    val w = sliceAt(index).asWriteable()
+public inline fun Memory.write(block: CursorWriteable.() -> Unit): Int {
+    val w = asWriteable()
     w.block()
     return w.position
 }

@@ -46,7 +46,7 @@ internal abstract class NativeDigestWriteable : DigestWriteable {
 
     override fun writeBytes(src: Readable, length: Int) {
         require(length >= 0)
-        if (src is MemoryReadable) writeBytes(src.readMemory(length))
+        if (src is MemoryReadable) writeBytes(src.readSlice(length))
         else writeBytesBuffered(src, length)
     }
 
@@ -117,6 +117,7 @@ internal abstract class NativeDigestWriteable : DigestWriteable {
     override fun reset() {
         checkStatus(false)
         doReset()
+        isFinalized = false
         bytesWritten = 0
     }
 }

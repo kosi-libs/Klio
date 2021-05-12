@@ -241,7 +241,7 @@ internal open class NioByteChannelWriteable(private val channel: WritableByteCha
 
     override fun writeBytes(src: Readable, length: Int) {
         if (src is MemoryReadable) {
-            writeBytes(src.readMemory(length))
+            writeBytes(src.readSlice(length))
         } else {
             writeBytesBuffered(src, length)
         }

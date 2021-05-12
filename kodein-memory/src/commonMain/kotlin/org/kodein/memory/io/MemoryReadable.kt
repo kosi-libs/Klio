@@ -12,7 +12,7 @@ public class MemoryReadable(public val memory: ReadMemory) : SeekableCursorReada
             field = value
         }
 
-    public fun readMemory(length: Int): ReadMemory {
+    public fun readSlice(length: Int): ReadMemory {
         val slice = memory.slice(position, length)
         position += length
         return slice
@@ -82,4 +82,4 @@ public class MemoryReadable(public val memory: ReadMemory) : SeekableCursorReada
     }
 }
 
-public fun ReadMemory.asReadable(index: Int = 0): MemoryReadable = MemoryReadable(sliceAt(index))
+public fun ReadMemory.asReadable(): MemoryReadable = MemoryReadable(this)

@@ -40,7 +40,7 @@ class CharsetTests {
         assertEquals(palindrome.length * 2 + 2, memory.size)
         assertEquals(charset.byteOrderMark, memory.getShort(0))
 
-        val slice = memory.asReadable(2).readString(charset)
+        val slice = memory.sliceAt(2).asReadable().readString(charset)
         assertEquals(palindrome, slice)
 
         val read = memory.asReadable().readString(Charset.UTF16())
