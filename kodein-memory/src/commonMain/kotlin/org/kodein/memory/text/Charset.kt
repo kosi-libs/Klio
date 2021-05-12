@@ -98,7 +98,7 @@ public abstract class Charset(public val name: String) {
                 return 4
             }
 
-            private inline fun decodeCodePoint(firstShort: Short, nextShort: () -> Short): Int {
+            private fun decodeCodePoint(firstShort: Short, nextShort: () -> Short): Int {
                 val c1 = shortToCodeUnit(firstShort)
 
                 return when (c1 shr 10 and 0x3F) {
@@ -112,7 +112,7 @@ public abstract class Charset(public val name: String) {
                 }
             }
 
-            private inline fun decodeCodePoint(readShort: () -> Short): Int = decodeCodePoint(readShort(), readShort)
+            private fun decodeCodePoint(readShort: () -> Short): Int = decodeCodePoint(readShort(), readShort)
 
             override fun decodeCodePoint(src: Readable): Int = decodeCodePoint(src::readShort)
 
@@ -285,7 +285,7 @@ public abstract class Charset(public val name: String) {
             return count
         }
 
-        private inline fun decodeCodePoint(firstByte: Byte, readByte: () -> Byte): Int {
+        private fun decodeCodePoint(firstByte: Byte, readByte: () -> Byte): Int {
             val c0 = firstByte.toInt() and 0xFF
             when (c0) {
                 in 0x00..0x7F -> { // 0xxxxxxx
