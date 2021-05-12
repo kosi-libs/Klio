@@ -39,11 +39,11 @@ kodein {
             main.dependencies {
                 implementation(npm("sha.js", "2.4.11"))
                 implementation(npm("create-hmac", "1.1.7"))
+                implementation(npm("buffer", "6.0.3"))
                 implementation(npm("safe-buffer", "5.2.1"))
                 implementation(npm("browserify-aes", "1.2.0"))
-                implementation(npm("pbkdf2", "3.1.1"))
-//                implementation(npm("jssha", "3.2.0"))
-//                implementation(npm("aes-js", "3.1.2"))
+                implementation(npm("pbkdf2", "3.1.2"))
+                implementation(npm("stream-browserify", "3.0.0"))
             }
         }
 
