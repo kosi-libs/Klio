@@ -45,8 +45,9 @@ public fun ByteArray.readString(charset: Charset = Charset.UTF8): String =
     asReadable().readString(charset)
 
 
+@OptIn(ExperimentalStdlibApi::class)
 public fun Writeable.writeNullTerminatedString(str: CharSequence, charset: Charset = Charset.UTF8): Int {
-    require(str.none { it.toInt() == 0 }) { "Char sequence must not have a null char ('\\0')." }
+    require(str.none { it.code == 0 }) { "Char sequence must not have a null char ('\\0')." }
     val size = writeString(str, charset)
     writeByte(0)
     return size + 1

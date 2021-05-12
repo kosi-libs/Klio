@@ -46,7 +46,6 @@ kodein {
 
         sourceSets.all {
             languageSettings.useExperimentalAnnotation("kotlin.Experimental")
-            languageSettings.enableLanguageFeature("InlineClasses")
         }
     }
 }

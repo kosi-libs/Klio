@@ -2,6 +2,7 @@ package org.kodein.memory.io
 
 import kotlin.test.*
 
+@OptIn(ExperimentalStdlibApi::class)
 class ReadMemoryTests {
 
     @Test
@@ -18,8 +19,8 @@ class ReadMemoryTests {
 
     @Test
     fun firstIndexOf() {
-        assertEquals(8, Memory.wrap("This is a test!".encodeToByteArray()).firstIndexOf('a'.toByte()))
-        assertEquals(-1, Memory.wrap("This is a test!".encodeToByteArray()).firstIndexOf('w'.toByte()))
+        assertEquals(8, Memory.wrap("This is a test!".encodeToByteArray()).firstIndexOf('a'.code.toByte()))
+        assertEquals(-1, Memory.wrap("This is a test!".encodeToByteArray()).firstIndexOf('w'.code.toByte()))
     }
 
     @Test
