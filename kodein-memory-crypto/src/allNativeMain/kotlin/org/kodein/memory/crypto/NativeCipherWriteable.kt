@@ -67,6 +67,7 @@ internal abstract class NativeCipherWriteable(private val key: Allocation, priva
     override fun flush() {}
 
     override fun close() {
+        output.requestCanWrite(16)
         output.writeNative(16) {
             doFinal(it.pointer, it.size)
         }

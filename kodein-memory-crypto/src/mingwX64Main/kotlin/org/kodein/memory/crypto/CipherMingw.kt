@@ -11,7 +11,14 @@ import kotlin.math.min
 private typealias CryptOp = (BCRYPT_KEY_HANDLE?, PUCHAR?, ULONG, CValuesRef<*>?, PUCHAR?, ULONG, PUCHAR?, ULONG, CValuesRef<ULONGVar>?, ULONG) -> NTSTATUS
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class MingwCipherWriteable(key: PlatformNativeAllocation, private val iv: PlatformNativeAllocation?, mode: String, output: Writeable, private val cryptOp: CryptOp) : NativeCipherWriteable(key, output) {
+private class MingwCipherWriteable(
+    key: PlatformNativeAllocation,
+    private val iv: PlatformNativeAllocation?,
+    mode: String,
+    output: Writeable,
+    private val cryptOp: CryptOp,
+    private val opReserve: Int
+) : NativeCipherWriteable(key, output) {
 
     companion object {
         const val bufferSize = 4096
@@ -50,7 +57,7 @@ private class MingwCipherWriteable(key: PlatformNativeAllocation, private val iv
             processed += copySize
             bufferPosition += copySize
 
-            val readySize = ((bufferPosition - 1) / 16) * 16
+            val readySize = ((bufferPosition - opReserve) / 16) * 16
             if (readySize > 0) {
                 cryptOp(
                     hKey.value,
@@ -95,7 +102,7 @@ private class MingwCipherWriteable(key: PlatformNativeAllocation, private val iv
 }
 
 public actual object AES128 {
-    private fun getCipher(cipherMode: CipherMode, key: ReadMemory, output: Writeable, cryptOp: CryptOp): NativeCipherWriteable {
+    private fun getCipher(cipherMode: CipherMode, key: ReadMemory, output: Writeable, cryptOp: CryptOp, opReserve: Int): NativeCipherWriteable {
         val (modeName, iv) = when (cipherMode) {
             is CipherMode.CBC -> "ChainingModeCBC" to cipherMode.iv?.let { Allocation.nativeCopy(it) }
             CipherMode.ECB -> "ChainingModeECB" to null
@@ -103,12 +110,12 @@ public actual object AES128 {
 
         val keyCopy = Allocation.nativeCopy(key)
 
-        return MingwCipherWriteable(keyCopy, iv, modeName, output, cryptOp)
+        return MingwCipherWriteable(keyCopy, iv, modeName, output, cryptOp, opReserve)
     }
 
     public actual fun encrypt(mode: CipherMode, key: ReadMemory, output: Writeable): CipherWriteable =
-        getCipher(mode, key, output, ::BCryptEncrypt)
+        getCipher(mode, key, output, ::BCryptEncrypt, 0)
 
     public actual fun decrypt(mode: CipherMode, key: ReadMemory, output: Writeable): CipherWriteable =
-        getCipher(mode, key, output, ::BCryptDecrypt)
+        getCipher(mode, key, output, ::BCryptDecrypt, 1)
 }
