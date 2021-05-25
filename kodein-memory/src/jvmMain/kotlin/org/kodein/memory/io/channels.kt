@@ -19,7 +19,7 @@ internal class WriteableNioByteChannel(private val writeable: Writeable, private
         val slice = src.slice()
         val count = slice.remaining()
         writeable.writeBytes(ByteBufferMemory(src.slice()))
-        src.position(src.position() + count)
+        src.jPosition = src.jPosition + count
         return count
     }
 
@@ -42,7 +42,7 @@ internal class ReadableNioByteChannel(private val readable: Readable, private va
 
     override fun read(dst: ByteBuffer): Int {
         val read = readable.tryReadBytes(ByteBufferMemory(dst.slice()))
-        dst.position(dst.position() + read)
+        dst.jPosition = dst.jPosition + read
         return read
     }
 
@@ -71,8 +71,8 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
     override fun valid(): Boolean = valid
 
     override fun tryReadByte(): Int {
-        buffer.position(0)
-        buffer.limit(1)
+        buffer.jPosition = 0
+        buffer.jLimit = 1
         val r = channel.read(buffer)
         if (r == -1) {
             valid = false
@@ -103,7 +103,7 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
         }
 
         if (byteBuffer != null) {
-            byteBuffer.position(0) {
+            byteBuffer.withPosition(0) {
                 val r = channel.read(byteBuffer)
                 if (r == -1) valid = false
                 else bytesRead += r
@@ -124,8 +124,8 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
     }
 
     private inline fun <T> readValue(size: Int, getValue: ByteBuffer.(Int) -> T): T {
-        buffer.position(0)
-        buffer.limit(size)
+        buffer.jPosition = 0
+        buffer.jLimit = size
         val n = channel.read(buffer)
         bytesRead += n
         if (n != size) throw IOException("Channel is over. Needed $size bytes, but only got $n.")
@@ -164,8 +164,8 @@ internal open class NioByteChannelReadable(private val channel: ReadableByteChan
         val buffer = ByteBuffer.allocate(min(8 * 1024, count))
         var skipped = 0
         while (skipped < count) {
-            buffer.position(0)
-            buffer.limit(min(buffer.capacity(), count - skipped))
+            buffer.jPosition = 0
+            buffer.jLimit = min(buffer.capacity(), count - skipped)
             val r = channel.read(buffer)
             if (r == -1) break
             bytesRead += r
@@ -234,7 +234,7 @@ internal open class NioByteChannelWriteable(private val channel: WritableByteCha
             else -> ByteBuffer.wrap(src.getBytes())
         }
 
-        byteBuffer.position(0) {
+        byteBuffer.withPosition(0) {
             channel.write(byteBuffer)
         }
     }

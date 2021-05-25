@@ -4,23 +4,23 @@ import java.nio.ByteBuffer
 
 public class DirectByteBufferMemory(byteBuffer: ByteBuffer) : AbstractMemory<DirectByteBufferMemory>() {
 
-    public val byteBuffer: ByteBuffer = byteBuffer.duplicate().also { it.position(0) }
+    public val byteBuffer: ByteBuffer = byteBuffer.duplicate().also { it.jPosition = 0 }
 
     init {
         require(byteBuffer.isDirect) { "ByteBuffer is not direct." }
     }
 
-    override val size: Int get() = byteBuffer.limit()
+    override val size: Int get() = byteBuffer.jLimit
 
     override fun unsafeSlice(index: Int, length: Int): DirectByteBufferMemory =
-        byteBuffer.position(index) {
+        byteBuffer.withPosition(index) {
             val slice = byteBuffer.slice()
-            slice.limit(length)
+            slice.jLimit = length
             DirectByteBufferMemory(slice)
         }
 
     override fun unsafePutBytes(index: Int, src: ByteArray, srcOffset: Int, length: Int) {
-        byteBuffer.position(index) {
+        byteBuffer.withPosition(index) {
             byteBuffer.put(src, srcOffset, length)
         }
     }
@@ -28,8 +28,8 @@ public class DirectByteBufferMemory(byteBuffer: ByteBuffer) : AbstractMemory<Dir
     override fun unsafeTryPutBytesOptimized(index: Int, src: AbstractMemory<*>): Boolean {
         if (src !is DirectByteBufferMemory || byteBuffer === src.byteBuffer) return false
 
-        byteBuffer.position(index) {
-            src.byteBuffer.position(0) {
+        byteBuffer.withPosition(index) {
+            src.byteBuffer.withPosition(0) {
                 byteBuffer.put(src.byteBuffer)
             }
         }
@@ -62,7 +62,7 @@ public class DirectByteBufferMemory(byteBuffer: ByteBuffer) : AbstractMemory<Dir
     override fun unsafeGetLong(index: Int): Long = byteBuffer.getLong(index)
 
     override fun unsafeGetBytes(index: Int, dst: ByteArray, dstOffset: Int, length: Int) {
-        byteBuffer.position(index) {
+        byteBuffer.withPosition(index) {
             byteBuffer.get(dst, dstOffset, length)
         }
     }

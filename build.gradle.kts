@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "org.kodein.memory"
-    version = "0.10.1"
+    version = "0.10.2"
 
     repositories {
         mavenCentral()
