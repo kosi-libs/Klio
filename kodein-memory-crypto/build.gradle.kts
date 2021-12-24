@@ -6,7 +6,7 @@ kodein {
     kotlin {
 
         val appleNative = kodeinSourceSets.new("appleNative", listOf(kodeinSourceSets.allPosix))
-        val appleNativeTargets = kodeinTargets.native.allDarwin + kodeinTargets.native.macosX64
+        val appleNativeTargets = kodeinTargets.native.allDarwin + kodeinTargets.native.macosX64 + kodeinTargets.native.macosArm64
         appleNativeTargets.forEach {
             it.dependencies.add(appleNative)
         }
@@ -48,7 +48,7 @@ kodein {
         }
 
         sourceSets.all {
-            languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }

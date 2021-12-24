@@ -45,7 +45,7 @@ kodein {
         }
 
         sourceSets.all {
-            languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }

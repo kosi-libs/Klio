@@ -36,7 +36,7 @@ kodein {
         add(kodeinTargets.native.mingwX64)
 
         sourceSets.all {
-            languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }
