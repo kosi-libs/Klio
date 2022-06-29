@@ -12,7 +12,7 @@ kodein {
         }
 
         common.main.dependencies {
-            api(project(":kodein-memory"))
+            api(project(":klio"))
         }
 
         add(kodeinTargets.jvm.jvm) {
@@ -48,6 +48,6 @@ afterEvaluate {
 }
 
 kodeinUpload {
-    name = "Kodein-Memory-Files"
-    description = "Kodein File Library"
+    name = "Klio-Files"
+    description = "Kotlin Multiplatform File Library"
 }

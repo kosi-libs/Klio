@@ -1,6 +1,6 @@
 plugins {
     id("org.kodein.library.mpp")
-    id("kotlinx-serialization")
+    kotlin("plugin.serialization")
 }
 
 kodein {
@@ -65,6 +65,6 @@ afterEvaluate {
 }
 
 kodeinUpload {
-    name = "Kodein-Memory"
-    description = "Kodein Memory Library"
+    name = "Klio"
+    description = "Kotlin Multiplatform Low-level I/O Library"
 }

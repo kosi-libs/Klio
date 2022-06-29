@@ -18,7 +18,7 @@ kodein {
         }
 
         common.main.dependencies {
-            api(project(":kodein-memory"))
+            api(project(":klio"))
         }
 
         add(kodeinTargets.jvm.jvm) {
@@ -54,6 +54,6 @@ kodein {
 }
 
 kodeinUpload {
-    name = "Kodein-Memory-Crypto"
-    description = "Kodein Crypto Library"
+    name = "Klio-Crypto"
+    description = "Kotlin Multiplatform Crypto Library"
 }
