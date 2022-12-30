@@ -137,21 +137,18 @@ public class UUID(public val mostSignificantBits: Long, public val leastSignific
             }
         }
 
-        override fun deserialize(decoder: Decoder): UUID {
-            decoder.decodeStructure(descriptor) {
-                var most: Long = 0
-                var least: Long = 0
+        override fun deserialize(decoder: Decoder): UUID = decoder.decodeStructure(descriptor) {
+            var most: Long = 0
+            var least: Long = 0
 
-                repeat(2) {
-                    when (decodeElementIndex(descriptor)) {
-                        0 -> most = decodeLongElement(descriptor, 0)
-                        1 -> least = decodeLongElement(descriptor, 1)
-                    }
+            repeat(2) {
+                when (decodeElementIndex(descriptor)) {
+                    0 -> most = decodeLongElement(descriptor, 0)
+                    1 -> least = decodeLongElement(descriptor, 1)
                 }
-                return UUID(most, least)
             }
+            return@decodeStructure UUID(most, least)
         }
-
     }
 }
 

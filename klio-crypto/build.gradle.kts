@@ -35,7 +35,7 @@ kodein {
 
         add(kodeinTargets.native.mingwX64)
 
-        add(kodeinTargets.js.js) {
+        add(kodeinTargets.js.ir.js) {
             main.dependencies {
                 implementation(npm("sha.js", "2.4.11"))
                 implementation(npm("create-hmac", "1.1.7"))
@@ -45,10 +45,6 @@ kodein {
                 implementation(npm("pbkdf2", "3.1.2"))
                 implementation(npm("stream-browserify", "3.0.0"))
             }
-        }
-
-        sourceSets.all {
-            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }

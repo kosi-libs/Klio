@@ -26,7 +26,7 @@ kodein {
             }
         }
 
-        add(kodeinTargets.js.js) {
+        add(kodeinTargets.js.ir.js) {
             dependsOn(allNonJvm)
         }
 
@@ -42,10 +42,6 @@ kodein {
             mainCompilation.cinterops.create("environ_windows")
 
             dependsOn(allNonJvm)
-        }
-
-        sourceSets.all {
-            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }

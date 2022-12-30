@@ -34,10 +34,6 @@ kodein {
         add(otherPosixTargets)
         add(kodeinTargets.native.allDarwin)
         add(kodeinTargets.native.mingwX64)
-
-        sourceSets.all {
-            languageSettings.optIn("kotlin.Experimental")
-        }
     }
 }
 
