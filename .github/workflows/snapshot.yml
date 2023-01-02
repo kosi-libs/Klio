@@ -1,5 +1,8 @@
 name: Build and deploy a snapshot
 
+# Ubuntu 20.04 is used as GLIBC used by konan are not compatible with newer versions
+# https://youtrack.jetbrains.com/issue/KT-43501/Static-linking-to-some-libraries-with-libc-calls-causes-linker-errors
+
 on:
   push:
     branches:
@@ -22,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-20.04, macOS-latest, windows-latest]
     steps:
       - name: Check out
         uses: actions/checkout@v2
@@ -44,7 +47,7 @@ jobs:
           java-version: 11
       # Host only for MacOS / Windows
       - name: Check (macos / windows)
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-20.04'
         run: ./gradlew hostOnlyTest
         shell: bash
       - name: Check Android
@@ -56,15 +59,15 @@ jobs:
           cmake: 3.10.2.4988404
           script: ./gradlew connectedCheck
       - name: Upload (macos / windows)
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-20.04'
         run: ./gradlew hostOnlyPublish -PgitRef=${{ github.ref }} -Psnapshot=true
         shell: bash
       # Linux / JVM / JS
       - name: Check (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: ./gradlew check
         shell: bash
       - name: Upload (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: ./gradlew publishAllPublicationsToOssrhStagingRepository -PgitRef=${{ github.ref }} -Psnapshot=true
         shell: bash
