@@ -1,5 +1,8 @@
 name: Build and deploy a release
 
+# Ubuntu 20.04 is used as GLIBC used by konan are not compatible with newer versions
+# https://youtrack.jetbrains.com/issue/KT-43501/Static-linking-to-some-libraries-with-libc-calls-causes-linker-errors
+
 on:
   release:
     types: [published]
@@ -7,7 +10,7 @@ on:
 jobs:
   create-staging-repository:
     name: Create staging repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       repository_id: ${{ steps.create.outputs.repository_id }}
     steps:
@@ -30,7 +33,7 @@ jobs:
       GPG_PRIVATE_PASSWORD: ${{ secrets.PGP_SIGNING_PASSWORD }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-20.04, macOS-latest, windows-latest]
     steps:
       - name: Check out
         uses: actions/checkout@v2
@@ -52,7 +55,7 @@ jobs:
           java-version: 11
       # Host only for MacOS / Windows
       - name: Check (macos / windows)
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-20.04'
         run: ./gradlew hostOnlyTest
         shell: bash
       - name: Check Android
@@ -64,22 +67,22 @@ jobs:
           cmake: 3.10.2.4988404
           script: ./gradlew connectedCheck
       - name: Upload (macos / windows)
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-20.04'
         run: ./gradlew hostOnlyPublish -Porg.kodein.sonatype.repositoryId=${{ needs.create-staging-repository.outputs.repository_id }}
         shell: bash
       # Linux / JVM / JS
       - name: Check (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: ./gradlew check
         shell: bash
       - name: Upload (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: ./gradlew publishAllPublicationsToOssrhStagingRepository -Porg.kodein.sonatype.repositoryId=${{ needs.create-staging-repository.outputs.repository_id }}
         shell: bash
 
   drop-or-release:
     needs: [create-staging-repository, build-upload]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() && needs.create-staging-repository.result == 'success' }}
     steps:
       - name: Discard

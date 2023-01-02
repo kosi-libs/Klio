@@ -1,5 +1,8 @@
 name: check
 
+# Ubuntu 20.04 is used as GLIBC used by konan are not compatible with newer versions
+# https://youtrack.jetbrains.com/issue/KT-43501/Static-linking-to-some-libraries-with-libc-calls-causes-linker-errors
+
 on:
   pull_request:
     paths-ignore:
@@ -15,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-20.04, macOS-latest, windows-latest]
     steps:
       - name: Check out
         uses: actions/checkout@v2
