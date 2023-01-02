@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "org.kodein.memory"
-    version = "0.12.0"
+    version = "0.13.0"
 }
 
-val kotlinxSerializationVer by extra { "1.3.2" }
+val kotlinxSerializationVer by extra { "1.4.1" }
